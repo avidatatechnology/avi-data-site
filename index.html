@@ -3,1218 +3,594 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Avi Data Technologies — spreadsheets, turned into dashboards</title>
-<meta name="description" content="Avi Data Technologies turns the exports you already pull from Excel and your CRM into performance and operational dashboards your team logs into and reads." />
-<!-- favicon: inline so the file stays fully self-contained for Netlify -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237C6CFF'/><g fill='white'><rect x='8' y='17' width='3.4' height='7' rx='1'/><rect x='14.3' y='12' width='3.4' height='12' rx='1'/><rect x='20.6' y='8' width='3.4' height='16' rx='1'/></g></svg>" />
+<title>Avi Data Technologies — software & dashboards for companies with data</title>
+<meta name="description" content="Avi Data Technologies builds custom software, financial dashboards, and operational tools that turn your data into decisions." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236E8BFF'/><stop offset='1' stop-color='%2334D8A0'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='%230A0E1A'/><path d='M8 22L14 9l2 5 2-5 6 13' fill='none' stroke='url(%23g)' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  /* ============ TOKENS ============ */
   :root{
-    --bg:#090D17;
-    --bg-grid: #0c1120;
-    --panel:#111829;
-    --panel-2:#0E1422;
-    --raised:#16203A;
-    --line:#212C46;
-    --line-soft:#1A2236;
-    --text:#EAEEF8;
-    --muted:#8A96B4;
-    --muted-2:#5C688A;
-    --brand:#7C6CFF;
-    --brand-2:#9B8CFF;
-    --cyan:#34D5C8;
-    --pos:#49D69D;
-    --neg:#F2607D;
-    --amber:#F4C56B;
-
-    --r:16px;
-    --r-sm:11px;
-    --rail:64px;
-    --top:62px;
-    --maxw:1360px;
-
-    --f-display:'Space Grotesk',system-ui,sans-serif;
-    --f-body:'Inter',system-ui,sans-serif;
-    --f-mono:'JetBrains Mono',ui-monospace,monospace;
+    --bg:#0A0E1A; --bg-2:#0C1120; --panel:#111726; --panel-2:#0D1322; --raised:#16203A;
+    --line:#1F2A44; --line-soft:#172033;
+    --text:#EAF0FB; --muted:#8793AE; --muted-2:#566179;
+    --brand:#6E8BFF; --brand-2:#9FB0FF; --mint:#34D8A0; --mint-2:#67E6BD;
+    --gold:#F2B45C; --rose:#F2607D; --up:#34D8A0; --down:#F2607D;
+    --r:18px; --top:62px; --maxw:1320px;
+    --fd:'Plus Jakarta Sans',system-ui,sans-serif; --fb:'Inter',system-ui,sans-serif; --fm:'JetBrains Mono',ui-monospace,monospace;
   }
-
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{
-    margin:0;
-    background:
-      radial-gradient(1100px 560px at 78% -8%, rgba(124,108,255,.14), transparent 60%),
-      radial-gradient(900px 500px at 0% 10%, rgba(52,213,200,.07), transparent 55%),
-      var(--bg);
-    color:var(--text);
-    font-family:var(--f-body);
-    font-size:15px;
-    line-height:1.55;
-    -webkit-font-smoothing:antialiased;
-  }
+  body{margin:0;background:radial-gradient(1200px 700px at 82% -12%,rgba(110,139,255,.12),transparent 55%),radial-gradient(1000px 600px at -8% 4%,rgba(52,216,160,.08),transparent 55%),var(--bg);color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
   a{color:inherit;text-decoration:none}
-  ::selection{background:rgba(124,108,255,.32)}
+  ::selection{background:rgba(110,139,255,.32)}
+  .mono{font-family:var(--fm)}
+  .mut{color:var(--muted)}
+  .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
 
-  .mono{font-family:var(--f-mono)}
-  .eyebrow{
-    font-family:var(--f-mono);
-    font-size:11px;letter-spacing:.16em;text-transform:uppercase;
-    color:var(--muted-2);
-  }
+  .topbar{position:fixed;inset:0 0 auto 0;height:var(--top);z-index:60;display:flex;align-items:center;gap:18px;padding:0 22px;background:rgba(10,14,26,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line-soft)}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand .mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(150deg,var(--brand),#4a5fd6);display:grid;place-items:center;box-shadow:0 4px 18px rgba(110,139,255,.4)}
+  .brand b{font-family:var(--fd);font-weight:700;font-size:16px;letter-spacing:-.02em}
+  .brand b span{color:var(--muted)}
+  .topnav{display:flex;gap:2px;margin-left:8px}
+  .topnav a{font-size:13.5px;color:var(--muted);padding:8px 13px;border-radius:9px;font-weight:500;transition:.16s}
+  .topnav a:hover{color:var(--text)} .topnav a.active{color:var(--text);background:rgba(255,255,255,.05)}
+  .top-right{margin-left:auto;display:flex;align-items:center;gap:11px}
+  .pill{font-family:var(--fd);font-weight:600;font-size:13px;padding:9px 17px;border-radius:11px;cursor:pointer;border:none;transition:.18s;display:inline-flex;align-items:center;gap:8px}
+  .pill-grad{background:linear-gradient(110deg,var(--brand),#4a5fd6);color:#fff;box-shadow:0 8px 22px -8px rgba(110,139,255,.7)}
+  .pill-grad:hover{transform:translateY(-1px)}
+  .pill-ghost{background:#121a2c;color:var(--text);border:1px solid var(--line)}
+  .pill-ghost:hover{border-color:var(--brand)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint)}
 
-  /* ============ TOPBAR ============ */
-  .topbar{
-    position:fixed;top:0;left:0;right:0;height:var(--top);z-index:60;
-    display:flex;align-items:center;gap:18px;
-    padding:0 18px 0 16px;
-    background:rgba(9,13,23,.82);
-    backdrop-filter:blur(14px);
-    border-bottom:1px solid var(--line-soft);
-  }
-  .brand{display:flex;align-items:center;gap:11px;min-width:0}
-  .brand .mark{
-    width:34px;height:34px;border-radius:9px;flex:none;
-    background:linear-gradient(150deg,var(--brand),#5a49d6);
-    display:grid;place-items:center;
-    box-shadow:0 4px 18px rgba(124,108,255,.4);
-  }
-  .brand .name{font-family:var(--f-display);font-weight:600;font-size:16px;letter-spacing:-.01em;white-space:nowrap}
-  .brand .name small{display:block;font-family:var(--f-mono);font-weight:400;font-size:9.5px;letter-spacing:.18em;color:var(--muted-2);text-transform:uppercase;margin-top:-2px}
-
-  .topnav{display:flex;gap:4px;margin-left:8px}
-  .topnav a{
-    font-size:13.5px;color:var(--muted);padding:7px 13px;border-radius:9px;
-    transition:.18s;font-weight:450;white-space:nowrap;
-  }
-  .topnav a:hover{color:var(--text);background:rgba(255,255,255,.04)}
-  .topnav a.active{color:var(--text);background:var(--raised);box-shadow:inset 0 0 0 1px var(--line)}
-
-  .top-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-  .status{
-    display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11px;
-    color:var(--muted);background:var(--panel-2);border:1px solid var(--line-soft);
-    padding:7px 12px;border-radius:999px;white-space:nowrap;
-  }
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--pos);box-shadow:0 0 0 0 rgba(73,214,157,.6);animation:pulse 2.4s infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(73,214,157,.55)}70%{box-shadow:0 0 0 7px rgba(73,214,157,0)}100%{box-shadow:0 0 0 0 rgba(73,214,157,0)}}
-  .icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line-soft);background:var(--panel-2);color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:.18s}
-  .icon-btn:hover{color:var(--text);border-color:var(--line)}
-  .avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(140deg,#2a3350,#3a4570);display:grid;place-items:center;font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--brand-2);border:1px solid var(--line)}
-
-  /* ============ SIDEBAR RAIL ============ */
-  .rail{
-    position:fixed;top:var(--top);left:0;bottom:0;width:var(--rail);z-index:55;
-    background:rgba(11,15,26,.6);border-right:1px solid var(--line-soft);
-    display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:6px;
-  }
-  .rail-btn{
-    width:40px;height:40px;border-radius:11px;display:grid;place-items:center;
-    color:var(--muted-2);cursor:pointer;position:relative;transition:.18s;
-  }
-  .rail-btn:hover{color:var(--text);background:rgba(255,255,255,.04)}
-  .rail-btn.active{color:#fff;background:linear-gradient(150deg,var(--brand),#5a49d6);box-shadow:0 6px 16px rgba(124,108,255,.35)}
-  .rail-btn .tip{
-    position:absolute;left:52px;top:50%;transform:translateY(-50%) translateX(-4px);
-    background:var(--raised);border:1px solid var(--line);color:var(--text);
-    font-size:12px;padding:5px 10px;border-radius:8px;white-space:nowrap;
-    opacity:0;pointer-events:none;transition:.16s;font-family:var(--f-body);
-  }
-  .rail-btn:hover .tip{opacity:1;transform:translateY(-50%) translateX(0)}
-  .rail-sep{flex:1}
-
-  /* ============ LAYOUT ============ */
-  .shell{padding:calc(var(--top) + 14px) 18px 18px calc(var(--rail) + 18px)}
+  .shell{padding:calc(var(--top) + 20px) 22px 30px}
   .wrap{max-width:var(--maxw);margin:0 auto}
+  .secthead{margin:46px 0 16px}
+  .secthead h2{font-family:var(--fd);font-weight:700;font-size:clamp(22px,3vw,32px);letter-spacing:-.025em;margin:6px 0 8px}
+  .secthead p{margin:0;color:var(--muted);font-size:15px;max-width:64ch}
 
-  /* ticker */
-  .ticker{
-    border:1px solid var(--line-soft);background:var(--panel-2);border-radius:12px;
-    overflow:hidden;margin-bottom:14px;position:relative;
-  }
-  .ticker::before,.ticker::after{content:"";position:absolute;top:0;bottom:0;width:48px;z-index:2;pointer-events:none}
-  .ticker::before{left:0;background:linear-gradient(90deg,var(--panel-2),transparent)}
-  .ticker::after{right:0;background:linear-gradient(270deg,var(--panel-2),transparent)}
-  .ticker-track{display:flex;gap:34px;padding:11px 0;width:max-content;animation:scroll 38s linear infinite}
-  .ticker:hover .ticker-track{animation-play-state:paused}
-  .ti{display:flex;align-items:center;gap:9px;font-family:var(--f-mono);font-size:12px;color:var(--muted);white-space:nowrap}
-  .ti b{color:var(--text);font-weight:600}
-  .ti .lbl{color:var(--muted-2);letter-spacing:.06em}
-  .ti .up{color:var(--pos)}.ti .down{color:var(--amber)}
-  @keyframes scroll{to{transform:translateX(-50%)}}
-
-  /* grids */
-  .grid{display:grid;gap:16px}
-  .hero-grid{grid-template-columns:1.55fr 1fr;align-items:stretch}
-  .kpis{grid-template-columns:repeat(4,1fr);margin-top:16px}
-  .cap-grid{grid-template-columns:1.3fr 1fr;margin-top:16px;align-items:start}
-  .cap-grid-2{grid-template-columns:1fr 1fr;margin-top:16px;align-items:start}
-
-  /* panel base */
-  .panel{
-    background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--r);
-    padding:16px;position:relative;
-  }
-  .panel-lift{box-shadow:0 24px 60px -28px rgba(0,0,0,.7)}
-  .phead{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-  .phead .pi{width:30px;height:30px;border-radius:9px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;color:var(--brand-2);flex:none}
-  .phead h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:-.01em}
-  .phead .act{margin-left:auto;font-family:var(--f-mono);font-size:11px;color:var(--muted-2);display:flex;align-items:center;gap:6px}
-  .menu-dots{color:var(--muted-2);letter-spacing:1px;cursor:default}
-
-  /* section heading (between panel groups) */
-  .secthead{margin:24px 0 0}
-  .secthead h2{font-family:var(--f-display);font-weight:600;font-size:clamp(19px,2.3vw,25px);letter-spacing:-.02em;margin:5px 0 6px}
-  .secthead p{color:var(--muted);max-width:62ch;margin:0;font-size:14px}
-
-  /* ============ HERO ============ */
-  .hero{padding:20px 22px 22px;overflow:hidden}
-  .hero h1{
-    font-family:var(--f-display);font-weight:600;
-    font-size:clamp(24px,3.6vw,38px);line-height:1.05;letter-spacing:-.025em;
-    margin:14px 0 0;
-  }
-  .hero h1 .ink{color:var(--muted-2)}
-  .hero h1 .hl{color:var(--brand-2)}
-  .hero .sub{color:var(--muted);font-size:16px;max-width:54ch;margin:16px 0 22px;line-height:1.6}
-  .cta-row{display:flex;gap:12px;flex-wrap:wrap}
-  .btn{
-    font-family:var(--f-body);font-weight:550;font-size:14px;border-radius:11px;
-    padding:12px 20px;cursor:pointer;border:1px solid transparent;transition:.18s;display:inline-flex;align-items:center;gap:9px;
-  }
-  .btn-primary{background:linear-gradient(150deg,var(--brand),#5a49d6);color:#fff;box-shadow:0 10px 26px -8px rgba(124,108,255,.6)}
-  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 14px 30px -8px rgba(124,108,255,.75)}
-  .btn-ghost{background:var(--panel-2);color:var(--text);border-color:var(--line)}
-  .btn-ghost:hover{border-color:var(--brand);color:#fff}
-
-  /* transformation demo */
-  .demo{
-    margin-top:26px;border:1px solid var(--line);border-radius:14px;overflow:hidden;
-    background:var(--panel-2);
-  }
-  .demo-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line-soft);background:rgba(255,255,255,.015)}
-  .tdots{display:flex;gap:6px}.tdots i{width:9px;height:9px;border-radius:50%;background:#39405e;display:block}
-  .tdots i:nth-child(1){background:#39405e}.tdots i:nth-child(2){background:#39405e}.tdots i:nth-child(3){background:#39405e}
-  .demo-file{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
-  .demo-toggle{margin-left:auto;display:flex;background:var(--bg);border:1px solid var(--line-soft);border-radius:9px;padding:3px}
-  .demo-toggle button{
-    font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--muted);
-    background:none;border:none;padding:6px 11px;border-radius:7px;cursor:pointer;transition:.16s;
-  }
-  .demo-toggle button.active{background:var(--raised);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
-
-  .stage{display:grid;min-height:262px}
-  .stage>.layer{grid-area:1/1;transition:opacity .55s ease, transform .55s ease, filter .55s ease}
-  .layer-raw{padding:14px}
-  .layer-live{padding:18px;opacity:0;transform:scale(.97);filter:blur(6px);pointer-events:none}
-  .stage.live .layer-raw{opacity:0;transform:scale(1.02);filter:blur(7px);pointer-events:none}
-  .stage.live .layer-live{opacity:1;transform:scale(1);filter:blur(0);pointer-events:auto}
-
-  /* excel grid */
-  .xl{width:100%;border-collapse:collapse;font-family:var(--f-mono);font-size:11.5px}
-  .xl th,.xl td{border:1px solid #1c2740;padding:5px 8px;text-align:left;color:var(--muted);height:26px}
-  .xl thead th{background:#10182b;color:var(--muted-2);font-weight:500;text-align:center}
-  .xl .rownum{background:#10182b;color:var(--muted-2);text-align:center;width:28px;font-weight:500}
-  .xl td.bad{color:var(--neg);background:rgba(242,96,125,.06)}
-  .xl td.blank{background:rgba(244,197,107,.05)}
-  .xl td.num{text-align:right;color:#c4cce0}
-
-  /* live dashboard inside hero */
-  .live-top{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-  .mini-kpi{background:var(--panel);border:1px solid var(--line-soft);border-radius:11px;padding:11px 12px}
-  .mini-kpi .k-l{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)}
-  .mini-kpi .k-v{font-family:var(--f-display);font-weight:600;font-size:22px;margin-top:3px;letter-spacing:-.02em}
-  .mini-kpi .k-d{font-family:var(--f-mono);font-size:10.5px;margin-top:2px}
-  .k-d.up{color:var(--pos)}.k-d.down{color:var(--neg)}
-  .spark-wrap{display:flex;align-items:center;gap:14px}
-  .spark{flex:1}
-  .lead{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
-  .lead td{padding:7px 8px;border-bottom:1px solid var(--line-soft)}
-  .lead tr:last-child td{border-bottom:none}
-  .lead .nm{font-weight:500}
-  .lead .sc{font-family:var(--f-mono);text-align:right;color:#c4cce0}
-  .lead .tr{font-family:var(--f-mono);text-align:right;width:54px}
-  .lead .tr.up{color:var(--pos)}.lead .tr.down{color:var(--neg)}
-  .rank{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;background:var(--raised);font-family:var(--f-mono);font-size:10px;color:var(--brand-2);margin-right:9px}
-
-  /* hero side panel (gauge) */
-  .gauge-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 2px}
-  .gnum{font-family:var(--f-display);font-weight:600;font-size:40px;letter-spacing:-.03em;margin-top:-66px}
-  .gnum small{display:block;font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);margin-top:2px}
-  .gcap{color:var(--muted);font-size:13px;margin-top:18px;max-width:30ch}
-  .deliver{display:flex;flex-direction:column;gap:9px;margin-top:18px}
-  .deliver .dl{display:flex;align-items:center;gap:10px;font-size:13px}
-  .deliver .dl span{margin-left:auto;font-family:var(--f-mono);font-size:12px;color:var(--text)}
-  .deliver .dl i{width:8px;height:8px;border-radius:2px;display:block}
-
-  /* ============ KPI ROW ============ */
-  .kpi{padding:14px}
-  .kpi .lbl{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
-  .kpi .val{font-family:var(--f-display);font-weight:600;font-size:27px;letter-spacing:-.025em;margin:8px 0 4px;line-height:1}
-  .kpi .val .u{color:var(--brand-2)}
-  .kpi .sub{font-size:12.5px;color:var(--muted)}
-  .kpi .bar{height:3px;border-radius:2px;background:var(--line-soft);margin-top:14px;overflow:hidden}
-  .kpi .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--cyan));border-radius:2px;width:0;transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
-
-  /* ============ CAPABILITY VISUALS ============ */
-  .desc{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 16px}
-  .feat{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:9px}
-  .feat li{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:#cdd5e8}
-  .feat li svg{flex:none;margin-top:3px;color:var(--brand-2)}
-
-  /* heatmap (operational) */
-  .heat{display:grid;grid-template-columns:auto repeat(12,1fr);gap:4px;margin-top:4px}
-  .heat .hl{font-family:var(--f-mono);font-size:9px;color:var(--muted-2);display:flex;align-items:center}
-  .cell{aspect-ratio:1;border-radius:3px;background:var(--raised)}
-  .heat .axis{grid-column:2 / -1;display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:9px;color:var(--muted-2);margin-top:5px}
-
-  /* roles / access (secure) */
-  .roles{display:flex;flex-direction:column;gap:9px}
-  .role{display:flex;align-items:center;gap:11px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:11px;padding:10px 12px}
-  .role .av{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-family:var(--f-display);font-weight:600;font-size:12px;color:#fff;flex:none}
-  .role .who{font-size:13px;font-weight:500}
-  .role .who small{display:block;color:var(--muted-2);font-family:var(--f-mono);font-size:10px;font-weight:400}
-  .role .tag{margin-left:auto;font-family:var(--f-mono);font-size:10px;color:var(--muted);background:var(--raised);border:1px solid var(--line);padding:4px 9px;border-radius:999px}
-
-  /* source chips */
-  .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:2px}
-  .chip{font-family:var(--f-mono);font-size:12px;color:#cdd5e8;background:var(--panel-2);border:1px solid var(--line);padding:8px 13px;border-radius:10px;display:flex;align-items:center;gap:8px}
-  .chip i{width:7px;height:7px;border-radius:2px;background:var(--cyan);display:block}
-
-  /* mini bar chart (performance over weeks) */
-  .bars{display:flex;align-items:flex-end;gap:8px;height:96px;margin-top:6px}
-  .bars .b{flex:1;background:linear-gradient(180deg,var(--brand),#4f43c0);border-radius:5px 5px 3px 3px;height:0;transition:height .9s cubic-bezier(.2,.7,.2,1);position:relative}
-  .bars .b.hi{background:linear-gradient(180deg,var(--cyan),#1f9b95)}
-  .barx{display:flex;gap:8px;font-family:var(--f-mono);font-size:9px;color:var(--muted-2);margin-top:7px}
-  .barx span{flex:1;text-align:center}
-
-  /* ============ PIPELINE ============ */
-  .pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:18px;position:relative}
-  .step{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:18px;position:relative}
-  .step .no{font-family:var(--f-mono);font-size:12px;color:var(--brand-2);letter-spacing:.05em}
-  .step h4{font-family:var(--f-display);font-weight:600;font-size:15px;margin:12px 0 7px;letter-spacing:-.01em}
-  .step p{font-size:12.5px;color:var(--muted);margin:0;line-height:1.55}
-  .step .ic{width:34px;height:34px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;color:var(--brand-2);margin-top:12px}
-  .step::after{content:"";position:absolute;right:-9px;top:50%;width:14px;height:14px;border-top:1px solid var(--line);border-right:1px solid var(--line);transform:translateY(-50%) rotate(45deg);z-index:2}
-  .step:last-child::after{display:none}
-
-  /* ============ ABOUT ============ */
-  .about-grid{grid-template-columns:1.25fr 1fr;margin-top:16px}
-  .about p{color:#cdd5e8;font-size:14.5px;line-height:1.7}
-  .about p+p{margin-top:13px}
-  .principles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
-  .pr{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:11px;padding:13px 14px}
-  .pr h5{margin:0 0 5px;font-family:var(--f-display);font-weight:600;font-size:13.5px}
-  .pr p{margin:0;font-size:12px;color:var(--muted)}
-  .feed{display:flex;flex-direction:column}
-  .frow{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
-  .frow:last-child{border-bottom:none}
-  .fdot{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;font-family:var(--f-display);font-weight:600;font-size:12px}
-  .frow .ft{font-size:13px;font-weight:500}
-  .frow .ft small{display:block;color:var(--muted-2);font-size:11.5px;font-weight:400;font-family:var(--f-body)}
-  .frow .fwhen{margin-left:auto;font-family:var(--f-mono);font-size:10.5px;color:var(--muted-2);white-space:nowrap}
-
-  /* ============ CONTACT ============ */
-  .contact-grid{grid-template-columns:1fr 1fr;margin-top:16px}
-  .field{margin-bottom:13px}
-  .field label{display:block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-bottom:6px}
-  .field input,.field textarea{
-    width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
-    color:var(--text);font-family:var(--f-body);font-size:14px;padding:11px 13px;transition:.16s;resize:vertical;
-  }
-  .field input:focus,.field textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(124,108,255,.16)}
-  .contact-aside{display:flex;flex-direction:column;gap:14px}
-  .reach{display:flex;align-items:center;gap:13px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:12px;padding:15px}
-  .reach .ri{width:38px;height:38px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;color:var(--brand-2);flex:none}
-  .reach .rl{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)}
-  .reach .rv{font-size:14px;font-weight:500;margin-top:2px}
-  .formnote{font-size:12px;color:var(--muted-2);margin-top:4px}
-
-  /* ============ FOOTER ============ */
-  .foot{
-    max-width:var(--maxw);margin:40px auto 0;padding:18px 0 8px;border-top:1px solid var(--line-soft);
-    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
-    font-family:var(--f-mono);font-size:11.5px;color:var(--muted-2);
-  }
-  .foot .sep{opacity:.4}
-  .foot a:hover{color:var(--text)}
-
-  /* ============ BUILT FOR ============ */
-  .aud-label{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin:22px 0 13px;display:flex;align-items:center;gap:11px}
-  .aud-label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
-  .aud-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(252px,1fr));gap:16px}
-  .aud{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:18px;transition:.18s}
-  .aud:hover{border-color:var(--line);transform:translateY(-2px)}
-  .aud .ahead{display:flex;align-items:center;gap:12px;margin-bottom:13px}
-  .aud .ai{width:40px;height:40px;border-radius:11px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;color:var(--brand-2);flex:none}
-  .aud h4{font-family:var(--f-display);font-weight:600;font-size:15px;margin:0;letter-spacing:-.01em;line-height:1.2}
-  .aud h4 small{display:block;font-family:var(--f-mono);font-weight:400;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--brand-2);margin-top:4px}
-  .aud p{font-size:13px;color:var(--muted);margin:0 0 13px;line-height:1.55}
-  .aud .login{display:flex;align-items:center;gap:9px;font-family:var(--f-mono);font-size:11px;color:var(--muted-2);border-top:1px solid var(--line-soft);padding-top:12px}
-  .aud .login svg{color:var(--pos);flex:none}
-  .aud .login b{color:var(--text);font-weight:500}
-  .aud-more{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:12px}
-  .tile{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:12px;padding:15px;transition:.16s}
-  .tile:hover{border-color:var(--line);transform:translateY(-2px)}
-  .tile .th{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:600;font-size:13.5px;letter-spacing:-.01em}
-  .tile .th svg{color:var(--cyan);flex:none}
-  .tile p{margin:9px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
-
-  /* ============ INTERACTIVE ============ */
-  .seg{display:inline-flex;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line-soft);border-radius:9px;padding:3px;gap:2px}
-  .seg button{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.02em;color:var(--muted);background:none;border:none;padding:6px 11px;border-radius:7px;cursor:pointer;transition:.15s;white-space:nowrap}
-  .seg button:hover{color:var(--text)}
-  .seg button.on{background:var(--raised);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
-  .pmetric{font-family:var(--f-mono);font-size:11px;color:var(--muted-2);letter-spacing:.03em;margin:14px 0 6px}
-  .pmetric .m{color:var(--text)}
-  .bars .b{cursor:default}
-  .cell{cursor:default;transition:background .35s ease}
-  .cell:hover{outline:1.5px solid rgba(255,255,255,.4);outline-offset:-1px}
-  .lead tr{transition:background .12s}
-  .lead tr:hover td{background:rgba(255,255,255,.025)}
-  .heat-legend{font-family:var(--f-mono);font-size:10px;color:var(--muted-2);letter-spacing:.04em;margin-top:10px}
-  .viztip{position:fixed;z-index:90;pointer-events:none;background:var(--raised);border:1px solid var(--line);color:var(--text);font-family:var(--f-mono);font-size:11px;padding:6px 9px;border-radius:8px;opacity:0;transform:translate(-50%,calc(-100% - 10px));transition:opacity .12s;white-space:nowrap;box-shadow:0 8px 22px rgba(0,0,0,.5)}
-  .aud-cta{margin-top:14px;font-family:var(--f-mono);font-size:11px;letter-spacing:.02em;color:var(--brand-2);background:none;border:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.15s}
-  .aud-cta:hover{color:#fff;gap:9px}
-
-  /* ============ BENTO BOARD ============ */
-  .board{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start;grid-auto-flow:row dense}
-  .board.stretch{align-items:stretch}
-  .board + .board{margin-top:12px}
-  .secthead + .board{margin-top:12px}
+  .board{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;align-items:stretch;grid-auto-flow:row dense}
+  .board+.board{margin-top:14px}
   .c1{grid-column:span 1}.c2{grid-column:span 2}.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c9{grid-column:span 9}.c10{grid-column:span 10}.c11{grid-column:span 11}.c12{grid-column:span 12}
-  .r2{grid-row:span 2}
-  .gpanel{display:flex;flex-direction:column}
-  .gpanel .deliver{margin-top:auto;padding-top:14px}
 
-  /* ============ EXTRA CHARTS ============ */
-  .trend{width:100%;height:170px;display:block;margin-top:6px}
-  .trend-line{fill:none;stroke:var(--cyan);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-  .trend-dot{fill:var(--bg);stroke:var(--cyan);stroke-width:2}
-  .trend-dot.hot{fill:var(--cyan)}
-  .trend-hit{fill:transparent;cursor:pointer}
-  .trend-x{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:9px;color:var(--muted-2);margin-top:6px}
-  .donut-wrap{position:relative;display:grid;place-items:center;margin:4px 0 12px}
-  .donut{width:150px;height:150px;transform:rotate(-90deg)}
-  .donut circle{fill:none;stroke-width:14;transition:opacity .15s}
-  .donut circle.dim{opacity:.32}
-  .donut-center{position:absolute;text-align:center;font-family:var(--f-display);pointer-events:none}
-  .donut-center b{font-size:23px;font-weight:600;display:block;letter-spacing:-.02em}
-  .donut-center small{font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)}
-  .donut-legend{display:flex;flex-direction:column;gap:7px}
-  .dleg{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);cursor:pointer;transition:.15s}
-  .dleg:hover{color:var(--text)}
-  .dleg i{width:9px;height:9px;border-radius:3px;flex:none}
-  .dleg span{margin-left:auto;font-family:var(--f-mono);font-size:11px;color:var(--text)}
-  .roi-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:22px;align-items:center}
-  .roi-controls label{display:block;font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);margin:0 0 9px}
-  .roi-controls label:not(:first-child){margin-top:18px}
-  .roi-controls input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:5px;border-radius:5px;background:var(--line);outline:none}
-  .roi-controls input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--brand);cursor:pointer;border:3px solid var(--panel);box-shadow:0 2px 9px rgba(124,108,255,.5)}
+  .card{background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
+  .chead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .chead h3{margin:0;font-family:var(--fd);font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .chead .pi{width:30px;height:30px;border-radius:9px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;color:var(--brand-2);flex:none}
+  .chead .right{margin-left:auto;display:flex;align-items:center;gap:9px}
+  .seeall{font-size:12px;color:var(--muted);cursor:pointer;font-weight:500} .seeall:hover{color:var(--brand-2)}
+  .tagm{font-family:var(--fm);font-size:11px;color:var(--muted-2)}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:1fr 1.15fr;gap:34px;align-items:center;margin-top:8px;padding:18px 0 8px}
+  .hero h1{font-family:var(--fd);font-weight:800;font-size:clamp(32px,5vw,56px);line-height:1.03;letter-spacing:-.03em;margin:14px 0 0}
+  .hero h1 .grad{background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero .sub{color:var(--muted);font-size:17px;line-height:1.6;max-width:52ch;margin:18px 0 24px}
+  .cta-row{display:flex;gap:12px;flex-wrap:wrap}
+  .trust{margin-top:26px;display:flex;gap:22px;flex-wrap:wrap;color:var(--muted-2);font-family:var(--fm);font-size:11.5px;letter-spacing:.04em}
+  .trust b{color:var(--text)}
+
+  /* shot frame (dashboard mockup) */
+  .shot{background:var(--panel-2);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px -40px rgba(0,0,0,.8)}
+  .shot-bar{display:flex;align-items:center;gap:9px;padding:10px 14px;border-bottom:1px solid var(--line-soft);background:#0b1120}
+  .shot-bar .d{display:flex;gap:6px}.shot-bar .d i{width:9px;height:9px;border-radius:50%;background:#2a3550;display:block}
+  .shot-bar .ttl{font-family:var(--fm);font-size:11px;color:var(--muted)}
+  .shot-bar .badge{margin-left:auto;font-family:var(--fm);font-size:10px;color:var(--mint);background:rgba(52,216,160,.1);border:1px solid rgba(52,216,160,.25);padding:3px 9px;border-radius:999px}
+  .shot-body{padding:14px;display:grid;gap:12px}
+  .mini{background:var(--panel);border:1px solid var(--line-soft);border-radius:13px;padding:13px}
+  .mini .mh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .mini .mh h4{margin:0;font-family:var(--fd);font-size:12.5px;font-weight:600}
+  .mini .mh .t{margin-left:auto;font-family:var(--fm);font-size:10px;color:var(--muted-2)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+
+  /* kpi */
+  .kpi{background:var(--panel);border:1px solid var(--line-soft);border-radius:13px;padding:14px}
+  .kpi .l{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)}
+  .kpi .v{font-family:var(--fd);font-weight:700;font-size:23px;letter-spacing:-.02em;margin:7px 0 3px}
+  .kpi .v small{font-size:12px;color:var(--muted-2);font-weight:600}
+  .kpi .d{font-family:var(--fm);font-size:11px;font-weight:600}
+  .d.up{color:var(--up)} .d.down{color:var(--down)}
+  .kpi-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+
+  /* charts shared */
+  .chart{width:100%;display:block}
+  .legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .lg{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);cursor:pointer;font-weight:500;transition:.15s}
+  .lg .sw{width:9px;height:9px;border-radius:3px} .lg.off{opacity:.4} .lg:hover{color:var(--text)}
+  .axx{display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;color:var(--muted-2);margin-top:7px}
+
+  /* perf bars */
+  .bars{display:flex;align-items:flex-end;gap:7px;height:110px;margin-top:8px}
+  .bars .b{flex:1;border-radius:5px 5px 3px 3px;height:0;transition:height .8s cubic-bezier(.2,.7,.2,1);background:linear-gradient(180deg,var(--brand),#3f50c4);cursor:default}
+  .bars .b.hi{background:linear-gradient(180deg,var(--mint),#1f9c74)}
+  .seg{display:inline-flex;flex-wrap:wrap;background:#0d1424;border:1px solid var(--line-soft);border-radius:10px;padding:3px;gap:2px}
+  .seg button{font-family:var(--fm);font-size:10.5px;color:var(--muted);background:none;border:none;padding:6px 10px;border-radius:7px;cursor:pointer;transition:.15s;white-space:nowrap}
+  .seg button:hover{color:var(--text)} .seg button.on{background:var(--raised);color:var(--text)}
+  .pmetric{font-family:var(--fm);font-size:11px;color:var(--muted-2);margin:11px 0 3px} .pmetric .m{color:var(--text)}
+  .lead{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+  .lead td{padding:8px 4px;border-bottom:1px solid var(--line-soft)} .lead tr:last-child td{border-bottom:none}
+  .lead tr:hover td{background:rgba(255,255,255,.02)}
+  .lead .rk{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;background:var(--raised);font-family:var(--fm);font-size:10px;color:var(--brand-2);margin-right:9px}
+  .lead .sc{text-align:right;font-family:var(--fm)} .lead .tr{text-align:right;width:50px;font-family:var(--fm)}
+  .tr.up{color:var(--up)} .tr.down{color:var(--down)}
+
+  /* heatmap */
+  .heat{display:grid;grid-template-columns:auto repeat(12,1fr);gap:4px}
+  .heat .hl{font-family:var(--fm);font-size:9px;color:var(--muted-2);display:flex;align-items:center}
+  .cell{aspect-ratio:1;border-radius:4px;background:#13192a;transition:background .35s,outline .12s;cursor:default}
+  .cell:hover{outline:1.5px solid rgba(255,255,255,.4);outline-offset:-1px}
+  .heat .axis{grid-column:2/-1;display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;color:var(--muted-2);margin-top:5px}
+  .heat-legend{font-family:var(--fm);font-size:10px;color:var(--muted-2);margin-top:9px}
+
+  /* donut */
+  .donut-wrap{position:relative;display:grid;place-items:center;margin:2px 0 12px}
+  .donut{width:140px;height:140px;transform:rotate(-90deg)} .donut circle{fill:none;stroke-width:14;transition:opacity .15s} .donut circle.dim{opacity:.3}
+  .donut-center{position:absolute;text-align:center;pointer-events:none}
+  .donut-center b{font-family:var(--fd);font-size:22px;font-weight:700;display:block} .donut-center small{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)}
+  .dleg{display:flex;flex-direction:column;gap:8px} .dleg .row{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);cursor:pointer} .dleg .row:hover{color:var(--text)} .dleg i{width:9px;height:9px;border-radius:3px} .dleg .row span{margin-left:auto;font-family:var(--fm);color:var(--text)}
+
+  /* chips, feat, roles */
+  .chips{display:flex;flex-wrap:wrap;gap:9px} .chip{font-family:var(--fm);font-size:12px;color:#cdd5e8;background:#0d1424;border:1px solid var(--line);padding:8px 12px;border-radius:10px;display:flex;align-items:center;gap:8px} .chip i{width:7px;height:7px;border-radius:2px;background:var(--mint)}
+  .feat{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:9px} .feat li{display:flex;gap:10px;font-size:13px;color:#cdd5e8} .feat li svg{flex:none;margin-top:2px;color:var(--mint)}
+  .roles{display:flex;flex-direction:column;gap:9px} .role{display:flex;align-items:center;gap:11px;background:#0d1424;border:1px solid var(--line-soft);border-radius:12px;padding:10px 12px}
+  .role .av{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-family:var(--fd);font-weight:700;font-size:12px;color:#fff;flex:none} .role .who{font-size:13px;font-weight:600} .role .who small{display:block;color:var(--muted-2);font-family:var(--fm);font-size:10px}
+  .role .tag{margin-left:auto;font-family:var(--fm);font-size:10px;color:var(--muted);background:var(--raised);border:1px solid var(--line);padding:4px 9px;border-radius:999px}
+
+  /* roi */
+  .roi-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:24px;align-items:center}
+  .roi-controls label{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted-2);margin:0 0 9px} .roi-controls label:not(:first-child){margin-top:16px}
+  .roi-controls input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:5px;border-radius:5px;background:#1c2740;outline:none}
+  .roi-controls input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--brand);cursor:pointer;border:3px solid var(--panel);box-shadow:0 0 12px rgba(110,139,255,.6)}
   .roi-controls input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--brand);cursor:pointer;border:3px solid var(--panel)}
-  .roi-readout{font-family:var(--f-mono);font-size:12px;color:var(--text);margin-top:8px}
-  .roi-result{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:12px;padding:18px}
-  .roi-big span{font-family:var(--f-display);font-weight:600;font-size:38px;letter-spacing:-.03em;background:linear-gradient(120deg,var(--brand-2),var(--cyan));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .roi-big small{display:block;font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:3px}
-  .roi-split{height:9px;border-radius:5px;background:var(--line);overflow:hidden;margin-top:16px}
-  .roi-split i{display:block;height:100%;width:85%;background:linear-gradient(90deg,var(--brand),var(--cyan));border-radius:5px}
-  .roi-note{font-size:11px;color:var(--muted-2);margin:12px 0 0;line-height:1.5}
-  .roi-note span{color:var(--text);font-family:var(--f-mono)}
+  .roi-readout{font-family:var(--fm);font-size:12px;margin-top:8px}
+  .roi-result{background:#0d1424;border:1px solid var(--line-soft);border-radius:14px;padding:18px}
+  .roi-big span{font-family:var(--fd);font-size:38px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent} .roi-big small{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:3px}
+  .roi-split{height:9px;border-radius:5px;background:#1c2740;overflow:hidden;margin-top:16px} .roi-split i{display:block;height:100%;width:85%;background:linear-gradient(90deg,var(--brand),var(--mint));border-radius:5px}
+  .roi-note{font-size:11px;color:var(--muted-2);margin:12px 0 0;line-height:1.5} .roi-note span{color:var(--text);font-family:var(--fm)}
 
-  /* ============ RESPONSIVE ============ */
+  /* clients */
+  .aud{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:18px;transition:.18s} .aud:hover{border-color:var(--line);transform:translateY(-2px)}
+  .aud .ah{display:flex;align-items:center;gap:12px;margin-bottom:12px} .aud .ai{width:40px;height:40px;border-radius:11px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;color:var(--brand-2);flex:none}
+  .aud h4{margin:0;font-family:var(--fd);font-size:15px;font-weight:700} .aud h4 small{display:block;font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mint);margin-top:4px}
+  .aud p{font-size:13px;color:var(--muted);margin:0 0 13px;line-height:1.55}
+  .aud .login{display:flex;align-items:center;gap:9px;font-family:var(--fm);font-size:11px;color:var(--muted-2);border-top:1px solid var(--line-soft);padding-top:12px} .aud .login svg{color:var(--mint);flex:none}
+  .aud-cta{margin-top:13px;font-family:var(--fm);font-size:11px;color:var(--brand-2);background:none;border:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.15s} .aud-cta:hover{gap:9px}
+  .tile{background:var(--panel);border:1px solid var(--line-soft);border-radius:13px;padding:15px;transition:.16s} .tile:hover{border-color:var(--line);transform:translateY(-2px)}
+  .tile .th{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-size:13px;font-weight:700} .tile .th svg{color:var(--brand-2);flex:none} .tile p{margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
+  .aud-label{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin:8px 0 12px;display:flex;align-items:center;gap:11px} .aud-label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
+  /* stepper */
+  .stepper{display:flex;align-items:flex-start;gap:0;margin:6px 0 18px;overflow-x:auto;padding-bottom:6px}
+  .stp{flex:1;min-width:120px;position:relative;text-align:center;padding:0 6px}
+  .stp .ring{width:30px;height:30px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;background:var(--raised);border:2px solid var(--line);color:var(--muted);position:relative;z-index:2}
+  .stp.done .ring{background:linear-gradient(150deg,var(--brand),#4a5fd6);border-color:transparent;color:#fff}
+  .stp.now .ring{border-color:var(--brand);color:var(--brand-2);box-shadow:0 0 0 4px rgba(110,139,255,.15)}
+  .stp::before{content:"";position:absolute;top:15px;left:-50%;width:100%;height:2px;background:var(--line-soft);z-index:1}
+  .stp:first-child::before{display:none}
+  .stp.done::before{background:linear-gradient(90deg,var(--brand),#4a5fd6)}
+  .stp .lab{font-family:var(--fd);font-size:12px;font-weight:600;line-height:1.3} .stp .sub{font-size:11px;color:var(--muted-2);margin-top:3px}
+  .step{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:16px;position:relative}
+  .step .no{font-family:var(--fm);font-size:12px;background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .step h4{font-family:var(--fd);font-size:14px;font-weight:700;margin:10px 0 6px} .step p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+
+  /* about + contact */
+  .about p{color:#cdd5e8;font-size:14px;line-height:1.7} .about p+p{margin-top:12px}
+  .principles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px} .pr{background:#0d1424;border:1px solid var(--line-soft);border-radius:12px;padding:13px 14px} .pr h5{margin:0 0 5px;font-family:var(--fd);font-size:13.5px;font-weight:700} .pr p{margin:0;font-size:12px;color:var(--muted)}
+  .field{margin-bottom:13px} .field label{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);margin-bottom:6px}
+  .field input,.field textarea{width:100%;background:#0d1424;border:1px solid var(--line);border-radius:11px;color:var(--text);font-family:var(--fb);font-size:14px;padding:11px 13px;transition:.16s;resize:vertical} .field input:focus,.field textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(110,139,255,.15)}
+  .reach{display:flex;align-items:center;gap:13px;background:#0d1424;border:1px solid var(--line-soft);border-radius:12px;padding:14px;margin-top:12px} .reach .ri{width:38px;height:38px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;color:var(--mint);flex:none} .reach .rl{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)} .reach .rv{font-size:14px;font-weight:600;margin-top:2px}
+
+  .viztip{position:fixed;z-index:90;pointer-events:none;background:var(--raised);border:1px solid var(--line);color:var(--text);font-family:var(--fm);font-size:11px;padding:7px 10px;border-radius:9px;opacity:0;transform:translate(-50%,calc(-100% - 12px));transition:opacity .12s;white-space:nowrap;box-shadow:0 10px 28px rgba(0,0,0,.6)}
+  .viztip .vr{display:flex;align-items:center;gap:6px} .viztip .vr i{width:7px;height:7px;border-radius:2px}
+  .foot{max-width:var(--maxw);margin:40px auto 0;padding:20px 0 6px;border-top:1px solid var(--line-soft);display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-family:var(--fm);font-size:11.5px;color:var(--muted-2)} .foot .sep{opacity:.4}
+
   @media (max-width:1080px){
-    .board{grid-template-columns:repeat(6,1fr)}
-    .board.stretch{align-items:start}
-    .c5,.c6,.c7,.c8,.c9,.c10,.c11,.c12{grid-column:1 / -1}
-    .c4{grid-column:span 3}
-    .c3{grid-column:span 3}
-    .c2{grid-column:span 2}
-    .r2{grid-row:auto}
-    .hero-grid,.cap-grid,.cap-grid-2,.about-grid,.contact-grid{grid-template-columns:1fr}
-    .kpis{grid-template-columns:repeat(2,1fr)}
-    .pipe{grid-template-columns:1fr 1fr}
-    .step::after{display:none}
-    .topnav{display:none}
+    .board{grid-template-columns:repeat(6,1fr)} .c5,.c6,.c7,.c8,.c9,.c10,.c11,.c12{grid-column:1/-1} .c3,.c4{grid-column:span 3} .c2{grid-column:span 2}
+    .hero{grid-template-columns:1fr;gap:24px} .topnav{display:none}
   }
   @media (max-width:720px){
-    :root{--rail:0px}
-    .board{grid-template-columns:1fr}
-    .rail{display:none}
-    .shell{padding:calc(var(--top) + 14px) 14px 14px 14px}
-    .status{display:none}
-    .kpis,.pipe{grid-template-columns:1fr}
-    .live-top{grid-template-columns:1fr 1fr}
-    .roi-grid{grid-template-columns:1fr}
-    .principles{grid-template-columns:1fr}
-    .hero{padding:22px 18px}
-    .brand .name small{display:none}
+    .shell{padding:calc(var(--top) + 14px) 14px 18px} .board{grid-template-columns:1fr} .grid3,.grid2,.roi-grid,.principles{grid-template-columns:1fr} .top-right .pill-ghost{display:none} .kpi-row{flex-direction:column;align-items:stretch}
   }
-  @media (prefers-reduced-motion:reduce){
-    html{scroll-behavior:auto}
-    .ticker-track{animation:none}
-    .dot{animation:none}
-    .stage>.layer{transition:none}
-  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.dot{box-shadow:none}}
 </style>
 </head>
 <body>
 
-<!-- ===================== TOPBAR ===================== -->
 <header class="topbar">
-  <div class="brand">
-    <span class="mark">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><rect x="3" y="13" width="3.6" height="8" rx="1.2"/><rect x="10.2" y="8" width="3.6" height="13" rx="1.2"/><rect x="17.4" y="3" width="3.6" height="18" rx="1.2"/></svg>
-    </span>
-    <span class="name">Avi Data <small>Technologies</small></span>
-  </div>
+  <div class="brand"><span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 20L9 6l2.5 6L14 6l7 14"/></svg></span><b>Avi Data <span>Technologies</span></b></div>
   <nav class="topnav" id="topnav">
-    <a href="#overview" class="active">Overview</a>
-    <a href="#capabilities">Capabilities</a>
-    <a href="#built-for">Clients</a>
-    <a href="#pipeline">Pipeline</a>
-    <a href="#about">About</a>
+    <a href="#work" class="active">What we build</a>
+    <a href="#platform">Platform</a>
+    <a href="#clients">Clients</a>
+    <a href="#process">Process</a>
     <a href="#contact">Contact</a>
   </nav>
   <div class="top-right">
-    <span class="status"><span class="dot"></span> All systems operational</span>
-    <button class="icon-btn" aria-label="Notifications">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-    </button>
-    <div class="avatar">A</div>
+    <span class="dot" title="All systems operational"></span>
+    <button class="pill pill-ghost" data-scroll="#work">See our work</button>
+    <button class="pill pill-grad" data-scroll="#contact">Book a walkthrough</button>
   </div>
 </header>
 
-<!-- ===================== SIDEBAR RAIL ===================== -->
-<aside class="rail">
-  <a class="rail-btn active" href="#overview"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span class="tip">Overview</span></a>
-  <a class="rail-btn" href="#capabilities"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg><span class="tip">Capabilities</span></a>
-  <a class="rail-btn" href="#built-for"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 19c0-3 2.5-5 6-5s6 2 6 5"/><path d="M15 19c0-2 1-3.5 3-3.5s3 1.5 3 3.5"/></svg><span class="tip">Clients</span></a>
-  <a class="rail-btn" href="#pipeline"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h6M14 7h6M4 17h6M14 17h6"/><circle cx="12" cy="7" r="2.2"/><circle cx="12" cy="17" r="2.2"/></svg><span class="tip">Pipeline</span></a>
-  <a class="rail-btn" href="#about"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg><span class="tip">About</span></a>
-  <div class="rail-sep"></div>
-  <a class="rail-btn" href="#contact"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg><span class="tip">Contact</span></a>
-  <a class="rail-btn" href="#contact"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg><span class="tip">Settings</span></a>
-</aside>
+<main class="shell"><div class="wrap">
 
-<!-- ===================== MAIN ===================== -->
-<main class="shell">
-  <div class="wrap">
+  <!-- HERO -->
+  <section id="top">
+    <div class="hero">
+      <div>
+        <span class="eyebrow">Software · financial dashboards · custom data tools</span>
+        <h1>We turn your data into <span class="grad">software people log into.</span></h1>
+        <p class="sub">Avi Data Technologies builds custom dashboards, financial models, and operational tools for companies drowning in spreadsheets and CRM exports — so your numbers become decisions, not homework.</p>
+        <div class="cta-row">
+          <button class="pill pill-grad" data-scroll="#work">See what we build</button>
+          <button class="pill pill-ghost" data-scroll="#contact">Start a conversation</button>
+        </div>
+        <div class="trust">
+          <span><b>12+</b> source formats</span><span><b>Role-based</b> logins</span><span><b>Days</b>, not quarters</span><span><b>White-labeled</b> to you</span>
+        </div>
+      </div>
 
-    <!-- ticker -->
-    <div class="ticker" aria-hidden="true">
-      <div class="ticker-track" id="ticker">
-        <!-- representative product/capability stats — edit freely -->
-        <span class="ti"><span class="lbl">REFRESH RATE</span> <b>live</b></span>
-        <span class="ti"><span class="lbl">SOURCE FORMATS</span> <b>12+</b> <span class="up">▲</span></span>
-        <span class="ti"><span class="lbl">DASHBOARD WIDGETS</span> <b>30+</b></span>
-        <span class="ti"><span class="lbl">ROLE TYPES</span> <b>person · team · branch</b></span>
-        <span class="ti"><span class="lbl">EXPORTS</span> <b>CSV · XLSX · PDF</b></span>
-        <span class="ti"><span class="lbl">HAND-UPDATED REPORTS</span> <b>0</b> <span class="up">▲</span></span>
-        <span class="ti"><span class="lbl">TIME TO FIRST VIEW</span> <b>days, not quarters</b></span>
+      <!-- flagship dashboard mockup -->
+      <div class="shot">
+        <div class="shot-bar"><span class="d"><i></i><i></i><i></i></span><span class="ttl">northgate-capital · portfolio.app</span><span class="badge">LIVE</span></div>
+        <div class="shot-body">
+          <div class="grid3">
+            <div class="kpi"><div class="l">Portfolio value</div><div class="v">$160M</div><div class="d up">▲ 6.4% QoQ</div></div>
+            <div class="kpi"><div class="l">Deals in diligence</div><div class="v">07</div><div class="d up">▲ 2</div></div>
+            <div class="kpi"><div class="l">Avg. exit ROI</div><div class="v">4.2<small>x</small></div><div class="d up">▲ 0.3x</div></div>
+          </div>
+          <div class="grid2">
+            <div class="mini"><div class="mh"><h4>Pipeline velocity</h4><span class="t">W1–W12</span></div><svg class="chart" id="heroCandles" viewBox="0 0 300 110" height="100"></svg></div>
+            <div class="mini"><div class="mh"><h4>Source distribution</h4><span class="t">234 leads</span></div><svg class="chart" id="heroGauge" viewBox="0 0 220 130" height="100" style="margin:0 auto;display:block"></svg></div>
+          </div>
+          <div class="mini"><div class="mh"><h4>Deal pipeline snapshot</h4><span class="t">sourced → closed</span></div><svg class="chart" id="heroArea" viewBox="0 0 560 130" height="120" preserveAspectRatio="none"></svg></div>
+        </div>
       </div>
     </div>
+  </section>
 
-    <!-- ===== OVERVIEW / HERO ===== -->
-    <section id="overview">
-      <div class="board stretch">
+  <!-- WHAT WE BUILD -->
+  <section id="work">
+    <div class="secthead"><span class="eyebrow">What we build</span><h2>Dashboards your team will actually open.</h2><p>A few examples of what we've built — financial, operational, and custom. Names and numbers are illustrative; the patterns are real.</p></div>
 
-        <!-- hero panel -->
-        <div class="panel panel-lift hero c7">
-          <span class="eyebrow">Avi Data Technologies · Operations, in view</span>
-          <h1>Your spreadsheet was never<br>the problem. <span class="hl">The view was.</span></h1>
-          <p class="sub">We take the exports you already pull — from Excel, your CRM, wherever the numbers live — and turn them into performance and operational dashboards your team logs into and actually reads.</p>
-          <div class="cta-row">
-            <a href="#capabilities" class="btn btn-primary">See what we build
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </a>
-            <a href="#contact" class="btn btn-ghost">Start a conversation</a>
+    <!-- Showcase A: executive / financial -->
+    <div class="board">
+      <div class="card c4" style="display:flex;flex-direction:column;justify-content:center">
+        <span class="eyebrow">Financial &amp; executive</span>
+        <h3 style="font-family:var(--fd);font-size:21px;font-weight:700;letter-spacing:-.02em;margin:8px 0 10px">The whole business on one screen.</h3>
+        <p class="mut" style="font-size:14px;line-height:1.6">Revenue, margin, and orders rolled up from every location and pushed back down to each manager. Built for <b style="color:var(--text)">Meridian Retail Group</b> — 14 stores, one source of truth.</p>
+        <ul class="feat">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Live KPIs with trend, vs. last period</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Region &amp; rep breakdowns, drillable</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Refreshes itself — no Monday spreadsheet</li>
+        </ul>
+      </div>
+      <div class="c8"><div class="shot">
+        <div class="shot-bar"><span class="d"><i></i><i></i><i></i></span><span class="ttl">meridian-retail · executive.app</span><span class="badge">LIVE</span></div>
+        <div class="shot-body">
+          <div class="grid3">
+            <div class="kpi"><div class="kpi-row"><div><div class="l">Revenue</div><div class="v">$1.21M</div></div><svg width="64" height="34" id="kbar1"></svg></div><div class="d up">▲ 4.8% vs last wk</div></div>
+            <div class="kpi"><div class="kpi-row"><div><div class="l">Gross margin</div><div class="v">31.5%</div></div><svg width="64" height="34" id="kbar2"></svg></div><div class="d up">▲ 0.9 pts</div></div>
+            <div class="kpi"><div class="kpi-row"><div><div class="l">Orders</div><div class="v">74,914</div></div><svg width="64" height="34" id="kbar3"></svg></div><div class="d down">▼ 1.1% vs last wk</div></div>
           </div>
+          <div class="mini"><div class="mh"><h4>Monthly sales</h4><span class="t">Jan–Dec · hover</span></div><svg class="chart" id="shotDots" viewBox="0 0 560 130" height="130"></svg></div>
+          <div class="grid2">
+            <div class="mini"><div class="mh"><h4>Net by region</h4><span class="t">vs target</span></div><svg class="chart" id="shotDiverge" viewBox="0 0 280 120" height="118"></svg></div>
+            <div class="mini"><div class="mh"><h4>Sales by year</h4><span class="t">this · last</span></div><svg class="chart" id="shotDual" viewBox="0 0 280 120" height="118" preserveAspectRatio="none"></svg></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
 
-          <!-- the signature: raw export → dashboard -->
-          <div class="demo">
-            <div class="demo-bar">
-              <span class="tdots"><i></i><i></i><i></i></span>
-              <span class="demo-file" id="demoFile">agents_export_final_v3.xlsx</span>
-              <div class="demo-toggle" id="demoToggle">
-                <button data-view="raw" class="active">Raw export</button>
-                <button data-view="live">Live dashboard</button>
-              </div>
-            </div>
-            <div class="stage" id="stage">
-              <!-- RAW -->
-              <div class="layer layer-raw">
-                <table class="xl">
-                  <thead><tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr></thead>
-                  <tbody>
-                    <tr><td class="rownum">1</td><td>agent</td><td>region</td><td>calls</td><td>conv</td><td>updated</td></tr>
-                    <tr><td class="rownum">2</td><td>Casey M.</td><td>WEST</td><td class="num">412</td><td class="num">0.31</td><td>11/14</td></tr>
-                    <tr><td class="rownum">3</td><td>r. okafor</td><td>west</td><td class="num">388</td><td class="bad">#N/A</td><td>11/14</td></tr>
-                    <tr><td class="rownum">4</td><td>Dana P</td><td>EAST</td><td class="num">501</td><td class="num">0.27</td><td class="blank"></td></tr>
-                    <tr><td class="rownum">5</td><td>—</td><td class="blank"></td><td class="num">  </td><td class="bad">#REF!</td><td>11/13</td></tr>
-                    <tr><td class="rownum">6</td><td>J. Whitfield</td><td>East</td><td class="num">447</td><td class="num">0.34</td><td>11/14</td></tr>
-                    <tr><td class="rownum">7</td><td>m. soto</td><td>WEST</td><td class="num">295</td><td class="num">.22</td><td class="blank"></td></tr>
-                  </tbody>
-                </table>
-              </div>
-              <!-- LIVE -->
-              <div class="layer layer-live">
-                <div class="live-top">
-                  <div class="mini-kpi"><div class="k-l">Total calls</div><div class="k-v">2,043</div><div class="k-d up">▲ 8.2% wk</div></div>
-                  <div class="mini-kpi"><div class="k-l">Avg conv.</div><div class="k-v">29.4%</div><div class="k-d up">▲ 1.1 pts</div></div>
-                  <div class="mini-kpi"><div class="k-l">Flagged rows</div><div class="k-v">0</div><div class="k-d down">cleaned</div></div>
-                </div>
-                <div class="spark-wrap">
-                  <svg class="spark" viewBox="0 0 240 60" preserveAspectRatio="none" height="56">
-                    <polyline class="sparkline" fill="none" stroke="#34D5C8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
-                      points="0,46 30,40 60,43 90,30 120,33 150,20 180,24 210,12 240,16"/>
-                  </svg>
-                </div>
-                <table class="lead">
-                  <tr><td class="nm"><span class="rank">1</span>Dana P.</td><td class="sc">501</td><td class="tr up">▲ 12</td></tr>
-                  <tr><td class="nm"><span class="rank">2</span>J. Whitfield</td><td class="sc">447</td><td class="tr up">▲ 6</td></tr>
-                  <tr><td class="nm"><span class="rank">3</span>Casey M.</td><td class="sc">412</td><td class="tr down">▼ 3</td></tr>
-                </table>
-              </div>
+    <!-- Showcase B: operational / collections -->
+    <div class="board">
+      <div class="c8"><div class="shot">
+        <div class="shot-bar"><span class="d"><i></i><i></i><i></i></span><span class="ttl">bhph-group · collections.app</span><span class="badge">LIVE</span></div>
+        <div class="shot-body">
+          <div class="grid3">
+            <div class="kpi"><div class="l">Receivables</div><div class="v">$4.7M</div><div class="d up">▲ on book</div></div>
+            <div class="kpi"><div class="l">Collected today</div><div class="v">$38.2K</div><div class="d up">▲ 112% of goal</div></div>
+            <div class="kpi"><div class="l">PTPs kept</div><div class="v">87%</div><div class="d up">▲ 5 pts</div></div>
+          </div>
+          <div class="mini"><div class="mh"><h4>Daily collections</h4><span class="t">last 14 days</span></div><svg class="chart" id="shotThin" viewBox="0 0 560 120" height="116"></svg></div>
+          <div class="grid2">
+            <div class="mini"><div class="mh"><h4>Collector leaderboard</h4><span class="t">% of goal</span></div><svg class="chart" id="shotLolli" viewBox="0 0 280 130" height="126"></svg></div>
+            <div class="mini"><div class="mh"><h4>Latest activity</h4><span class="t">live feed</span></div>
+              <table class="lead" style="margin-top:2px">
+                <tr><td>Casey M. <span class="mut" style="font-size:11px">· PTP set</span></td><td class="sc">$420</td><td class="tr up">▲</td></tr>
+                <tr><td>Dana P. <span class="mut" style="font-size:11px">· paid in full</span></td><td class="sc">$1,180</td><td class="tr up">▲</td></tr>
+                <tr><td>R. Okafor <span class="mut" style="font-size:11px">· broken PTP</span></td><td class="sc">$260</td><td class="tr down">▼</td></tr>
+              </table>
             </div>
           </div>
         </div>
+      </div></div>
+      <div class="card c4" style="display:flex;flex-direction:column;justify-content:center">
+        <span class="eyebrow">Operational &amp; custom</span>
+        <h3 style="font-family:var(--fd);font-size:21px;font-weight:700;letter-spacing:-.02em;margin:8px 0 10px">Run the floor, not the inbox.</h3>
+        <p class="mut" style="font-size:14px;line-height:1.6">A live collections + sales-floor app for a <b style="color:var(--text)">buy-here-pay-here auto group</b> — per-collector goals, kept-promise tracking, and a stock board, all from their daily exports.</p>
+        <ul class="feat">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Per-agent goals, badges, and streaks</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Promise-to-pay tracking &amp; alerts</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Scoped logins per branch &amp; role</li>
+        </ul>
+      </div>
+    </div>
+  </section>
 
-        <!-- hero side: what we deliver -->
-        <div class="panel gpanel c5">
-          <div class="phead">
-            <span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 0-9 9"/><path d="M12 7v5l3 2"/></svg></span>
-            <h3>What you get</h3>
-            <span class="menu-dots">···</span>
+  <!-- PLATFORM -->
+  <section id="platform">
+    <div class="secthead"><span class="eyebrow">Platform</span><h2>The building blocks, live.</h2><p>Every dashboard we ship is made of pieces like these — interactive, role-aware, and built on one clean data model. Try them.</p></div>
+    <div class="board">
+      <div class="card c8">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span><h3>Performance dashboards</h3><div class="right"><div class="seg" id="perfSeg"><button data-k="all" class="on">All</button><button data-k="cpa">CPAs</button><button data-k="adv">Advisors</button><button data-k="site">Multi-site</button><button data-k="auto">Auto</button></div></div></div>
+        <div class="pmetric"><span class="m" id="perfMetric">Calls handled</span> · last 8 weeks · hover a bar</div>
+        <div class="bars" id="perfBars"><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div></div>
+        <div class="axx"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span><span>W7</span><span>W8</span></div>
+        <table class="lead" id="perfLead"></table>
+      </div>
+      <div class="card c4">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><h3>Logins &amp; roles</h3></div>
+        <div class="roles">
+          <div class="role"><span class="av" style="background:linear-gradient(140deg,var(--brand),#4a5fd6)">AD</span><span class="who">Owner<small>admin@company</small></span><span class="tag">full access</span></div>
+          <div class="role"><span class="av" style="background:linear-gradient(140deg,var(--mint),#1f9c74)">MG</span><span class="who">Branch manager<small>west.mgr</small></span><span class="tag">west region</span></div>
+          <div class="role"><span class="av" style="background:linear-gradient(140deg,var(--gold),#b9822f)">AG</span><span class="who">Agent<small>c.morris</small></span><span class="tag">own numbers</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="board">
+      <div class="card c4">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>When the work happens</h3><div class="right"><div class="seg" id="heatSeg"><button data-m="thr" class="on">Throughput</button><button data-m="exc">Exceptions</button></div></div></div>
+        <div class="heat" id="heat"></div>
+        <div class="heat"><div class="hl"></div><div class="axis"><span>8a</span><span>11a</span><span>2p</span><span>5p</span><span>8p</span></div></div>
+        <div class="heat-legend" id="heatLegend">Busier hours run brighter — hover any cell</div>
+      </div>
+      <div class="card c4">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg></span><h3>Source mix</h3></div>
+        <div class="donut-wrap"><svg class="donut" id="donut" viewBox="0 0 120 120"></svg><div class="donut-center" id="donutCenter"><b>12+</b><small>formats</small></div></div>
+        <div class="dleg" id="donutLegend"></div>
+      </div>
+      <div class="card c4">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16M7 4v8l-3 8h16l-3-8V4"/></svg></span><h3>We read your stack</h3></div>
+        <p class="mut" style="font-size:13px;margin:0 0 13px;line-height:1.55">If you can export it, we can read it. No migration, no new tools for your team.</p>
+        <div class="chips"><span class="chip"><i></i>Excel</span><span class="chip"><i></i>CSV</span><span class="chip"><i></i>Sheets</span><span class="chip"><i></i>Salesforce</span><span class="chip"><i></i>HubSpot</span><span class="chip"><i></i>QuickBooks</span><span class="chip"><i></i>DB dumps</span></div>
+      </div>
+    </div>
+    <div class="board">
+      <div class="card c12">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg></span><h3>See your payback</h3><div class="right"><span class="seeall">drag to play</span></div></div>
+        <div class="roi-grid">
+          <div class="roi-controls">
+            <label>Hours/week your team spends on manual reports</label>
+            <input type="range" id="roiHours" min="2" max="60" value="18">
+            <div class="roi-readout"><span id="roiHoursVal">18</span> hrs / week</div>
+            <label>People doing that work</label>
+            <input type="range" id="roiPeople" min="1" max="40" value="4">
+            <div class="roi-readout"><span id="roiPeopleVal">4</span> people</div>
           </div>
-          <div class="gauge-wrap">
-            <svg width="200" height="118" viewBox="0 0 200 118">
-              <defs><linearGradient id="garc" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="#7C6CFF"/><stop offset="1" stop-color="#34D5C8"/>
-              </linearGradient></defs>
-              <path d="M16 110 A 84 84 0 0 1 184 110" fill="none" stroke="#1d2740" stroke-width="13" stroke-linecap="round"/>
-              <path id="gaugeArc" d="M16 110 A 84 84 0 0 1 184 110" fill="none" stroke="url(#garc)" stroke-width="13" stroke-linecap="round"/>
-            </svg>
-            <div class="gnum">90%<small>self-updating</small></div>
-            <p class="gcap">Most of the recurring reports your team rebuilds by hand become dashboards that refresh themselves.</p>
-          </div>
-          <div class="deliver">
-            <div class="dl"><i style="background:var(--brand)"></i> Performance views <span>by name</span></div>
-            <div class="dl"><i style="background:var(--cyan)"></i> Operational views <span>live</span></div>
-            <div class="dl"><i style="background:var(--pos)"></i> Secure logins <span>per role</span></div>
+          <div class="roi-result">
+            <div class="roi-big"><span id="roiSaved">0</span><small>hours / year reclaimed</small></div>
+            <div class="roi-split"><i></i></div>
+            <p class="roi-note">From <span id="roiManual">0</span> hrs/year of manual reporting, Avi automates roughly 85%. Illustrative.</p>
           </div>
         </div>
       </div>
+    </div>
+  </section>
 
-      <!-- KPI row -->
-      <div class="board">
-        <div class="panel kpi c3">
-          <div class="lbl">First dashboard</div>
-          <div class="val">Days<span class="u">.</span></div>
-          <div class="sub">not quarters — we work from data you already have</div>
-          <div class="bar"><i data-w="86"></i></div>
-        </div>
-        <div class="panel kpi c3">
-          <div class="lbl">Source formats we read</div>
-          <div class="val" data-count="12" data-suffix="+">0</div>
-          <div class="sub">Excel · CSV · Google Sheets · CRM exports</div>
-          <div class="bar"><i data-w="70"></i></div>
-        </div>
-        <div class="panel kpi c3">
-          <div class="lbl">Access</div>
-          <div class="val">Per role</div>
-          <div class="sub">each person logs in to exactly their slice</div>
-          <div class="bar"><i data-w="92"></i></div>
-        </div>
-        <div class="panel kpi c3">
-          <div class="lbl">Hand-updated reports</div>
-          <div class="val" data-count="0">0</div>
-          <div class="sub">everything refreshes on its own schedule</div>
-          <div class="bar"><i data-w="100"></i></div>
+  <!-- CLIENTS -->
+  <section id="clients">
+    <div class="secthead"><span class="eyebrow">Clients</span><h2>Who we build for.</h2><p>Teams that have outgrown their spreadsheets — with people, clients, or locations to compare.</p></div>
+    <div class="aud-label">Core focus</div>
+    <div class="board">
+      <div class="aud c4"><div class="ah"><span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg></span><h4>CPAs &amp; accounting<small>Accounting</small></h4></div><p>Realization, WIP, and staff utilization — without rebuilding the schedule every month-end.</p><div class="login"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Partners see the firm · staff see their book</div><button class="aud-cta" data-k="cpa">See a sample CPA dashboard →</button></div>
+      <div class="aud c4"><div class="ah"><span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l5-5 4 3 6-7"/><path d="M21 8v4h-4"/><path d="M3 21h18"/></svg></span><h4>Financial advisors<small>Wealth</small></h4></div><p>AUM, production, and client portfolios — from your CRM and custodian exports into one advisor login.</p><div class="login"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Each advisor sees only their households</div><button class="aud-cta" data-k="adv">See a sample advisor dashboard →</button></div>
+      <div class="aud c4"><div class="ah"><span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><rect x="4" y="9" width="6" height="12"/><rect x="14" y="5" width="6" height="16"/></svg></span><h4>Multi-location ops<small>Multi-site</small></h4></div><p>Every branch, store, or office on one screen — ranked side by side, scoped to its manager.</p><div class="login"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>HQ sees all · each site sees itself</div><button class="aud-cta" data-k="site">See a multi-site dashboard →</button></div>
+    </div>
+    <div class="aud-label">Also a strong fit</div>
+    <div class="board">
+      <div class="tile c2"><div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 13l1.5-5h11L19 13"/><path d="M3 17v-4h18v4"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/></svg>Auto dealers</div><p>Sales floor + collections by rep and lot.</p></div>
+      <div class="tile c2"><div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5"/></svg>Staffing</div><p>Recruiter performance from one export.</p></div>
+      <div class="tile c2"><div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>Insurance</div><p>Producer books, renewals, retention.</p></div>
+      <div class="tile c2"><div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 6l4 4-9 9-4 1 1-4z"/><path d="M17 3l4 4-2 2-4-4z"/></svg>Field service</div><p>Tech throughput, job aging by crew.</p></div>
+      <div class="tile c2"><div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Real estate</div><p>Occupancy, rent roll, portfolio.</p></div>
+      <div class="tile c2"><div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg>Medical</div><p>Provider production, utilization.</p></div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section id="process">
+    <div class="secthead"><span class="eyebrow">Process</span><h2>From export to live app.</h2><p>How we turn a folder of spreadsheets into software your team logs into — usually in weeks, not quarters.</p></div>
+    <div class="card c12" style="margin-bottom:14px">
+      <div class="stepper">
+        <div class="stp done"><div class="ring"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l4 4L19 6"/></svg></div><div class="lab">Discovery</div><div class="sub">your exports + goals</div></div>
+        <div class="stp done"><div class="ring"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l4 4L19 6"/></svg></div><div class="lab">Data model</div><div class="sub">clean + reconcile</div></div>
+        <div class="stp done"><div class="ring"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l4 4L19 6"/></svg></div><div class="lab">Mockup</div><div class="sub">you react, we refine</div></div>
+        <div class="stp now"><div class="ring">4</div><div class="lab">Build &amp; wire</div><div class="sub">charts + logins</div></div>
+        <div class="stp"><div class="ring">5</div><div class="lab">Launch</div><div class="sub">live + auto-refresh</div></div>
+        <div class="stp"><div class="ring">6</div><div class="lab">Iterate</div><div class="sub">as you grow</div></div>
+      </div>
+    </div>
+    <div class="board">
+      <div class="step c3"><span class="no">01</span><h4>Sources</h4><p>You keep working in Excel and your CRM. Nothing changes for your team.</p></div>
+      <div class="step c3"><span class="no">02</span><h4>Ingest &amp; model</h4><p>We pull exports, fix types, dedupe, and define the numbers that matter — once.</p></div>
+      <div class="step c3"><span class="no">03</span><h4>Build the app</h4><p>Custom dashboards and tools, white-labeled to your brand, on the web.</p></div>
+      <div class="step c3"><span class="no">04</span><h4>Roles &amp; launch</h4><p>Each person logs in to exactly their slice. It refreshes itself from then on.</p></div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="secthead"><span class="eyebrow">About &amp; contact</span><h2>A founder-led software studio.</h2></div>
+    <div class="board">
+      <div class="card about c7">
+        <p>Avi Data Technologies builds the software, dashboards, and financial tooling behind companies that run on data. The person who scopes your data is the person who builds the app — and the one who answers when a number looks off.</p>
+        <p>We start where reporting actually lives: a folder of exports, a dozen tabs, and one analyst who knows which file is the "real" one. We turn that into something the whole team can trust, log into, and act on — no new tools to learn.</p>
+        <div class="principles">
+          <div class="pr"><h5>Built, not theorized</h5><p>Working software, not strategy decks.</p></div>
+          <div class="pr"><h5>Your data, your view</h5><p>White-labeled to your brand and roles.</p></div>
+          <div class="pr"><h5>One source of truth</h5><p>Every view computes from one clean model.</p></div>
+          <div class="pr"><h5>No rip-and-replace</h5><p>We read what you already have.</p></div>
         </div>
       </div>
-      <div class="board">
-        <div class="panel c8">
-          <div class="phead">
-            <span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 13l3-3 3 2 5-6"/></svg></span>
-            <h3>Hours reclaimed</h3>
-            <div class="seg" id="trendSeg" style="margin-left:auto"><button data-t="wk" class="on">Weekly</button><button data-t="mo">Monthly</button></div>
-          </div>
-          <div class="pmetric"><span class="m">Manual reporting hours your team spends</span> · hover a point</div>
-          <svg class="trend" id="trendSvg" viewBox="0 0 640 170" preserveAspectRatio="none"></svg>
-          <div class="trend-x" id="trendX"></div>
-        </div>
-        <div class="panel c4">
-          <div class="phead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span><h3>Source mix</h3></div>
-          <div class="donut-wrap"><svg class="donut" id="donut" viewBox="0 0 120 120"></svg><div class="donut-center" id="donutCenter"><b>12+</b><small>formats</small></div></div>
-          <div class="donut-legend" id="donutLegend"></div>
-        </div>
+      <div class="card c5">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg></span><h3>Tell us where your numbers live</h3></div>
+        <div class="field"><label for="f-name">Name</label><input id="f-name" type="text" placeholder="Your name"></div>
+        <div class="field"><label for="f-co">Company</label><input id="f-co" type="text" placeholder="Company name"></div>
+        <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" placeholder="you@company.com"></div>
+        <div class="field"><label for="f-msg">What do you report on today?</label><textarea id="f-msg" rows="3" placeholder="e.g. weekly agent performance out of Excel, plus a CRM export nobody has time to clean…"></textarea></div>
+        <button class="pill pill-grad" id="sendBtn" style="width:100%;justify-content:center">Send to Avi Data →</button>
+        <div class="reach"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg></span><div><div class="rl">Email</div><div class="rv"><a href="mailto:hello@avidatatech.com">hello@avidatatech.com</a></div></div></div>
       </div>
-      <div class="board">
-        <div class="panel c12">
-          <div class="phead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg></span><h3>See your payback</h3><span class="act">DRAG TO PLAY</span></div>
-          <div class="roi-grid">
-            <div class="roi-controls">
-              <label>Hours/week your team spends on manual reports</label>
-              <input type="range" id="roiHours" min="2" max="60" value="18">
-              <div class="roi-readout"><span id="roiHoursVal">18</span> hrs / week</div>
-              <label>People doing that work</label>
-              <input type="range" id="roiPeople" min="1" max="40" value="4">
-              <div class="roi-readout"><span id="roiPeopleVal">4</span> people</div>
-            </div>
-            <div class="roi-result">
-              <div class="roi-big"><span id="roiSaved">0</span><small>hours / year reclaimed</small></div>
-              <div class="roi-split"><i></i></div>
-              <p class="roi-note">From <span id="roiManual">0</span> hrs/year of manual reporting, Avi automates roughly 85%. Illustrative.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- ===== CAPABILITIES ===== -->
-    <section id="capabilities">
-      <div class="secthead">
-        <span class="eyebrow">Capabilities</span>
-        <h2>Two kinds of dashboard. One source of truth.</h2>
-        <p>Performance dashboards tell you how people are doing. Operational dashboards tell you how the work is moving. We build both from the same clean data — so the numbers always agree.</p>
-      </div>
+  <footer class="foot"><span>© 2026 Avi Data Technologies</span><span class="sep">·</span><span>Software &amp; dashboards for companies with data</span><span class="sep">·</span><span>Greenville, SC</span><span style="margin-left:auto" class="sep">data in · decisions out</span></footer>
 
-      <!-- perf + secure -->
-      <div class="board">
-        <!-- performance -->
-        <div class="panel c7">
-          <div class="phead">
-            <span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
-            <h3>Performance dashboards</h3>
-            <span class="act">INTERACTIVE</span>
-          </div>
-          <p class="desc">See who's performing — by name, branch, and team. Pick a context to re-skin the same dashboard for that world:</p>
-          <div class="seg" id="perfSeg" role="tablist" aria-label="Performance context">
-            <button data-k="all" class="on">All</button>
-            <button data-k="cpa">CPAs</button>
-            <button data-k="adv">Advisors</button>
-            <button data-k="site">Multi-site</button>
-            <button data-k="auto">Auto</button>
-          </div>
-          <div class="pmetric"><span class="m" id="perfMetric">Calls handled</span> · last 8 weeks · hover a bar</div>
-          <div class="bars" id="perfBars"><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div><div class="b"></div></div>
-          <div class="barx"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span><span>W7</span><span>W8</span></div>
-          <table class="lead" id="perfLead"></table>
-        </div>
-
-        <!-- secure access -->
-        <div class="panel c5">
-          <div class="phead">
-            <span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-            <h3>Logins &amp; roles</h3>
-            <span class="act">SCOPED</span>
-          </div>
-          <p class="desc">Everyone sees their slice — and only their slice. Usernames, role-based views, and branch scoping baked in from day one.</p>
-          <div class="roles">
-            <div class="role"><span class="av" style="background:linear-gradient(140deg,#7C6CFF,#5a49d6)">AD</span><span class="who">Owner<small>admin@company</small></span><span class="tag">full access</span></div>
-            <div class="role"><span class="av" style="background:linear-gradient(140deg,#34D5C8,#1f9b95)">MG</span><span class="who">Branch manager<small>west.mgr</small></span><span class="tag">west region</span></div>
-            <div class="role"><span class="av" style="background:linear-gradient(140deg,#49D69D,#2a9c6f)">AG</span><span class="who">Agent<small>c.morris</small></span><span class="tag">own numbers</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- operational + sources -->
-      <div class="board">
-        <!-- operational -->
-        <div class="panel c7">
-          <div class="phead">
-            <span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-            <h3>Operational dashboards</h3>
-            <div class="seg" id="heatSeg" style="margin-left:auto"><button data-m="thr" class="on">Throughput</button><button data-m="exc">Exceptions</button></div>
-          </div>
-          <p class="desc">Watch the operation, not the inbox. Toggle throughput against flagged exceptions, and hover any cell for the detail behind it.</p>
-          <div class="heat" id="heat"></div>
-          <div class="heat"><div class="hl"></div><div class="axis"><span>8a</span><span>11a</span><span>2p</span><span>5p</span><span>8p</span></div></div>
-          <div class="heat-legend" id="heatLegend">Busier hours run brighter — hover any cell</div>
-        </div>
-
-        <!-- sources -->
-        <div class="panel c5">
-          <div class="phead">
-            <span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>
-            <h3>We read your stack</h3>
-            <span class="act">NO MIGRATION</span>
-          </div>
-          <p class="desc">Your team keeps working where they work. We meet the data where it already lives — if you can export it, we can read it.</p>
-          <div class="chips">
-            <span class="chip"><i></i> Excel .xlsx</span>
-            <span class="chip"><i></i> CSV / TSV</span>
-            <span class="chip"><i></i> Google Sheets</span>
-            <span class="chip"><i></i> CRM exports</span>
-            <span class="chip"><i></i> Salesforce</span>
-            <span class="chip"><i></i> HubSpot</span>
-            <span class="chip"><i></i> Database dumps</span>
-            <span class="chip"><i></i> Custom feeds</span>
-          </div>
-          <ul class="feat" style="margin-top:16px">
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l4 4L19 6"/></svg> We clean, dedupe, and reconcile the mess for you</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== BUILT FOR ===== -->
-    <section id="built-for">
-      <div class="secthead">
-        <span class="eyebrow">Clients</span>
-        <h2>Who we build for.</h2>
-        <p>The pattern is always the same: a team that's outgrown its spreadsheets, with people, clients, or locations that need to be compared side by side. If that sounds like you, you're who we build for.</p>
-      </div>
-
-      <div class="aud-label">Core focus</div>
-      <div class="board">
-        <div class="aud c4">
-          <div class="ahead">
-            <span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/></svg></span>
-            <h4>CPAs &amp; accounting firms<small>Accounting</small></h4>
-          </div>
-          <p>Realization, WIP, and staff utilization — without rebuilding the schedule by hand every month-end.</p>
-          <div class="login"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Partners see the firm · <b>staff see their book</b></div>
-          <button class="aud-cta" data-k="cpa">See a sample CPA dashboard
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-        </div>
-
-        <div class="aud c4">
-          <div class="ahead">
-            <span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l5-5 4 3 6-7"/><path d="M21 8v4h-4"/><path d="M3 21h18"/></svg></span>
-            <h4>Financial advisors &amp; RIAs<small>Wealth</small></h4>
-          </div>
-          <p>AUM, production, and client portfolios — pulled from your CRM and custodian exports into one advisor login.</p>
-          <div class="login"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Each advisor sees <b>only their households</b></div>
-          <button class="aud-cta" data-k="adv">See a sample advisor dashboard
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-        </div>
-
-        <div class="aud c4">
-          <div class="ahead">
-            <span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><rect x="4" y="9" width="6" height="12"/><rect x="14" y="5" width="6" height="16"/><path d="M6 12h2M6 15h2M16 8h2M16 11h2M16 14h2"/></svg></span>
-            <h4>Multi-location operators<small>Multi-site</small></h4>
-          </div>
-          <p>Every branch, store, or office on one screen — ranked side by side, each location scoped to its own manager.</p>
-          <div class="login"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> HQ sees all · <b>each site sees itself</b></div>
-          <button class="aud-cta" data-k="site">See a multi-site dashboard
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-        </div>
-      </div>
-
-      <div class="aud-label">Also a strong fit</div>
-      <div class="board">
-        <div class="tile c2">
-          <div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 13l1.5-5h11L19 13"/><path d="M3 17v-4h18v4"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/></svg> Auto &amp; equipment dealers</div>
-          <p>Sales floor and collections, by salesperson and by lot.</p>
-        </div>
-        <div class="tile c2">
-          <div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5"/><path d="M15 20c0-2 1-3.5 3-3.5s3 1.5 3 3.5"/></svg> Staffing &amp; recruiting</div>
-          <p>Recruiter performance and placements from one export.</p>
-        </div>
-        <div class="tile c2">
-          <div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg> Insurance agencies</div>
-          <p>Producer books, renewals, and retention at a glance.</p>
-        </div>
-        <div class="tile c2">
-          <div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 6l4 4-9 9-4 1 1-4z"/><path d="M17 3l4 4-2 2-4-4z"/></svg> Field service &amp; trades</div>
-          <p>Tech throughput and job aging, crew by crew.</p>
-        </div>
-        <div class="tile c2">
-          <div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg> Property &amp; real estate</div>
-          <p>Occupancy, rent roll, and portfolio returns.</p>
-        </div>
-        <div class="tile c2">
-          <div class="th"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg> Medical &amp; dental groups</div>
-          <p>Provider production and schedule utilization.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== PIPELINE ===== -->
-    <section id="pipeline">
-      <div class="secthead">
-        <span class="eyebrow">Pipeline</span>
-        <h2>How a spreadsheet becomes a dashboard.</h2>
-        <p>Five steps. Your team only notices the last two.</p>
-      </div>
-      <div class="pipe">
-        <div class="step">
-          <span class="no">01</span>
-          <h4>Sources</h4>
-          <p>You keep working in Excel and your CRM. Nothing about your team's day changes.</p>
-          <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg></span>
-        </div>
-        <div class="step">
-          <span class="no">02</span>
-          <h4>Ingest &amp; clean</h4>
-          <p>We pull the exports, fix types, dedupe, and reconcile what doesn't line up.</p>
-          <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16M7 4v8l-3 8h16l-3-8V4"/></svg></span>
-        </div>
-        <div class="step">
-          <span class="no">03</span>
-          <h4>Model &amp; metrics</h4>
-          <p>We define the numbers that matter and compute them the same way every time.</p>
-          <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></span>
-        </div>
-        <div class="step">
-          <span class="no">04</span>
-          <h4>Dashboard</h4>
-          <p>Performance and operational views, built to how your team actually reads them.</p>
-          <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
-        </div>
-        <div class="step">
-          <span class="no">05</span>
-          <h4>Roles &amp; logins</h4>
-          <p>Each person logs in to exactly the slice they should see. Nothing more.</p>
-          <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg></span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== ABOUT ===== -->
-    <section id="about">
-      <div class="secthead">
-        <span class="eyebrow">About</span>
-        <h2>A founder-led data studio.</h2>
-      </div>
-      <div class="board">
-        <div class="panel about c7">
-          <p>Avi Data Technologies isn't a faceless agency that hands you a deck and disappears. The person who scopes your data is the person who builds the dashboard — and the one who picks up the phone when a number looks off.</p>
-          <p>We started where most reporting actually lives: a folder of exports, a dozen tabs, and one analyst who knows which file is the "real" one. Our job is to take that fragile, hand-kept system and turn it into something the whole team can trust and log into — without asking anyone to change tools or learn a new platform.</p>
-          <p>We've built this across auto retail, staffing, distribution, and wealth — anywhere a team was running on spreadsheets that had outgrown them.</p>
-          <div class="principles">
-            <div class="pr"><h5>Built, not theorized</h5><p>We ship working dashboards, not strategy memos.</p></div>
-            <div class="pr"><h5>Your data, your view</h5><p>White-labeled to your brand, scoped to your roles.</p></div>
-            <div class="pr"><h5>One source of truth</h5><p>Every view computes from the same clean model.</p></div>
-            <div class="pr"><h5>No rip-and-replace</h5><p>We read what you already have. No migration.</p></div>
-          </div>
-        </div>
-
-        <div class="panel c5">
-          <div class="phead">
-            <span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg></span>
-            <h3>Recent builds</h3>
-            <span class="act">BY INDUSTRY</span>
-          </div>
-          <div class="feed">
-            <div class="frow"><span class="fdot" style="background:rgba(124,108,255,.16);color:var(--brand-2)">AR</span><span class="ft">Auto retail<small>collections + sales-floor dashboards, role logins</small></span><span class="fwhen">operational</span></div>
-            <div class="frow"><span class="fdot" style="background:rgba(52,213,200,.16);color:var(--cyan)">ST</span><span class="ft">Staffing<small>agent performance from a 90MB workbook</small></span><span class="fwhen">performance</span></div>
-            <div class="frow"><span class="fdot" style="background:rgba(73,214,157,.16);color:var(--pos)">DS</span><span class="ft">Distribution<small>order + inventory operations view</small></span><span class="fwhen">operational</span></div>
-            <div class="frow"><span class="fdot" style="background:rgba(244,197,107,.16);color:var(--amber)">WM</span><span class="ft">Wealth<small>client-portfolio projection dashboards</small></span><span class="fwhen">performance</span></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== CONTACT ===== -->
-    <section id="contact">
-      <div class="secthead">
-        <span class="eyebrow">Contact</span>
-        <h2>Tell us where your numbers live.</h2>
-        <p>Send over what you report on today — even if it's "a messy spreadsheet." That's exactly the starting point we like.</p>
-      </div>
-      <div class="board">
-        <div class="panel c7">
-          <div class="field">
-            <label for="f-name">Name</label>
-            <input id="f-name" type="text" placeholder="Your name" autocomplete="name">
-          </div>
-          <div class="field">
-            <label for="f-co">Company</label>
-            <input id="f-co" type="text" placeholder="Company name" autocomplete="organization">
-          </div>
-          <div class="field">
-            <label for="f-email">Email</label>
-            <input id="f-email" type="email" placeholder="you@company.com" autocomplete="email">
-          </div>
-          <div class="field">
-            <label for="f-msg">What do you report on today?</label>
-            <textarea id="f-msg" rows="4" placeholder="e.g. weekly agent performance out of Excel, plus a CRM export nobody has time to clean…"></textarea>
-          </div>
-          <button class="btn btn-primary" id="sendBtn" style="width:100%;justify-content:center">Send to Avi Data
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-          </button>
-          <p class="formnote">Opens your mail app with the details filled in — nothing is sent until you hit send.</p>
-        </div>
-
-        <div class="contact-aside c5">
-          <div class="reach">
-            <span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg></span>
-            <div><div class="rl">Email</div><div class="rv"><a href="mailto:hello@avidatatech.com">hello@avidatatech.com</a></div></div>
-          </div>
-          <div class="reach">
-            <span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
-            <div><div class="rl">Based in</div><div class="rv">Greenville / Upstate, South Carolina</div></div>
-          </div>
-          <div class="panel" style="flex:1;display:flex;flex-direction:column;justify-content:center">
-            <div class="phead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg></span><h3>What happens next</h3></div>
-            <ul class="feat">
-              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l4 4L19 6"/></svg> We look at one real export from you</li>
-              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l4 4L19 6"/></svg> You see a rough mockup of the dashboard it becomes</li>
-              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l4 4L19 6"/></svg> If it's a fit, we scope the real build — no obligation</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- footer -->
-    <footer class="foot">
-      <span>© 2026 Avi Data Technologies</span>
-      <span class="sep">·</span>
-      <span>A founder-led data studio</span>
-      <span class="sep">·</span>
-      <span class="status" style="display:inline-flex"><span class="dot"></span> operational</span>
-      <span style="margin-left:auto" class="sep">v1.0 · build today</span>
-    </footer>
-
-  </div>
-</main>
+</div></main>
 
 <script>
 (function(){
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var tip=document.createElement('div'); tip.className='viztip'; document.body.appendChild(tip);
+  function showTip(h,x,y){ tip.innerHTML=h; tip.style.left=x+'px'; tip.style.top=y+'px'; tip.style.opacity='1'; }
+  function hideTip(){ tip.style.opacity='0'; }
+  function onView(el,cb){ if(!('IntersectionObserver' in window)||reduce){cb();return;} var io=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting){cb();io.disconnect();}});},{threshold:.3}); io.observe(el); }
+  function $(id){return document.getElementById(id);}
+  function smooth(p){ if(p.length<2)return''; var d='M'+p[0][0].toFixed(1)+','+p[0][1].toFixed(1); for(var i=0;i<p.length-1;i++){var a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c; d+=' C'+(b[0]+(c[0]-a[0])/6).toFixed(1)+','+(b[1]+(c[1]-a[1])/6).toFixed(1)+' '+(c[0]-(e[0]-b[0])/6).toFixed(1)+','+(c[1]-(e[1]-b[1])/6).toFixed(1)+' '+c[0].toFixed(1)+','+c[1].toFixed(1);} return d; }
 
-  /* ---- shared hover tooltip ---- */
-  var vizTip=document.createElement('div'); vizTip.className='viztip'; document.body.appendChild(vizTip);
-  function showTip(t,x,y){ vizTip.textContent=t; vizTip.style.left=x+'px'; vizTip.style.top=y+'px'; vizTip.style.opacity='1'; }
-  function hideTip(){ vizTip.style.opacity='0'; }
+  document.querySelectorAll('[data-scroll]').forEach(function(b){ b.addEventListener('click',function(){ var t=document.querySelector(b.getAttribute('data-scroll')); if(t)t.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'}); }); });
 
-  /* ---- hero transformation toggle + autoplay ---- */
-  var stage = document.getElementById('stage');
-  var toggle = document.getElementById('demoToggle');
-  function setView(v){
-    var live = v === 'live';
-    stage.classList.toggle('live', live);
-    toggle.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.view === v); });
-  }
-  toggle.addEventListener('click', function(e){
-    var b = e.target.closest('button'); if(!b) return; setView(b.dataset.view);
-  });
-  if(reduce){ setView('live'); }
-  else { setTimeout(function(){ setView('live'); }, 1400); }
-
-  /* ---- gauge arc fill ---- */
-  var arc = document.getElementById('gaugeArc');
-  if(arc){
-    var len = arc.getTotalLength();
-    arc.style.strokeDasharray = len;
-    arc.style.strokeDashoffset = len;
-    if(reduce){ arc.style.transition='none'; arc.style.strokeDashoffset = len*(1-0.90); }
-    else {
-      arc.style.transition = 'stroke-dashoffset 1.6s cubic-bezier(.2,.7,.2,1)';
-      requestAnimationFrame(function(){ setTimeout(function(){ arc.style.strokeDashoffset = len*(1-0.90); }, 500); });
-    }
+  /* ---- candlesticks ---- */
+  function candles(id){ var s=$(id); if(!s)return; var W=300,H=110,PB=10,PT=8,MIN=2,MAX=12;
+    var D=[[6,8,5,7],[7,9,6,6],[6,7,4,5],[5,8,5,8],[8,10,7,7],[7,9,5,9],[9,11,8,8],[8,9,6,7],[7,10,6,10],[10,12,9,9],[9,10,7,11],[11,12,9,12]];
+    var n=D.length,cw=(W-12)/n,bw=cw*0.5;
+    function y(v){return PT+(H-PT-PB)*(1-(v-MIN)/(MAX-MIN));}
+    var h='';for(var i=0;i<n;i++){var x=6+cw*i+cw/2,o=D[i][0],hi=D[i][1],lo=D[i][2],c=D[i][3],up=c>=o,col=up?'#34D8A0':'#F2607D';
+      h+='<line x1="'+x.toFixed(1)+'" y1="'+y(hi).toFixed(1)+'" x2="'+x.toFixed(1)+'" y2="'+y(lo).toFixed(1)+'" stroke="'+col+'" stroke-width="1.4"/>';
+      var yt=y(Math.max(o,c)),yb=y(Math.min(o,c));h+='<rect x="'+(x-bw/2).toFixed(1)+'" y="'+yt.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(2,yb-yt).toFixed(1)+'" rx="1.5" fill="'+col+'"/>';}
+    s.innerHTML=h;
   }
 
-  /* ---- operational heatmap (interactive: throughput / exceptions) ---- */
-  var heat = document.getElementById('heat');
-  var heatMode='thr';
-  var heatScales={thr:['#16203A','#243a5e','#2f5a86','#2c7d8f','#34D5C8'],exc:['#1b1925','#3a2f3e','#5e3a4a','#9a4a52','#F2607D']};
-  var HDAYS=['Mon','Tue','Wed','Thu','Fri','Sat'];
-  function hourLab(c){var h=8+c;return (h>12?h-12:h)+(h>=12?'p':'a');}
-  function paintHeat(){
-    if(!heat)return;
-    heat.querySelectorAll('.cell').forEach(function(cell){
-      var lvl=heatMode==='thr'?+cell.dataset.thr:+cell.dataset.exc;
-      cell.style.background=heatScales[heatMode][lvl];
-    });
-    var lg=document.getElementById('heatLegend');
-    if(lg) lg.textContent=heatMode==='thr'?'Busier hours run brighter — hover any cell':'Flagged exceptions show in rose — hover any cell';
-  }
-  if(heat){
-    for(var r=0;r<6;r++){
-      var lab=document.createElement('div'); lab.className='hl'; lab.textContent=HDAYS[r]; heat.appendChild(lab);
-      for(var c=0;c<12;c++){
-        var cell=document.createElement('div'); cell.className='cell';
-        var bias=Math.max(0,1-Math.abs(c-6)/7)*Math.max(0,1-Math.abs(r-2)/4);
-        var thr=Math.min(4,Math.round(bias*4+Math.random()*1.2));
-        var exc=(Math.random()<0.10+bias*0.14)?Math.min(4,1+Math.round(Math.random()*3)):0;
-        cell.dataset.thr=thr; cell.dataset.exc=exc;
-        cell.dataset.thrv=18+thr*21+(c%3)*4; cell.dataset.excv=exc;
-        cell.dataset.day=HDAYS[r]; cell.dataset.hour=hourLab(c);
-        heat.appendChild(cell);
-      }
-    }
-    paintHeat();
-    heat.addEventListener('mousemove',function(e){
-      var c=e.target.closest('.cell'); if(!c){hideTip();return;}
-      var txt=c.dataset.day+' '+c.dataset.hour+' · '+(heatMode==='thr'?c.dataset.thrv+' events':(+c.dataset.exc>0?c.dataset.excv+' flagged':'all clear'));
-      showTip(txt,e.clientX,e.clientY);
-    });
-    heat.addEventListener('mouseleave',hideTip);
-    var hs=document.getElementById('heatSeg');
-    if(hs) hs.addEventListener('click',function(e){var b=e.target.closest('button'); if(!b)return; heatMode=b.dataset.m; hs.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x===b);}); paintHeat();});
+  /* ---- semicircle gauge ---- */
+  function gauge(id){ var s=$(id); if(!s)return; var cx=110,cy=112,r=82;
+    var seg=[['AI Sourced',38,'#6E8BFF'],['Inbound',30,'#34D8A0'],['Referrals',20,'#F2B45C'],['Events',12,'#F2607D']];
+    function pt(a){return [cx+r*Math.cos(a*Math.PI/180),cy+r*Math.sin(a*Math.PI/180)];}
+    var h='',a=180;seg.forEach(function(g){var a1=a+180*g[1]/100,p0=pt(a),p1=pt(a1);h+='<path d="M'+p0[0].toFixed(1)+','+p0[1].toFixed(1)+' A'+r+' '+r+' 0 0 1 '+p1[0].toFixed(1)+','+p1[1].toFixed(1)+'" fill="none" stroke="'+g[2]+'" stroke-width="13" stroke-linecap="round"/>';a=a1+1.5;});
+    h+='<text x="110" y="104" text-anchor="middle" fill="#EAF0FB" font-family="Plus Jakarta Sans" font-weight="700" font-size="26">234</text>';
+    h+='<text x="110" y="120" text-anchor="middle" fill="#566179" font-family="JetBrains Mono" font-size="9" letter-spacing="2">LEADS</text>';
+    s.innerHTML=h;
   }
 
-  /* ---- intersection-driven animations ---- */
-  function onView(el, cb){
-    if(!('IntersectionObserver' in window) || reduce){ cb(); return; }
-    var io = new IntersectionObserver(function(ents){
-      ents.forEach(function(e){ if(e.isIntersecting){ cb(); io.disconnect(); } });
-    },{threshold:.4});
-    io.observe(el);
+  /* ---- stacked area ---- */
+  function stream(id){ var s=$(id); if(!s)return; var W=560,H=130,PB=4;
+    var L=[[40,42,44,48,52,58,66,76,88,100,112,120],[24,26,27,30,34,40,48,58,70,82,92,100],[10,11,12,14,17,22,28,36,46,56,66,74]];
+    var cols=['#6E8BFF','#5570d8','#3f50c4'],n=L[0].length;
+    function pts(arr){return arr.map(function(v,i){return [(W)*(i/(n-1)), H-PB-(H-PB-6)*(v/130)];});}
+    var h='';for(var k=0;k<L.length;k++){var P=pts(L[k]),d=smooth(P)+' L'+W+','+(H-PB)+' L0,'+(H-PB)+' Z';h+='<path d="'+d+'" fill="'+cols[k]+'" opacity="'+(0.32+k*0.18)+'"/>';}
+    var top=pts(L[0]);h+='<path d="'+smooth(top)+'" fill="none" stroke="#9FB0FF" stroke-width="2"/>';
+    s.innerHTML=h;
   }
 
-  // kpi bars
-  document.querySelectorAll('.kpi .bar i').forEach(function(bar){
-    onView(bar, function(){ bar.style.width = (bar.dataset.w||60)+'%'; });
-  });
-  /* ---- performance dashboard (interactive context presets) ---- */
-  var PRESET={
-    all:{metric:'Calls handled',u:{f:5.1,o:0,s:' calls'},bars:[42,55,48,68,61,88,74,82],
-         lead:[['Dana P.','501','12','up'],['J. Whitfield','447','6','up'],['Casey M.','412','3','down']]},
-    cpa:{metric:'Realization rate',u:{f:1,o:0,s:'%'},bars:[70,66,72,75,69,81,78,86],
-         lead:[['M. Alvarez','96%','4','up'],['P. Donnelly','91%','2','up'],['R. Okafor','88%','1','down']]},
-    adv:{metric:'New production',u:{f:1.6,o:0,p:'$',s:'K'},bars:[50,62,58,71,80,77,84,92],
-         lead:[['Whitfield Hh','$2.4M','8','up'],['Carrow Hh','$1.9M','5','up'],['Okafor Hh','$1.4M','3','up']]},
-    site:{metric:'Revenue index',u:{f:0.6,o:60,s:''},bars:[60,58,64,70,66,74,80,71],
-         lead:[['Greenville','118','6','up'],['Anderson','104','2','up'],['Seneca','97','4','down']]},
-    auto:{metric:'Units retailed',u:{f:0.32,o:4,s:' u'},bars:[44,52,49,63,58,76,69,80],
-         lead:[['C. Morris','22','3','up'],['D. Pratt','19','1','up'],['J. Reyes','17','2','down']]}
-  };
-  var perfLocked=false;
-  function renderPerf(k){
-    var p=PRESET[k]; if(!p)return;
-    var m=document.getElementById('perfMetric'); if(m)m.textContent=p.metric;
-    var seg=document.getElementById('perfSeg');
-    if(seg) seg.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.k===k);});
-    var bars=document.querySelectorAll('#perfBars .b'); var mx=Math.max.apply(null,p.bars);
-    bars.forEach(function(b,i){
-      var h=p.bars[i]||0; b.style.height=h+'%'; b.classList.toggle('hi',p.bars[i]===mx);
-      var u=p.u,val=Math.round(h*u.f+(u.o||0)); b.dataset.tip='Wk'+(i+1)+' · '+(u.p||'')+val+(u.s||'');
-    });
-    var lead=document.getElementById('perfLead');
-    if(lead) lead.innerHTML=p.lead.map(function(row,i){
-      return '<tr><td class="nm"><span class="rank">'+(i+1)+'</span>'+row[0]+'</td><td class="sc">'+row[1]+'</td><td class="tr '+row[3]+'">'+(row[3]==='up'?'▲':'▼')+' '+row[2]+'</td></tr>';
-    }).join('');
-  }
-  var pb=document.getElementById('perfBars');
-  if(pb){
-    onView(pb,function(){ if(!perfLocked) renderPerf('all'); });
-    pb.addEventListener('mousemove',function(e){var b=e.target.closest('.b'); if(!b||!b.dataset.tip){hideTip();return;} showTip(b.dataset.tip,e.clientX,e.clientY);});
-    pb.addEventListener('mouseleave',hideTip);
-  }
-  var pseg=document.getElementById('perfSeg');
-  if(pseg) pseg.addEventListener('click',function(e){var b=e.target.closest('button'); if(!b)return; perfLocked=true; renderPerf(b.dataset.k);});
-
-  /* ---- audience cards jump to a sample dashboard ---- */
-  document.querySelectorAll('.aud-cta').forEach(function(b){
-    b.addEventListener('click',function(){
-      perfLocked=true;
-      var t=document.getElementById('capabilities');
-      if(t) t.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
-      setTimeout(function(){ renderPerf(b.dataset.k); }, reduce?0:480);
-    });
-  });
-
-  // count-up numbers
-  document.querySelectorAll('[data-count]').forEach(function(el){
-    var target = parseFloat(el.dataset.count), suffix = el.dataset.suffix||'';
-    onView(el, function(){
-      if(reduce || target===0){ el.textContent = target + suffix; return; }
-      var start=null, dur=900;
-      function step(ts){ start=start||ts; var p=Math.min(1,(ts-start)/dur);
-        el.textContent = Math.round(target*(1-Math.pow(1-p,3))) + suffix;
-        if(p<1) requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
-    });
-  });
-
-  // sparkline draw-in
-  var spark=document.querySelector('.sparkline');
-  if(spark && !reduce){
-    var L=spark.getTotalLength(); spark.style.strokeDasharray=L; spark.style.strokeDashoffset=L;
-    spark.style.transition='stroke-dashoffset 1.4s ease .2s';
-    onView(spark.closest('.demo'), function(){ spark.style.strokeDashoffset=0; });
+  /* ---- mini kpi bars ---- */
+  function mbars(id,vals,col){ var s=$(id); if(!s)return; var W=64,H=34,n=vals.length,bw=(W-(n-1)*3)/n,mx=Math.max.apply(null,vals);
+    var h='';for(var i=0;i<n;i++){var bh=Math.max(3,(H-2)*vals[i]/mx);h+='<rect x="'+(i*(bw+3)).toFixed(1)+'" y="'+(H-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="1.5" fill="'+(i===n-1?col:'#2a3550')+'"/>';}
+    s.innerHTML=h;
   }
 
-  /* ---- scroll-spy for topnav + rail ---- */
-  var sections = ['overview','capabilities','built-for','pipeline','about','contact'];
-  var topLinks = document.querySelectorAll('#topnav a');
-  var railLinks = document.querySelectorAll('.rail .rail-btn');
-  function setActive(id){
-    topLinks.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+id); });
-    railLinks.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+id); });
-  }
-  if('IntersectionObserver' in window){
-    var spy = new IntersectionObserver(function(ents){
-      ents.forEach(function(e){ if(e.isIntersecting) setActive(e.target.id); });
-    },{rootMargin:'-45% 0px -50% 0px'});
-    sections.forEach(function(id){ var s=document.getElementById(id); if(s) spy.observe(s); });
+  /* ---- dot-matrix columns ---- */
+  function dotmatrix(id){ var s=$(id); if(!s)return; var W=560,H=130,rows=9,MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var V=[4,5,4,6,7,5,9,6,7,8,6,7],n=V.length,cw=W/n,r=3.6,gapY=(H-12)/rows;
+    var h='';for(var i=0;i<n;i++){var cx=cw*i+cw/2;for(var j=0;j<rows;j++){var on=j<V[i];var cy=H-8-j*gapY;var col=on?(j>=V[i]-2?'#67E6BD':'#34D8A0'):'#1c2740';h+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r+'" fill="'+col+'"/>';}
+      h+='<rect class="hit" data-m="'+MO[i]+'" data-v="'+V[i]+'" x="'+(cw*i)+'" y="0" width="'+cw+'" height="'+H+'" fill="transparent"/>';}
+    s.innerHTML=h;
+    s.addEventListener('mousemove',function(e){var t=e.target.closest('.hit');if(!t){hideTip();return;}showTip('<b>'+t.dataset.m+'</b><div class="vr"><i style="background:#34D8A0"></i>'+(t.dataset.v*9.7).toFixed(0)+'k sales</div>',e.clientX,e.clientY);});
+    s.addEventListener('mouseleave',hideTip);
   }
 
-  /* ---- contact form -> mailto ---- */
-  document.getElementById('sendBtn').addEventListener('click', function(){
-    var n=val('f-name'), co=val('f-co'), em=val('f-email'), m=val('f-msg');
-    var subject = 'New inquiry'+(co?(' — '+co):'');
-    var body = 'Name: '+n+'\nCompany: '+co+'\nEmail: '+em+'\n\nReports on today:\n'+m;
-    window.location.href = 'mailto:hello@avidatatech.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-  });
-  function val(id){ var e=document.getElementById(id); return e?e.value.trim():''; }
+  /* ---- diverging bars ---- */
+  function diverge(id){ var s=$(id); if(!s)return; var W=280,H=120,base=H/2,R=['Fin','Mex','Den','Swi','Uk','USA','Can','Swe','Bra','Gre'];
+    var V=[18,-32,-20,8,30,22,-14,16,-24,28],n=V.length,cw=W/n,bw=cw*0.55,mx=36;
+    var h='<line x1="0" y1="'+base+'" x2="'+W+'" y2="'+base+'" stroke="#1f2a44" stroke-width="1"/>';
+    for(var i=0;i<n;i++){var x=cw*i+cw/2-bw/2,bh=(base-8)*Math.abs(V[i])/mx,up=V[i]>=0;h+='<rect x="'+x.toFixed(1)+'" y="'+(up?base-bh:base).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="2" fill="'+(up?'#34D8A0':'#F2607D')+'" opacity="0.92"/>';}
+    s.innerHTML=h;
+  }
 
-  /* ---- trend chart ---- */
+  /* ---- dual line ---- */
+  function dual(id){ var s=$(id); if(!s)return; var W=280,H=120,PB=10,PT=10,MAX=10;
+    var A=[3,4,3.5,5,6,5.5,7,6.5,8,7.5,9,8.5],B=[2,2.5,3,3.5,4,5,5.5,5,6,6.5,6,7],n=A.length;
+    function pts(arr){return arr.map(function(v,i){return [W*(i/(n-1)),PT+(H-PT-PB)*(1-v/MAX)];});}
+    s.innerHTML='<path d="'+smooth(pts(B))+'" fill="none" stroke="#566179" stroke-width="2" stroke-dasharray="3 4"/>'+'<path d="'+smooth(pts(A))+'" fill="none" stroke="#34D8A0" stroke-width="2.4" stroke-linecap="round"/>';
+  }
+
+  /* ---- thin bars ---- */
+  function thin(id){ var s=$(id); if(!s)return; var W=560,H=120,V=[7,9,6,11,8,12,7,10,9,13,8,11,10,12],n=V.length,cw=W/n,bw=4,mx=14;
+    var h='<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9FB0FF"/><stop offset="1" stop-color="#3f50c4"/></linearGradient></defs>';
+    for(var i=0;i<n;i++){var bh=(H-12)*V[i]/mx,x=cw*i+cw/2-bw/2;h+='<rect x="'+x.toFixed(1)+'" y="'+(H-bh).toFixed(1)+'" width="'+bw+'" height="'+bh.toFixed(1)+'" rx="2" fill="url(#tg)"/>';}
+    s.innerHTML=h;
+  }
+
+  /* ---- lollipop leaderboard ---- */
+  function lolli(id){ var s=$(id); if(!s)return; var W=280,H=130,PB=22,N=['M','J','N','E','A','R','S'],V=[58,74,66,118,88,70,62],n=V.length,cw=W/n,mx=130,hi=3;
+    var h='';for(var i=0;i<n;i++){var x=cw*i+cw/2,bh=(H-PB-14)*V[i]/mx,top=H-PB-bh,big=i===hi;
+      h+='<line x1="'+x.toFixed(1)+'" y1="'+(H-PB)+'" x2="'+x.toFixed(1)+'" y2="'+top.toFixed(1)+'" stroke="'+(big?'#34D8A0':'#2a3550')+'" stroke-width="'+(big?9:3)+'" stroke-linecap="round"/>';
+      h+='<circle cx="'+x.toFixed(1)+'" cy="'+top.toFixed(1)+'" r="'+(big?7:4)+'" fill="'+(big?'#67E6BD':'#6E8BFF')+'"/>';
+      if(big)h+='<text x="'+x.toFixed(1)+'" y="'+(top-12).toFixed(1)+'" text-anchor="middle" fill="#34D8A0" font-family="JetBrains Mono" font-size="10" font-weight="600">118%</text>';
+      h+='<text x="'+x.toFixed(1)+'" y="'+(H-7)+'" text-anchor="middle" fill="#566179" font-family="JetBrains Mono" font-size="9">'+N[i]+'</text>';}
+    s.innerHTML=h;
+  }
+
+  candles('heroCandles'); gauge('heroGauge'); stream('heroArea');
+  mbars('kbar1',[5,7,6,9,8,11,12],'#6E8BFF'); mbars('kbar2',[6,7,7,8,9,10,11],'#34D8A0'); mbars('kbar3',[9,8,10,7,9,8,7],'#F2B45C');
+  onView($('shotDots')||document.body,function(){ dotmatrix('shotDots'); diverge('shotDiverge'); dual('shotDual'); });
+  onView($('shotThin')||document.body,function(){ thin('shotThin'); lolli('shotLolli'); });
+
+  /* ---- performance presets ---- */
   (function(){
-    var svg=document.getElementById('trendSvg'); if(!svg) return;
-    var W=640,H=170,PAD=16,MAX=42;
-    var DATA={wk:[38,36,33,30,22,16,12,10],mo:[40,39,37,35,33,28,24,20,16,13,11,10]};
-    var XL={wk:['W1','W2','W3','W4','W5','W6','W7','W8'],mo:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']};
-    var xax=document.getElementById('trendX'), mode='wk';
-    function pts(a){var n=a.length;return a.map(function(v,i){return [PAD+(W-2*PAD)*(i/(n-1)), PAD+(H-2*PAD)*(1-v/MAX)];});}
-    function render(m){
-      mode=m; var a=DATA[m], P=pts(a);
-      var d=P.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
-      var poly=PAD+','+(H-PAD)+' '+d+' '+P[P.length-1][0].toFixed(1)+','+(H-PAD);
-      svg.innerHTML='<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34D5C8" stop-opacity="0.26"/><stop offset="1" stop-color="#34D5C8" stop-opacity="0"/></linearGradient></defs>'
-        +'<polygon points="'+poly+'" fill="url(#tg)"/>'
-        +'<polyline class="trend-line" points="'+d+'"/>'
-        +P.map(function(p,i){return '<circle class="trend-dot" data-i="'+i+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3"/>';}).join('')
-        +P.map(function(p,i){return '<circle class="trend-hit" data-i="'+i+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="16"/>';}).join('');
-      xax.innerHTML=XL[m].map(function(l){return '<span>'+l+'</span>';}).join('');
-      var ln=svg.querySelector('.trend-line');
-      if(ln && !reduce){var L=ln.getTotalLength();ln.style.strokeDasharray=L;ln.style.strokeDashoffset=L;requestAnimationFrame(function(){ln.style.transition='stroke-dashoffset .9s ease';ln.style.strokeDashoffset=0;});}
-      document.querySelectorAll('#trendSeg button').forEach(function(b){b.classList.toggle('on',b.dataset.t===m);});
-    }
-    svg.addEventListener('mousemove',function(e){
-      var h=e.target.closest('.trend-hit'); if(!h){hideTip();svg.querySelectorAll('.trend-dot').forEach(function(d){d.classList.remove('hot');});return;}
-      var i=+h.dataset.i; svg.querySelectorAll('.trend-dot').forEach(function(d){d.classList.toggle('hot',+d.dataset.i===i);});
-      showTip(XL[mode][i]+' · '+DATA[mode][i]+' hrs', e.clientX, e.clientY);
-    });
-    svg.addEventListener('mouseleave',function(){hideTip();svg.querySelectorAll('.trend-dot').forEach(function(d){d.classList.remove('hot');});});
-    var ts=document.getElementById('trendSeg');
-    if(ts) ts.addEventListener('click',function(e){var b=e.target.closest('button'); if(b) render(b.dataset.t);});
-    onView(svg,function(){render('wk');});
+    var P={all:{m:'Calls handled',u:{f:5.1,s:' calls'},bars:[42,55,48,68,61,88,74,82],lead:[['Dana P.','501','12','up'],['J. Whitfield','447','6','up'],['Casey M.','412','3','down']]},
+      cpa:{m:'Realization rate',u:{f:1,s:'%'},bars:[70,66,72,75,69,81,78,86],lead:[['M. Alvarez','96%','4','up'],['P. Donnelly','91%','2','up'],['R. Okafor','88%','1','down']]},
+      adv:{m:'New production',u:{f:1.6,p:'$',s:'K'},bars:[50,62,58,71,80,77,84,92],lead:[['Whitfield Hh','$2.4M','8','up'],['Carrow Hh','$1.9M','5','up'],['Okafor Hh','$1.4M','3','up']]},
+      site:{m:'Revenue index',u:{f:0.6,o:60,s:''},bars:[60,58,64,70,66,74,80,71],lead:[['Greenville','118','6','up'],['Anderson','104','2','up'],['Seneca','97','4','down']]},
+      auto:{m:'Units retailed',u:{f:0.32,o:4,s:' u'},bars:[44,52,49,63,58,76,69,80],lead:[['C. Morris','22','3','up'],['D. Pratt','19','1','up'],['J. Reyes','17','2','down']]}};
+    var locked=false;
+    function render(k){var p=P[k];if(!p)return;var m=$('perfMetric');if(m)m.textContent=p.m;var seg=$('perfSeg');if(seg)seg.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.k===k);});
+      var bars=document.querySelectorAll('#perfBars .b'),mx=Math.max.apply(null,p.bars);
+      bars.forEach(function(b,i){var h=p.bars[i]||0;b.style.height=h+'%';b.classList.toggle('hi',p.bars[i]===mx);var u=p.u,val=Math.round(h*u.f+(u.o||0));b.dataset.tip='Wk'+(i+1)+' · '+(u.p||'')+val+(u.s||'');});
+      var lead=$('perfLead');if(lead)lead.innerHTML=p.lead.map(function(r,i){return '<tr><td><span class="rk">'+(i+1)+'</span>'+r[0]+'</td><td class="sc">'+r[1]+'</td><td class="tr '+r[3]+'">'+(r[3]==='up'?'\u25B2':'\u25BC')+' '+r[2]+'</td></tr>';}).join('');}
+    var pb=$('perfBars');if(pb){onView(pb,function(){if(!locked)render('all');});pb.addEventListener('mousemove',function(e){var b=e.target.closest('.b');if(!b||!b.dataset.tip){hideTip();return;}showTip(b.dataset.tip,e.clientX,e.clientY);});pb.addEventListener('mouseleave',hideTip);}
+    var ps=$('perfSeg');if(ps)ps.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;locked=true;render(b.dataset.k);});
+    document.querySelectorAll('.aud-cta').forEach(function(b){b.addEventListener('click',function(){locked=true;var t=$('platform');if(t)t.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});setTimeout(function(){render(b.dataset.k);},reduce?0:480);});});
   })();
 
-  /* ---- source-mix donut ---- */
-  (function(){
-    var donut=document.getElementById('donut'); if(!donut) return;
-    var SRC=[['Excel',38,'#34D5C8'],['CSV',22,'#7C6CFF'],['CRM exports',20,'#49D69D'],['Google Sheets',12,'#F4C56B'],['Databases',8,'#9B8CFF']];
-    var R=52,C=2*Math.PI*R,off=0;
-    donut.innerHTML='<circle cx="60" cy="60" r="'+R+'" stroke="#1A2236"/>'+SRC.map(function(s,i){var len=C*s[1]/100;var el='<circle class="dseg" data-i="'+i+'" cx="60" cy="60" r="'+R+'" stroke="'+s[2]+'" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'"/>';off+=len;return el;}).join('');
-    var leg=document.getElementById('donutLegend'), center=document.getElementById('donutCenter');
-    leg.innerHTML=SRC.map(function(s,i){return '<div class="dleg" data-i="'+i+'"><i style="background:'+s[2]+'"></i>'+s[0]+'<span>'+s[1]+'%</span></div>';}).join('');
-    function focus(i){donut.querySelectorAll('.dseg').forEach(function(c){c.classList.toggle('dim', i!=null && +c.dataset.i!==i);});center.innerHTML=(i==null)?'<b>12+</b><small>formats</small>':'<b>'+SRC[i][1]+'%</b><small>'+SRC[i][0]+'</small>';}
-    donut.addEventListener('mousemove',function(e){var c=e.target.closest('.dseg');focus(c?+c.dataset.i:null);});
-    donut.addEventListener('mouseleave',function(){focus(null);});
-    leg.addEventListener('mousemove',function(e){var d=e.target.closest('.dleg');focus(d?+d.dataset.i:null);});
-    leg.addEventListener('mouseleave',function(){focus(null);});
-  })();
+  /* ---- heatmap ---- */
+  (function(){var heat=$('heat');if(!heat)return;var mode='thr',sc={thr:['#13192a','#16324a','#1c5e74','#23a08f','#34D8A0'],exc:['#1a1322','#3a2230','#5e2a47','#9a3563','#F2607D']},D=['Mon','Tue','Wed','Thu','Fri','Sat'];
+    function hr(c){var h=8+c;return (h>12?h-12:h)+(h>=12?'p':'a');}
+    function paint(){heat.querySelectorAll('.cell').forEach(function(c){c.style.background=sc[mode][mode==='thr'?+c.dataset.thr:+c.dataset.exc];});var lg=$('heatLegend');if(lg)lg.textContent=mode==='thr'?'Busier hours run brighter — hover any cell':'Flagged exceptions in red — hover any cell';}
+    for(var r=0;r<6;r++){var lab=document.createElement('div');lab.className='hl';lab.textContent=D[r];heat.appendChild(lab);for(var c=0;c<12;c++){var cell=document.createElement('div');cell.className='cell';var bias=Math.max(0,1-Math.abs(c-6)/7)*Math.max(0,1-Math.abs(r-2)/4);var thr=Math.min(4,Math.round(bias*4+Math.random()*1.2)),exc=(Math.random()<0.1+bias*0.14)?Math.min(4,1+Math.round(Math.random()*3)):0;cell.dataset.thr=thr;cell.dataset.exc=exc;cell.dataset.thrv=18+thr*21+(c%3)*4;cell.dataset.day=D[r];cell.dataset.hour=hr(c);heat.appendChild(cell);}}
+    paint();heat.addEventListener('mousemove',function(e){var c=e.target.closest('.cell');if(!c){hideTip();return;}showTip(c.dataset.day+' '+c.dataset.hour+' · '+(mode==='thr'?c.dataset.thrv+' events':(+c.dataset.exc>0?c.dataset.exc+' flagged':'all clear')),e.clientX,e.clientY);});heat.addEventListener('mouseleave',hideTip);
+    var hs=$('heatSeg');if(hs)hs.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;mode=b.dataset.m;hs.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x===b);});paint();});})();
 
-  /* ---- ROI payback slider ---- */
-  (function(){
-    var rh=document.getElementById('roiHours'), rp=document.getElementById('roiPeople'); if(!rh||!rp) return;
-    var rhv=document.getElementById('roiHoursVal'), rpv=document.getElementById('roiPeopleVal'),
-        rs=document.getElementById('roiSaved'), rm=document.getElementById('roiManual');
-    function tween(el,to){var from=parseInt((el.textContent||'0').replace(/,/g,''))||0;if(reduce){el.textContent=to.toLocaleString();return;}var s=null,dur=380;function step(ts){s=s||ts;var p=Math.min(1,(ts-s)/dur);el.textContent=Math.round(from+(to-from)*(1-Math.pow(1-p,3))).toLocaleString();if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);}
-    function calc(){var h=+rh.value,p=+rp.value;rhv.textContent=h;rpv.textContent=p;var manual=h*p*52;rm.textContent=manual.toLocaleString();tween(rs,Math.round(manual*0.85));}
-    rh.addEventListener('input',calc); rp.addEventListener('input',calc); calc();
-  })();
+  /* ---- donut ---- */
+  (function(){var donut=$('donut');if(!donut)return;var SRC=[['Excel',38,'#6E8BFF'],['CSV',22,'#34D8A0'],['CRM exports',20,'#F2B45C'],['Sheets',12,'#9FB0FF'],['Databases',8,'#F2607D']];var R=52,C=2*Math.PI*R,off=0;
+    donut.innerHTML='<circle cx="60" cy="60" r="'+R+'" stroke="#13192a"/>'+SRC.map(function(s,i){var len=C*s[1]/100;var el='<circle class="dseg" data-i="'+i+'" cx="60" cy="60" r="'+R+'" stroke="'+s[2]+'" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'"/>';off+=len;return el;}).join('');
+    var leg=$('donutLegend'),center=$('donutCenter');leg.innerHTML=SRC.map(function(s,i){return '<div class="row" data-i="'+i+'"><i style="background:'+s[2]+'"></i>'+s[0]+'<span>'+s[1]+'%</span></div>';}).join('');
+    function focus(i){donut.querySelectorAll('.dseg').forEach(function(c){c.classList.toggle('dim',i!=null&&+c.dataset.i!==i);});center.innerHTML=(i==null)?'<b>12+</b><small>formats</small>':'<b>'+SRC[i][1]+'%</b><small>'+SRC[i][0]+'</small>';}
+    donut.addEventListener('mousemove',function(e){var c=e.target.closest('.dseg');focus(c?+c.dataset.i:null);});donut.addEventListener('mouseleave',function(){focus(null);});leg.addEventListener('mousemove',function(e){var d=e.target.closest('.row');focus(d?+d.dataset.i:null);});leg.addEventListener('mouseleave',function(){focus(null);});})();
 
+  /* ---- roi ---- */
+  (function(){var rh=$('roiHours'),rp=$('roiPeople');if(!rh||!rp)return;var rhv=$('roiHoursVal'),rpv=$('roiPeopleVal'),rs=$('roiSaved'),rm=$('roiManual');
+    function tw(el,to){var from=parseInt((el.textContent||'0').replace(/,/g,''))||0;if(reduce){el.textContent=to.toLocaleString();return;}var st=null;function step(ts){st=st||ts;var p=Math.min(1,(ts-st)/380);el.textContent=Math.round(from+(to-from)*(1-Math.pow(1-p,3))).toLocaleString();if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);}
+    function calc(){var h=+rh.value,p=+rp.value;rhv.textContent=h;rpv.textContent=p;var manual=h*p*52;rm.textContent=manual.toLocaleString();tw(rs,Math.round(manual*0.85));}
+    rh.addEventListener('input',calc);rp.addEventListener('input',calc);calc();})();
+
+  /* ---- scroll-spy ---- */
+  (function(){var ids=['work','platform','clients','process','contact'],links=document.querySelectorAll('#topnav a');function set(id){links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+id);});}
+    if('IntersectionObserver' in window){var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)set(e.target.id);});},{rootMargin:'-45% 0px -50% 0px'});ids.forEach(function(id){var s=$(id);if(s)sp.observe(s);});}})();
+
+  /* ---- contact ---- */
+  var sb=$('sendBtn');if(sb)sb.addEventListener('click',function(){function v(id){var e=$(id);return e?e.value.trim():'';}var co=v('f-co');var body='Name: '+v('f-name')+'\nCompany: '+co+'\nEmail: '+v('f-email')+'\n\nReports on today:\n'+v('f-msg');window.location.href='mailto:hello@avidatatech.com?subject='+encodeURIComponent('New inquiry'+(co?' \u2014 '+co:''))+'&body='+encodeURIComponent(body);});
 })();
 </script>
 </body>
