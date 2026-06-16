@@ -16,7 +16,7 @@
     --text:#EAF0FB; --muted:#8793AE; --muted-2:#566179;
     --brand:#6E8BFF; --brand-2:#9FB0FF; --mint:#34D8A0; --mint-2:#67E6BD;
     --gold:#F2B45C; --rose:#F2607D; --up:#34D8A0; --down:#F2607D;
-    --r:18px; --top:62px; --maxw:1320px;
+    --r:18px; --top:62px; --sb:250px; --sbc:72px; --maxw:1320px;
     --fd:'Plus Jakarta Sans',system-ui,sans-serif; --fb:'Inter',system-ui,sans-serif; --fm:'JetBrains Mono',ui-monospace,monospace;
   }
   *{box-sizing:border-box}
@@ -44,7 +44,7 @@
   .pill-ghost:hover{border-color:var(--brand)}
   .dot{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint)}
 
-  .shell{padding:calc(var(--top) + 20px) 22px 30px}
+  .shell{margin-left:var(--sb);padding:30px 32px 34px}
   .wrap{max-width:var(--maxw);margin:0 auto}
   .secthead{margin:46px 0 16px}
   .secthead h2{font-family:var(--fd);font-weight:700;font-size:clamp(22px,3vw,32px);letter-spacing:-.025em;margin:6px 0 8px}
@@ -203,33 +203,192 @@
   .gchart .hit,.gchart .dseg{cursor:default}
   @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}.gchart .gb{transform:none}.gchart .gd{opacity:1;transform:none}.shot-bar .badge{animation:none}}
 
+  /* ambient motion */
+  .bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .bgfx .blob{position:absolute;border-radius:50%;filter:blur(90px)}
+  .bgfx .b1{width:540px;height:540px;background:radial-gradient(circle,rgba(110,139,255,.16),transparent 70%);top:-180px;right:-60px;animation:drift1 28s ease-in-out infinite}
+  .bgfx .b2{width:480px;height:480px;background:radial-gradient(circle,rgba(52,216,160,.12),transparent 70%);bottom:-200px;left:-140px;animation:drift2 34s ease-in-out infinite}
+  .bgfx .b3{width:400px;height:400px;background:radial-gradient(circle,rgba(110,139,255,.09),transparent 70%);top:42%;left:52%;animation:drift3 40s ease-in-out infinite}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-46px,34px) scale(1.09)}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(54px,-30px) scale(1.12)}}
+  @keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-34px,-44px) scale(.92)}}
+  .hero h1 .grad,.roi-big span{background-size:220% auto;animation:sheen 9s linear infinite}
+  @keyframes sheen{to{background-position:220% center}}
+  #heroArea path{animation:breathe 7s ease-in-out infinite} @keyframes breathe{50%{filter:brightness(1.13)}}
+  @media (prefers-reduced-motion:reduce){.bgfx{display:none}.hero h1 .grad,.roi-big span{animation:none}#heroArea path{animation:none}}
+
+  .bgfx .grid{position:absolute;inset:-60%;background:linear-gradient(rgba(110,139,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(110,139,255,.045) 1px,transparent 1px);background-size:48px 48px;opacity:.45;animation:gridmove 42s linear infinite}
+  @keyframes gridmove{to{transform:translate(48px,48px)}}
+  .bgfx .b4{width:600px;height:600px;background:radial-gradient(circle,rgba(159,176,255,.07),transparent 70%);top:16%;left:-12%;animation:drift4 46s ease-in-out infinite}
+  @keyframes drift4{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(90px,42px) scale(1.06)}}
+  @keyframes tw{0%,100%{filter:drop-shadow(0 0 0 rgba(103,230,189,0))}50%{filter:drop-shadow(0 0 5px rgba(103,230,189,.85))}}
+  .gchart.in .tk{animation:tw 3.4s ease-in-out infinite}
+  @keyframes glowp{0%,100%{filter:drop-shadow(0 0 0 rgba(52,216,160,0))}50%{filter:drop-shadow(0 0 7px rgba(52,216,160,.85))}}
+  .gchart.in .lp{animation:glowp 2.8s ease-in-out infinite}
+  #heroGauge text{animation:gtxt 3.6s ease-in-out infinite} @keyframes gtxt{0%,100%{opacity:.82}50%{opacity:1}}
+  .bars .b.hi{animation:barglow 3s ease-in-out infinite} @keyframes barglow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.22)}}
+  .cell.hotcell{animation:hotc 4.5s ease-in-out infinite} @keyframes hotc{0%,100%{filter:brightness(1)}50%{filter:brightness(1.32)}}
+  .dot{animation:dotp 2.4s ease-in-out infinite} @keyframes dotp{0%,100%{box-shadow:0 0 6px var(--mint)}50%{box-shadow:0 0 12px var(--mint)}}
+  @media (prefers-reduced-motion:reduce){.bgfx .grid,.bgfx .b4,.gchart.in .tk,.gchart.in .lp,#heroGauge text,.bars .b.hi,.cell.hotcell,.dot{animation:none}}
+
+  @media (hover:hover) and (pointer:fine){
+    body.cz, body.cz *{cursor:none}
+    body.cz input, body.cz textarea{cursor:text}
+    #cursor{position:fixed;top:0;left:0;z-index:200;pointer-events:none}
+    #cursor .ring{position:absolute;width:26px;height:26px;border:1px solid rgba(159,176,255,.2);border-radius:50%;transform:translate(-50%,-50%);transition:width .18s ease,height .18s ease,border-color .18s ease,background .18s ease}
+    #cursor .dot{position:absolute;width:5px;height:5px;background:#34D8A0;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 8px rgba(52,216,160,.8)}
+    body.curhot #cursor .ring{width:42px;height:42px;border-color:#34D8A0;background:rgba(52,216,160,.06)}
+    body.curdown #cursor .ring{width:20px;height:20px}
+  }
+
+  /* process: advanced interactive stepper */
+  .proc{overflow:hidden}
+  .proc .stepper{position:relative;display:flex;gap:0;padding:8px 0 18px;margin:0}
+  .proc .stp::before{display:none}
+  .proc .track{position:absolute;top:26px;left:10%;width:80%;height:2px;background:var(--line-soft);border-radius:2px}
+  .proc .track .fill{position:absolute;left:0;top:0;height:100%;width:0;background:linear-gradient(90deg,var(--brand),var(--mint));background-size:200% 100%;border-radius:2px;transition:width .6s cubic-bezier(.2,.7,.2,1);animation:flowfill 3s linear infinite}
+  @keyframes flowfill{to{background-position:-200% 0}}
+  .proc .packet{position:absolute;top:50%;left:0;width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint),0 0 20px rgba(52,216,160,.6);transform:translate(-50%,-50%);animation:packet 3.2s ease-in-out infinite}
+  @keyframes packet{0%{left:0;opacity:0}8%{opacity:1}92%{opacity:1}100%{left:100%;opacity:0}}
+  .proc .stp{flex:1;min-width:100px;text-align:center;position:relative;z-index:2;cursor:pointer;padding:0 4px}
+  .proc .stp .ring{width:36px;height:36px;border-radius:50%;margin:0 auto 11px;display:grid;place-items:center;background:var(--raised);border:2px solid var(--line);color:var(--muted);font-family:var(--fm);font-size:13px;transition:transform .3s,box-shadow .3s,background .3s,border-color .3s;position:relative}
+  .proc .stp .ring::before{content:"";position:absolute;inset:-14px;border-radius:50%}
+  .proc .stp:hover .ring{border-color:var(--brand)}
+  .proc .stp.active .ring{background:linear-gradient(150deg,var(--brand),#4a5fd6);border-color:transparent;color:#fff}
+  .proc .stp.sel .ring{transform:scale(1.14);border-color:var(--brand-2);box-shadow:0 0 0 4px rgba(110,139,255,.18),0 0 24px rgba(110,139,255,.55)}
+  .proc .stp.sel .ring::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--brand-2);animation:ping 1.8s ease-out infinite}
+  @keyframes ping{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.75);opacity:0}}
+  .proc .stp .lab{font-family:var(--fd);font-size:12.5px;font-weight:600;color:var(--muted);transition:color .2s}
+  .proc .stp.sel .lab,.proc .stp:hover .lab{color:var(--text)}
+  .proc .stp .sub{font-size:11px;color:var(--muted-2);margin-top:3px;font-style:italic}
+  .proc-detail{position:relative;background:#0d1424;border:1px solid var(--line-soft);border-radius:14px;padding:24px 26px;overflow:hidden;min-height:188px}
+  .proc-detail .hud{position:absolute;width:13px;height:13px;border:2px solid rgba(110,139,255,.45);opacity:.7}
+  .proc-detail .k1{top:9px;left:9px;border-right:none;border-bottom:none}
+  .proc-detail .k2{top:9px;right:9px;border-left:none;border-bottom:none}
+  .proc-detail .k3{bottom:9px;left:9px;border-right:none;border-top:none}
+  .proc-detail .k4{bottom:9px;right:9px;border-left:none;border-top:none}
+  .proc-detail .scan{position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--mint),transparent);opacity:0;pointer-events:none;z-index:3}
+  .proc-detail.anim .scan{animation:scan 1s ease-out}
+  @keyframes scan{0%{top:0;opacity:.85}100%{top:100%;opacity:0}}
+  .proc-detail .pd-ghost{position:absolute;right:20px;bottom:-22px;font-family:var(--fd);font-weight:800;font-size:122px;line-height:1;color:rgba(110,139,255,.055);pointer-events:none;letter-spacing:-.04em;z-index:0;transition:color .4s}
+  .proc-detail .pd-body{position:relative;z-index:1}
+  .pd-kicker{font-family:var(--fm);font-size:11px;letter-spacing:.12em;color:var(--mint);margin-bottom:9px}
+  .pd-kicker b{color:var(--muted-2);font-weight:500;letter-spacing:.08em}
+  #pdTitle{font-family:var(--fd);font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0 0 10px}
+  #pdDesc{color:var(--muted);font-size:14px;line-height:1.65;margin:0 0 14px;max-width:64ch}
+  .proc-detail.anim #pdTitle{animation:prise .45s ease both}
+  .proc-detail.anim #pdDesc{animation:prise .55s .05s ease both}
+  @keyframes prise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+  #pdPoints{margin-top:0} #pdPoints li{opacity:0}
+  .proc-detail.anim #pdPoints li{animation:prise .5s ease both}
+  .proc-detail.anim #pdPoints li:nth-child(1){animation-delay:.14s}
+  .proc-detail.anim #pdPoints li:nth-child(2){animation-delay:.22s}
+  .proc-detail.anim #pdPoints li:nth-child(3){animation-delay:.30s}
+  @media (max-width:720px){.proc .stepper{overflow-x:auto} .proc-detail .pd-ghost{font-size:82px}}
+  @media (prefers-reduced-motion:reduce){.proc .track .fill,.proc .packet,.proc .stp.sel .ring::after{animation:none}.proc-detail.anim .scan,.proc-detail.anim #pdTitle,.proc-detail.anim #pdDesc,.proc-detail.anim #pdPoints li{animation:none}#pdPoints li{opacity:1}}
+
+  /* about upgrade */
+  .about .lead{font-size:15.5px;color:#dbe2f2;line-height:1.65;margin-top:0}
+  .principles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+  .pr{display:flex;gap:12px;align-items:flex-start;background:#0d1424;border:1px solid var(--line-soft);border-radius:12px;padding:14px;transition:border-color .2s,transform .2s,box-shadow .2s}
+  .pr:hover{border-color:rgba(110,139,255,.32);transform:translateY(-2px);box-shadow:0 14px 32px -22px rgba(0,0,0,.8)}
+  .pr .pi{width:34px;height:34px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;color:var(--brand-2);flex:none}
+  .pr h5{margin:0 0 4px;font-family:var(--fd);font-size:13.5px;font-weight:700}
+  .pr p{margin:0;font-size:12px;color:var(--muted);line-height:1.45}
+  .sig{display:flex;align-items:center;gap:9px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft);font-family:var(--fm);font-size:11.5px;letter-spacing:.04em;color:var(--muted)}
+
+  /* company / stats band */
+  .statband{padding:0;overflow:hidden}
+  .stats{display:flex}
+  .stat{flex:1;padding:24px 20px;text-align:center;border-right:1px solid var(--line-soft)}
+  .stat:last-child{border-right:none}
+  .stat b{display:block;font-family:var(--fd);font-weight:800;font-size:clamp(26px,3.4vw,40px);line-height:1;letter-spacing:-.03em;background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .stat span{display:block;font-size:12.5px;color:var(--muted);margin-top:8px}
+  .cta{display:flex;flex-direction:column}
+  @media (max-width:720px){.stats{flex-wrap:wrap}.stat{flex:1 1 50%;border-right:none;border-bottom:1px solid var(--line-soft);padding:18px 12px}.stat:nth-last-child(-n+1){border-bottom:none}}
+
+  section[id]{scroll-margin-top:calc(var(--top) + 18px)}
+  /* sidebar (dashboard route nav) */
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sb);z-index:60;display:flex;flex-direction:column;padding:20px 16px;background:linear-gradient(180deg,#0b1020,#090d18);border-right:1px solid var(--line-soft)}
+  .sb-brand{display:flex;align-items:center;gap:11px;padding:6px 8px 18px;margin-bottom:6px;border-bottom:1px solid var(--line-soft)}
+  .sb-brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(150deg,var(--brand),#4a5fd6);display:grid;place-items:center;box-shadow:0 4px 18px rgba(110,139,255,.4);flex:none}
+  .sb-name b{font-family:var(--fd);font-weight:700;font-size:15px;letter-spacing:-.02em;display:block;line-height:1.1}
+  .sb-name small{display:block;font-family:var(--fm);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2);margin-top:3px}
+  .sb-nav{display:flex;flex-direction:column;gap:3px;margin-top:8px}
+  .sb-nav a{display:flex;align-items:center;gap:12px;font-size:13.5px;font-weight:500;color:var(--muted);padding:10px 12px;border-radius:10px;transition:color .16s,background .16s;position:relative}
+  .sb-nav a svg{flex:none;color:var(--muted-2);transition:color .16s}
+  .sb-nav a:hover{color:var(--text);background:rgba(255,255,255,.045)}
+  .sb-nav a.active{color:var(--text);background:rgba(110,139,255,.12)}
+  .sb-nav a.active svg{color:var(--brand-2)}
+  .sb-nav a.active::before{content:"";position:absolute;left:-16px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,var(--brand),var(--mint))}
+  .sb-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px;padding-top:16px;border-top:1px solid var(--line-soft)}
+  .sb-status{display:flex;align-items:center;gap:9px;font-family:var(--fm);font-size:11px;color:var(--muted-2)}
+  .mobilebar,.hamb{display:none}
+  .scrim{position:fixed;inset:0;background:rgba(5,8,16,.62);opacity:0;pointer-events:none;transition:opacity .25s;z-index:55}
+  body.nav-open .scrim{opacity:1;pointer-events:auto}
+  @media (max-width:900px){
+    .sidebar{transform:translateX(-100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);width:min(80vw,290px);box-shadow:0 0 70px rgba(0,0,0,.6)}
+    body.nav-open .sidebar{transform:none}
+    .mobilebar{display:flex;align-items:center;position:fixed;top:0;left:0;right:0;height:var(--top);z-index:50;padding:0 16px 0 64px;background:rgba(10,14,26,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
+    .mobilebar .brand .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(150deg,var(--brand),#4a5fd6);display:grid;place-items:center;flex:none}
+    .mobilebar .brand b{font-family:var(--fd);font-weight:700;font-size:15px;letter-spacing:-.02em} .mobilebar .brand b span{color:var(--muted)}
+    .hamb{display:flex;flex-direction:column;justify-content:center;gap:4px;position:fixed;top:13px;left:14px;z-index:62;width:36px;height:36px;padding:9px;border-radius:9px;background:#121a2c;border:1px solid var(--line);cursor:pointer}
+    .hamb span{display:block;height:2px;width:100%;background:var(--text);border-radius:2px;transition:transform .22s,opacity .22s}
+    body.nav-open .hamb span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+    body.nav-open .hamb span:nth-child(2){opacity:0}
+    body.nav-open .hamb span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+  }
+
+  /* collapsible sidebar */
+  .sidebar,.shell{transition:width .25s cubic-bezier(.2,.7,.2,1),margin-left .25s cubic-bezier(.2,.7,.2,1)}
+  .sb-brand{cursor:pointer}
+  .sb-chev{margin-left:auto;color:var(--muted-2);transition:transform .25s,color .16s;flex:none}
+  .sb-brand:hover .sb-chev{color:var(--text)}
+  @media (min-width:901px){
+    body.sb-collapsed .sidebar{width:var(--sbc)}
+    body.sb-collapsed .shell{margin-left:var(--sbc)}
+    body.sb-collapsed .sb-name,body.sb-collapsed .sb-chev{display:none}
+    body.sb-collapsed .sb-brand{justify-content:center;padding:6px 0 18px;gap:0}
+    body.sb-collapsed .sb-nav a{justify-content:center;padding:11px 0}
+    body.sb-collapsed .sb-nav a span{display:none}
+    body.sb-collapsed .sb-foot .pill span{display:none}
+    body.sb-collapsed .sb-foot .pill{padding:12px 0}
+    body.sb-collapsed .sb-status{justify-content:center}
+    body.sb-collapsed .sb-status .stxt{display:none}
+    body.sb-collapsed .sb-nav a::after{content:attr(data-tip);position:absolute;left:calc(100% + 16px);top:50%;transform:translateY(-50%) translateX(-6px);white-space:nowrap;background:var(--raised);border:1px solid var(--line);color:var(--text);font-family:var(--fm);font-size:11px;padding:6px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .14s,transform .14s;box-shadow:0 10px 28px rgba(0,0,0,.6);z-index:70}
+    body.sb-collapsed .sb-nav a:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
+  }
+
   @media (max-width:1080px){
     .board{grid-template-columns:repeat(6,1fr)} .c5,.c6,.c7,.c8,.c9,.c10,.c11,.c12{grid-column:1/-1} .c3,.c4{grid-column:span 3} .c2{grid-column:span 2}
     .hero{grid-template-columns:1fr;gap:24px} .topnav{display:none}
   }
   @media (max-width:720px){
-    .shell{padding:calc(var(--top) + 14px) 14px 18px} .board{grid-template-columns:1fr} .grid3,.grid2,.roi-grid,.principles{grid-template-columns:1fr} .top-right .pill-ghost{display:none} .kpi-row{flex-direction:column;align-items:stretch}
+    .shell{margin-left:0;padding:calc(var(--top) + 16px) 14px 18px} .board{grid-template-columns:1fr} .grid3,.grid2,.roi-grid,.principles{grid-template-columns:1fr} .top-right .pill-ghost{display:none} .kpi-row{flex-direction:column;align-items:stretch}
   }
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.dot{box-shadow:none}}
 </style>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="brand"><span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 20L9 6l2.5 6L14 6l7 14"/></svg></span><b>Avi Data <span>Technologies</span></b></div>
-  <nav class="topnav" id="topnav">
-    <a href="#work" class="active">What we build</a>
-    <a href="#platform">Platform</a>
-    <a href="#clients">Clients</a>
-    <a href="#process">Process</a>
-    <a href="#contact">Contact</a>
+<button class="hamb" id="hamb" aria-label="Menu"><span></span><span></span><span></span></button>
+<div class="mobilebar"><div class="brand"><span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 20L9 6l2.5 6L14 6l7 14"/></svg></span><b>Avi Data <span>Technologies</span></b></div></div>
+<div class="scrim" id="scrim"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sb-brand" id="sbToggle" title="Toggle menu"><span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 20L9 6l2.5 6L14 6l7 14"/></svg></span><div class="sb-name"><b>Avi Data</b><small>Technologies</small></div><svg class="sb-chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+  <nav class="sb-nav" id="topnav">
+    <a href="#top"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Overview</span></a>
+    <a href="#work" class="active"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span>What we build</span></a>
+    <a href="#platform"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg><span>Platform</span></a>
+    <a href="#clients"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5"/><path d="M16 14c2.5 0 4 1.6 4 4"/></svg><span>Clients</span></a>
+    <a href="#process"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 8v8M8 6h6a4 4 0 0 1 4 4M8 18h6a4 4 0 0 0 4-4"/></svg><span>Process</span></a>
+    <a href="#contact"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M3 21h18"/><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg><span>Company</span></a>
   </nav>
-  <div class="top-right">
-    <span class="dot" title="All systems operational"></span>
-    <button class="pill pill-ghost" data-scroll="#work">See our work</button>
-    <button class="pill pill-grad" data-scroll="#contact">Book a walkthrough</button>
+  <div class="sb-foot">
+    <div class="sb-status"><span class="dot"></span> <span class="stxt">All systems operational</span></div>
+    <button class="pill pill-grad" data-scroll="#contact" style="width:100%;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span>Book a walkthrough</span></button>
   </div>
-</header>
+</aside>
 
 <main class="shell"><div class="wrap">
 
@@ -243,9 +402,6 @@
         <div class="cta-row">
           <button class="pill pill-grad" data-scroll="#work">See what we build</button>
           <button class="pill pill-ghost" data-scroll="#contact">Start a conversation</button>
-        </div>
-        <div class="trust">
-          <span><b>12+</b> source formats</span><span><b>Role-based</b> logins</span><span><b>Days</b>, not quarters</span><span><b>White-labeled</b> to you</span>
         </div>
       </div>
 
@@ -277,12 +433,14 @@
       <div class="card c4" style="display:flex;flex-direction:column;justify-content:center">
         <span class="eyebrow">Financial &amp; executive</span>
         <h3 style="font-family:var(--fd);font-size:21px;font-weight:700;letter-spacing:-.02em;margin:8px 0 10px">The whole business on one screen.</h3>
-        <p class="mut" style="font-size:14px;line-height:1.6">Revenue, margin, and orders rolled up from every location and pushed back down to each manager. Built for <b style="color:var(--text)">Meridian Retail Group</b> — 14 stores, one source of truth.</p>
+        <p class="mut" style="font-size:14px;line-height:1.65">Revenue, margin, and orders roll up from every location, region, and rep into one live picture — then push back down so each manager sees exactly their slice. Everything reconciles to the same source, so leadership and the floor stop arguing about which spreadsheet is right and start making decisions from one set of numbers.</p>
         <ul class="feat">
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Live KPIs with trend, vs. last period</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Region &amp; rep breakdowns, drillable</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Refreshes itself — no Monday spreadsheet</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Live KPIs with trend and pacing vs. last period</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Region, location, and rep breakdowns you can drill into</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Targets and rankings — who's ahead, who's behind, today</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Refreshes itself from your exports — no Monday-morning rebuild</li>
         </ul>
+        <p style="font-size:12px;color:var(--muted-2);margin:14px 0 0;border-top:1px solid var(--line-soft);padding-top:12px">Typically fed by accounting, point-of-sale, and CRM exports.</p>
       </div>
       <div class="c8"><div class="shot">
         <div class="shot-bar"><span class="d"><i></i><i></i><i></i></span><span class="badge">LIVE</span></div>
@@ -327,12 +485,14 @@
       <div class="card c4" style="display:flex;flex-direction:column;justify-content:center">
         <span class="eyebrow">Operational &amp; custom</span>
         <h3 style="font-family:var(--fd);font-size:21px;font-weight:700;letter-spacing:-.02em;margin:8px 0 10px">Run the floor, not the inbox.</h3>
-        <p class="mut" style="font-size:14px;line-height:1.6">A live collections + sales-floor app for a <b style="color:var(--text)">buy-here-pay-here auto group</b> — per-collector goals, kept-promise tracking, and a stock board, all from their daily exports.</p>
+        <p class="mut" style="font-size:14px;line-height:1.65">Sometimes a dashboard isn't enough — you need the tool your team actually works in. We build the daily app around your workflow: goals and leaderboards, promise and follow-up tracking, queues, stock and ticket boards — all driven by the same data, updated as the day goes, with every person scoped to exactly what they own.</p>
         <ul class="feat">
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Per-agent goals, badges, and streaks</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Promise-to-pay tracking &amp; alerts</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Scoped logins per branch &amp; role</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Per-person goals, streaks, and a live leaderboard</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Promise and follow-up tracking with automatic alerts</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Queues, stock, or ticket boards built to your process</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Scoped logins per branch, team, and role</li>
         </ul>
+        <p style="font-size:12px;color:var(--muted-2);margin:14px 0 0;border-top:1px solid var(--line-soft);padding-top:12px">One source of data behind both the numbers and the workflow.</p>
       </div>
     </div>
   </section>
@@ -419,46 +579,57 @@
 
   <!-- PROCESS -->
   <section id="process">
-    <div class="secthead"><span class="eyebrow">Process</span><h2>From export to live app.</h2><p>How we turn a folder of spreadsheets into software your team logs into — usually in weeks, not quarters.</p></div>
-    <div class="card c12" style="margin-bottom:14px">
-      <div class="stepper">
-        <div class="stp done"><div class="ring"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l4 4L19 6"/></svg></div><div class="lab">Discovery</div><div class="sub">your exports + goals</div></div>
-        <div class="stp done"><div class="ring"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l4 4L19 6"/></svg></div><div class="lab">Data model</div><div class="sub">clean + reconcile</div></div>
-        <div class="stp done"><div class="ring"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l4 4L19 6"/></svg></div><div class="lab">Mockup</div><div class="sub">you react, we refine</div></div>
-        <div class="stp now"><div class="ring">4</div><div class="lab">Build &amp; wire</div><div class="sub">charts + logins</div></div>
-        <div class="stp"><div class="ring">5</div><div class="lab">Launch</div><div class="sub">live + auto-refresh</div></div>
-        <div class="stp"><div class="ring">6</div><div class="lab">Iterate</div><div class="sub">as you grow</div></div>
+    <div class="secthead"><span class="eyebrow">Process</span><h2>From export to live app.</h2><p>How we turn a folder of spreadsheets into software your team logs into &mdash; usually in weeks, not quarters. Hover or tap any step.</p></div>
+    <div class="card c12 proc">
+      <div class="stepper" id="stepper"></div>
+      <div class="proc-detail anim" id="procDetail">
+        <span class="hud k1"></span><span class="hud k2"></span><span class="hud k3"></span><span class="hud k4"></span>
+        <span class="scan"></span>
+        <span class="pd-ghost" id="pdGhost">01</span>
+        <div class="pd-body">
+          <div class="pd-kicker"><span id="pdNum">STEP 01</span> <b>/ 05 &middot; <span id="pdTag">Week 1</span></b></div>
+          <h3 id="pdTitle">Discovery</h3>
+          <p id="pdDesc"></p>
+          <ul class="feat" id="pdPoints"></ul>
+        </div>
       </div>
-    </div>
-    <div class="board">
-      <div class="step c3"><span class="no">01</span><h4>Sources</h4><p>You keep working in Excel and your CRM. Nothing changes for your team.</p></div>
-      <div class="step c3"><span class="no">02</span><h4>Ingest &amp; model</h4><p>We pull exports, fix types, dedupe, and define the numbers that matter — once.</p></div>
-      <div class="step c3"><span class="no">03</span><h4>Build the app</h4><p>Custom dashboards and tools, white-labeled to your brand, on the web.</p></div>
-      <div class="step c3"><span class="no">04</span><h4>Roles &amp; launch</h4><p>Each person logs in to exactly their slice. It refreshes itself from then on.</p></div>
     </div>
   </section>
 
   <!-- CONTACT -->
   <section id="contact">
-    <div class="secthead"><span class="eyebrow">About &amp; contact</span><h2>A founder-led software studio.</h2></div>
+    <div class="secthead"><span class="eyebrow">The company</span><h2>We build the data software your company runs on.</h2><p>Avi Data Technologies turns the data your business already produces into custom dashboards, financial tooling, and internal apps &mdash; deployed securely, scaled across every team, and supported for the long run.</p></div>
+
     <div class="board">
-      <div class="card about c7">
-        <p>Avi Data Technologies builds the software, dashboards, and financial tooling behind companies that run on data. The person who scopes your data is the person who builds the app — and the one who answers when a number looks off.</p>
-        <p>We start where reporting actually lives: a folder of exports, a dozen tabs, and one analyst who knows which file is the "real" one. We turn that into something the whole team can trust, log into, and act on — no new tools to learn.</p>
-        <div class="principles">
-          <div class="pr"><h5>Built, not theorized</h5><p>Working software, not strategy decks.</p></div>
-          <div class="pr"><h5>Your data, your view</h5><p>White-labeled to your brand and roles.</p></div>
-          <div class="pr"><h5>One source of truth</h5><p>Every view computes from one clean model.</p></div>
-          <div class="pr"><h5>No rip-and-replace</h5><p>We read what you already have.</p></div>
+      <div class="card statband c12">
+        <div class="stats">
+          <div class="stat"><b data-val="50" data-suf="+">50+</b><span>custom builds shipped</span></div>
+          <div class="stat"><b data-val="7" data-suf="">7</b><span>industries served</span></div>
+          <div class="stat"><b data-val="99.9" data-dec="1" data-suf="%">99.9%</b><span>uptime across deployments</span></div>
+          <div class="stat"><b data-val="5" data-suf="M+">5M+</b><span>records processed daily</span></div>
         </div>
       </div>
-      <div class="card c5">
-        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg></span><h3>Tell us where your numbers live</h3></div>
+    </div>
+
+    <div class="board">
+      <div class="card about c7">
+        <p class="lead">We become your software team. Avi Data Technologies operates as your company&rsquo;s dedicated software and data department &mdash; designing, building, and running the production-grade dashboards and tools your business runs on, without the cost and overhead of building that team in-house.</p>
+        <p>From a single department to an entire organization, everything runs on one governed data model and integrates the systems you already have &mdash; so adoption is immediate and the numbers always reconcile.</p>
+        <div class="principles">
+          <div class="pr"><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span><div><h5>Production-grade software</h5><p>Reliable apps your teams depend on daily &mdash; not prototypes.</p></div></div>
+          <div class="pr"><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg></span><div><h5>One governed source of truth</h5><p>Every view computes from one clean, reconciled data model.</p></div></div>
+          <div class="pr"><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><div><h5>Secure &amp; role-aware</h5><p>Enterprise-style access so each team sees only what it should.</p></div></div>
+          <div class="pr"><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M4 20h16"/></svg></span><div><h5>Built on your stack</h5><p>We integrate the exports, systems, and tools you already run.</p></div></div>
+        </div>
+      </div>
+      <div class="card cta c5">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg></span><h3>Talk to our team</h3></div>
+        <p class="mut" style="font-size:13px;margin:-2px 0 14px;line-height:1.55">Tell us where your data lives and what you need to see. We&rsquo;ll get back to you within one business day.</p>
         <div class="field"><label for="f-name">Name</label><input id="f-name" type="text" placeholder="Your name"></div>
         <div class="field"><label for="f-co">Company</label><input id="f-co" type="text" placeholder="Company name"></div>
-        <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" placeholder="you@company.com"></div>
-        <div class="field"><label for="f-msg">What do you report on today?</label><textarea id="f-msg" rows="3" placeholder="e.g. weekly agent performance out of Excel, plus a CRM export nobody has time to clean…"></textarea></div>
-        <button class="pill pill-grad" id="sendBtn" style="width:100%;justify-content:center">Send to Avi Data →</button>
+        <div class="field"><label for="f-email">Work email</label><input id="f-email" type="email" placeholder="you@company.com"></div>
+        <div class="field"><label for="f-msg">What do you need to see?</label><textarea id="f-msg" rows="3" placeholder="e.g. company-wide performance pulled from Excel and our CRM, in one secure dashboard&hellip;"></textarea></div>
+        <button class="pill pill-grad" id="sendBtn" style="width:100%;justify-content:center">Request a walkthrough &rarr;</button>
         <div class="reach"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg></span><div><div class="rl">Email</div><div class="rv"><a href="mailto:hello@avidatatech.com">hello@avidatatech.com</a></div></div></div>
       </div>
     </div>
@@ -534,11 +705,19 @@
   function dual(id){var s=$(id);if(!s)return;var W=280,H=120,PB=10,PT=10,MAX=10;
     var A=[3,4,3.5,5,6,5.5,7,6.5,8,7.5,9,8.5],B=[2,2.5,3,3.5,4,5,5.5,5,6,6.5,6,7],MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],n=A.length;
     function pts(arr){return arr.map(function(v,i){return [W*(i/(n-1)),PT+(H-PT-PB)*(1-v/MAX)];});}
-    var h='<path class="ln" d="'+smooth(pts(B))+'" fill="none" stroke="#566179" stroke-width="2" stroke-dasharray="3 4"/>'+'<path class="ln" d="'+smooth(pts(A))+'" fill="none" stroke="#34D8A0" stroke-width="2.4" stroke-linecap="round"/>';
+    var PA=pts(A),PB=pts(B);
+    var h='<line class="xh" x1="0" y1="2" x2="0" y2="'+(H-2)+'" stroke="#9FB0FF" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" opacity="0"/>';
+    h+='<path class="ln" d="'+smooth(PB)+'" fill="none" stroke="#566179" stroke-width="2" stroke-dasharray="3 4"/>'+'<path class="ln" d="'+smooth(PA)+'" fill="none" stroke="#34D8A0" stroke-width="2.4" stroke-linecap="round"/>';
+    h+='<circle class="xda" r="3.4" fill="#34D8A0" stroke="#0D1322" stroke-width="1.4" opacity="0"/><circle class="xdb" r="3.4" fill="#9FB0FF" stroke="#0D1322" stroke-width="1.4" opacity="0"/>';
     for(var i=0;i<n;i++){h+='<rect class="hit" data-i="'+i+'" x="'+(W*i/n)+'" y="0" width="'+(W/n)+'" height="'+H+'" fill="transparent"/>';}
     s.innerHTML=h;
-    s.addEventListener('mousemove',function(e){var t=e.target.closest('.hit');if(!t){hideTip();return;}var i=+t.dataset.i;showTip('<b>'+MO[i]+'</b><div class="vr"><i style="background:#34D8A0"></i>this yr '+A[i]+'k</div><div class="vr"><i style="background:#566179"></i>last yr '+B[i]+'k</div>',e.clientX,e.clientY);});
-    s.addEventListener('mouseleave',hideTip);appear(s);}
+    var xh=s.querySelector('.xh'),xda=s.querySelector('.xda'),xdb=s.querySelector('.xdb');
+    s.addEventListener('mousemove',function(e){var t=e.target.closest('.hit');if(!t){hideTip();xh.setAttribute('opacity','0');xda.setAttribute('opacity','0');xdb.setAttribute('opacity','0');return;}var i=+t.dataset.i,x=PA[i][0];
+      xh.setAttribute('x1',x);xh.setAttribute('x2',x);xh.setAttribute('opacity','0.55');
+      xda.setAttribute('cx',PA[i][0]);xda.setAttribute('cy',PA[i][1]);xda.setAttribute('opacity','1');
+      xdb.setAttribute('cx',PB[i][0]);xdb.setAttribute('cy',PB[i][1]);xdb.setAttribute('opacity','1');
+      showTip('<b>'+MO[i]+'</b><div class="vr"><i style="background:#34D8A0"></i>this yr '+A[i]+'k</div><div class="vr"><i style="background:#9FB0FF"></i>last yr '+B[i]+'k</div>',e.clientX,e.clientY);});
+    s.addEventListener('mouseleave',function(){hideTip();xh.setAttribute('opacity','0');xda.setAttribute('opacity','0');xdb.setAttribute('opacity','0');});appear(s);}
 
   function thin(id){var s=$(id);if(!s)return;var W=560,H=120,V=[7,9,6,11,8,12,7,10,9,13,8,11,10,12],n=V.length,cw=W/n,bw=4,mx=14;
     var h='<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9FB0FF"/><stop offset="1" stop-color="#3f50c4"/></linearGradient></defs>';
@@ -597,7 +776,7 @@
     function calc(){var h=+rh.value,p=+rp.value;rhv.textContent=h;rpv.textContent=p;var manual=h*p*52;rm.textContent=manual.toLocaleString();tw(rs,Math.round(manual*0.85));}
     rh.addEventListener('input',calc);rp.addEventListener('input',calc);calc();})();
 
-  (function(){var ids=['work','platform','clients','process','contact'],links=document.querySelectorAll('#topnav a');function set(id){links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+id);});}
+  (function(){var ids=['top','work','platform','clients','process','contact'],links=document.querySelectorAll('#topnav a');function set(id){links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+id);});}
     if('IntersectionObserver' in window){var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)set(e.target.id);});},{rootMargin:'-45% 0px -50% 0px'});ids.forEach(function(id){var s=$(id);if(s)sp.observe(s);});}})();
 
   var sb=$('sendBtn');if(sb)sb.addEventListener('click',function(){function v(id){var e=$(id);return e?e.value.trim():'';}var co=v('f-co');var body='Name: '+v('f-name')+'\nCompany: '+co+'\nEmail: '+v('f-email')+'\n\nReports on today:\n'+v('f-msg');window.location.href='mailto:hello@avidatatech.com?subject='+encodeURIComponent('New inquiry'+(co?' \u2014 '+co:''))+'&body='+encodeURIComponent(body);});
@@ -607,6 +786,104 @@
     var rv=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');rv.unobserve(e.target);}});},{threshold:.12});
     document.querySelectorAll('.hero,.secthead,.board').forEach(function(el){el.classList.add('reveal');rv.observe(el);});
   }
+
+  if(!reduce){
+    var bg=document.createElement('div');bg.className='bgfx';bg.innerHTML='<span class="grid"></span><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span>';document.body.insertBefore(bg,document.body.firstChild);
+    document.querySelectorAll('#shotDots circle').forEach(function(c,i){ if(c.getAttribute('fill')==='#67E6BD'){ c.classList.add('tk'); c.style.animationDelay=((i%9)*0.22)+'s'; } });
+    document.querySelectorAll('#shotLolli circle').forEach(function(c){ if(c.getAttribute('fill')==='#67E6BD') c.classList.add('lp'); });
+    document.querySelectorAll('#heroCandles rect.gb').forEach(function(r,i){ if(i%3===0){ r.classList.add('tk'); r.style.animationDelay=(i*0.18)+'s'; } });
+    var k=0; document.querySelectorAll('#heat .cell').forEach(function(c){ if(+c.dataset.thr>=4 && k<8){ c.classList.add('hotcell'); c.style.animationDelay=(k*0.5)+'s'; k++; } });
+  }
+
+  (function(){
+    if(reduce) return;
+    if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+    document.body.classList.add('cz');
+    var c=document.createElement('div');c.id='cursor';c.innerHTML='<div class="ring"></div><div class="dot"></div>';document.body.appendChild(c);
+    var ring=c.querySelector('.ring'),dot=c.querySelector('.dot');
+    var rx=window.innerWidth/2,ry=window.innerHeight/2,mx=rx,my=ry;
+    window.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';});
+    (function loop(){rx+=(mx-rx)*0.2;ry+=(my-ry)*0.2;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+    var hot='a,button,input,textarea,select,.seg button,.aud-cta,.seeall,.role,.sb-brand,[data-scroll]';
+    document.addEventListener('mouseover',function(e){if(e.target.closest&&e.target.closest(hot))document.body.classList.add('curhot');});
+    document.addEventListener('mouseout',function(e){var to=e.relatedTarget;if(!(to&&to.closest&&to.closest(hot)))document.body.classList.remove('curhot');});
+    document.addEventListener('mousedown',function(){document.body.classList.add('curdown');});
+    document.addEventListener('mouseup',function(){document.body.classList.remove('curdown');});
+    document.addEventListener('mouseleave',function(){c.style.opacity='0';});
+    document.addEventListener('mouseenter',function(){c.style.opacity='1';});
+  })();
+  (function(){
+    var ST=$('stepper'); if(!ST) return;
+    var chk='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>';
+    var STEPS=[
+      {lab:'Discovery',sub:'your exports + goals',tag:'Week 1',title:'Discovery',
+       desc:"We start with what you already have — your exports, your spreadsheets, and the questions you wish you could answer in one click. Nothing changes for your team yet.",
+       pts:["Walk through your current reports & exports","Define the numbers that actually matter","Map who needs to see what"]},
+      {lab:'Mockup',sub:'we design, you refine',tag:'Week 1–2',title:'Mockup',
+       desc:"We design a clickable, branded mockup of your dashboard or tool first — so you react to something real before a single line of production code is written.",
+       pts:["A branded, interactive mockup","You point, we adjust — fast","Lock the layout before we build"]},
+      {lab:'Build & wire',sub:'charts + logins',tag:'Weeks 2–4',title:'Build & wire',
+       desc:"We build the real app: charts, tables, and tools wired to one clean data model, with role-based logins so each person sees only their slice.",
+       pts:["Custom charts & tools, white-labeled","One clean model behind every view","Role-based logins & permissions"]},
+      {lab:'Launch',sub:'live + auto-refresh',tag:'Go-live',title:'Launch',
+       desc:"Your team logs in. From then on it refreshes itself from your exports — the Monday-morning rebuild is gone for good.",
+       pts:["Live on the web, on your own domain","Automatic refresh from your data","Hands-on onboarding for your team"]},
+      {lab:'Iterate & Maintain',sub:'we know it inside out',tag:'Ongoing',title:'Iterate & Maintain',
+       desc:"Software is never really finished — dependencies shift, APIs change, edge cases surface, and the business keeps moving. We don't disappear at launch: because we built it, we know how it's wired and why every decision was made, so changes land fast and safely.",
+       pts:["We know how it's built — no ramp-up, no guesswork","Dependencies, security, and fixes kept current","New views, metrics, and logins as you grow"]}
+    ];
+    var n=STEPS.length, sel=0, auto=null, interacted=false;
+    var html='<span class="track"><span class="fill"></span><span class="packet"></span></span>';
+    STEPS.forEach(function(s,i){ html+='<div class="stp" data-i="'+i+'"><div class="ring"><span class="num">'+(i+1)+'</span></div><div class="lab">'+s.lab+'</div><div class="sub">'+s.sub+'</div></div>'; });
+    ST.innerHTML=html;
+    var fill=ST.querySelector('.fill'), detail=$('procDetail');
+    function pad(x){x=String(x);return x.length<2?'0'+x:x;}
+    function render(i){ sel=i; var stps=ST.querySelectorAll('.stp');
+      stps.forEach(function(el,j){ el.classList.toggle('active',j<=i); el.classList.toggle('sel',j===i); var num=el.querySelector('.num'); if(j<i){num.innerHTML='\u2713';} else {num.textContent=(j+1);} });
+      fill.style.width=(n>1?(i/(n-1))*100:0)+'%';
+      var s=STEPS[i];
+      $('pdNum').textContent='STEP '+pad(i+1);
+      $('pdTag').textContent=s.tag;
+      $('pdGhost').textContent=pad(i+1);
+      $('pdTitle').textContent=s.title;
+      $('pdDesc').textContent=s.desc;
+      $('pdPoints').innerHTML=s.pts.map(function(p){return '<li>'+chk+p+'</li>';}).join('');
+      detail.classList.remove('anim'); void detail.offsetWidth; detail.classList.add('anim');
+    }
+    function stopAuto(){ if(auto){clearInterval(auto);auto=null;} }
+    function go(i){ if(i===sel)return; interacted=true; stopAuto(); render(i); }
+    ST.addEventListener('mouseover',function(e){ var r=e.target.closest('.ring'); if(r){ var s=r.closest('.stp'); if(s) go(+s.dataset.i); } });
+    ST.addEventListener('click',function(e){ var s=e.target.closest('.stp'); if(s) go(+s.dataset.i); });
+    render(0);
+    if(!reduce){ onView(ST,function(){ if(!auto && !interacted){ auto=setInterval(function(){ if(interacted){stopAuto();return;} render((sel+1)%n); },3400); } }); }
+  })();
+
+
+  (function(){
+    var sb=document.querySelectorAll('#contact .stat b'); if(!sb.length) return;
+    function run(el){ var fin=el.getAttribute('data-final')||el.textContent; var m=fin.match(/^([\d.]+)(.*)$/); if(!m){ el.textContent=fin; return; } var to=parseFloat(m[1]),suf=m[2],dec=m[1].indexOf('.')>=0?1:0;
+      if(reduce||isNaN(to)){ el.textContent=fin; return; }
+      var st=null; (function step(ts){ st=st||ts; var p=Math.min(1,(ts-st)/1200); el.textContent=(to*(1-Math.pow(1-p,3))).toFixed(dec)+suf; if(p<1)requestAnimationFrame(step); else el.textContent=fin; })(); }
+    sb.forEach(function(el){ el.setAttribute('data-final',el.textContent); });
+    if('IntersectionObserver' in window && !reduce){ var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){run(e.target);io.unobserve(e.target);}});},{threshold:.4}); sb.forEach(function(el){ el.textContent=el.textContent.replace(/[\d.]+/,'0'); io.observe(el); }); } else { sb.forEach(run); }
+  })();
+
+
+  (function(){
+    var hamb=document.getElementById('hamb'), scrim=document.getElementById('scrim');
+    function close(){ document.body.classList.remove('nav-open'); }
+    if(hamb) hamb.addEventListener('click',function(){ document.body.classList.toggle('nav-open'); });
+    if(scrim) scrim.addEventListener('click',close);
+    document.querySelectorAll('#topnav a').forEach(function(a){ a.addEventListener('click',close); });
+  })();
+
+
+  (function(){
+    var t=document.getElementById('sbToggle');
+    if(t) t.addEventListener('click',function(){ document.body.classList.toggle('sb-collapsed'); });
+    document.querySelectorAll('#topnav a').forEach(function(a){ var s=a.querySelector('span'); if(s) a.setAttribute('data-tip', s.textContent); });
+  })();
+
 })();
 </script>
 </body>
