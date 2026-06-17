@@ -122,7 +122,7 @@
   .cell{aspect-ratio:1;border-radius:4px;background:#13192a;transition:background .35s,outline .12s;cursor:default}
   .cell:hover{outline:1.5px solid rgba(255,255,255,.4);outline-offset:-1px}
   .heat .axis{grid-column:2/-1;display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;color:var(--muted-2);margin-top:5px}
-  .heat-legend{font-family:var(--fm);font-size:10px;color:var(--muted-2);margin-top:9px}
+
 
   /* donut */
   .donut-wrap{position:relative;display:grid;place-items:center;margin:2px 0 12px}
@@ -359,6 +359,37 @@
     body.sb-collapsed .sb-nav a:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
   }
 
+  /* extra background variety */
+  .bgfx .beam{position:absolute;top:-30%;left:-20%;width:160%;height:60%;background:linear-gradient(115deg,transparent 38%,rgba(110,139,255,.05) 50%,transparent 62%);transform:rotate(-8deg);animation:beam 38s linear infinite;mix-blend-mode:screen}
+  @keyframes beam{0%{transform:rotate(-8deg) translateX(-25%)}100%{transform:rotate(-8deg) translateX(25%)}}
+  .bgfx .orbit{position:absolute;top:40%;left:50%;width:1px;height:1px}
+  .bgfx .orbit i{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(110,139,255,.55);box-shadow:0 0 12px rgba(110,139,255,.5);transform-origin:0 0}
+  .bgfx .orbit i.o1{animation:orb1 26s linear infinite}
+  .bgfx .orbit i.o2{background:rgba(52,216,160,.5);box-shadow:0 0 10px rgba(52,216,160,.45);animation:orb2 34s linear infinite}
+  .bgfx .orbit i.o3{background:rgba(159,176,255,.45);box-shadow:0 0 14px rgba(159,176,255,.35);animation:orb3 44s linear infinite}
+  @keyframes orb1{from{transform:rotate(0deg) translate(280px) rotate(0deg)}to{transform:rotate(360deg) translate(280px) rotate(-360deg)}}
+  @keyframes orb2{from{transform:rotate(120deg) translate(420px) rotate(-120deg)}to{transform:rotate(480deg) translate(420px) rotate(-480deg)}}
+  @keyframes orb3{from{transform:rotate(240deg) translate(560px) rotate(-240deg)}to{transform:rotate(600deg) translate(560px) rotate(-600deg)}}
+  @media (prefers-reduced-motion:reduce){.bgfx .beam,.bgfx .orbit i{animation:none}}
+
+  .seg.seg-row{flex-wrap:nowrap}
+  .seg.seg-row button{white-space:nowrap}
+  .chead .right{flex:none;margin-left:auto}
+  .radarcard{display:flex;flex-direction:column}
+  #radar .grid{stroke:#1f2a44;fill:none;stroke-width:1}
+  #radar .axis{stroke:#1a2236;stroke-width:1}
+  #radar .lbl{fill:var(--muted);font-family:var(--fm);font-size:9.5px;letter-spacing:.04em}
+  #radar .area{fill:url(#radarGrad);stroke:#9FB0FF;stroke-width:1.8;stroke-linejoin:round;opacity:.95}
+  #radar .pt{fill:#67E6BD;stroke:#0d1424;stroke-width:1.6;cursor:default;transition:r .18s,filter .18s}
+  #radar .pt.on{r:6;filter:drop-shadow(0 0 10px rgba(103,230,189,.9))}
+  #radar .axis.hot{stroke:#9FB0FF;stroke-width:1.5}
+  #radar .hit{cursor:default}
+  .radar-legend .row{padding:3px 6px;border-radius:6px;transition:background .15s,color .15s;cursor:default}
+  .radar-legend .row:hover{background:rgba(110,139,255,.12);color:var(--text)}
+  .radar-legend{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;margin-top:6px;font-family:var(--fm);font-size:10.5px;color:var(--muted)}
+  .radar-legend .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .radar-legend .row span{color:var(--mint)}
+
   @media (max-width:1080px){
     .board{grid-template-columns:repeat(6,1fr)} .c5,.c6,.c7,.c8,.c9,.c10,.c11,.c12{grid-column:1/-1} .c3,.c4{grid-column:span 3} .c2{grid-column:span 2}
     .hero{grid-template-columns:1fr;gap:24px} .topnav{display:none}
@@ -519,20 +550,19 @@
     </div>
     <div class="board">
       <div class="card c4">
-        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>When the work happens</h3><div class="right"><div class="seg" id="heatSeg"><button data-m="thr" class="on">Throughput</button><button data-m="exc">Exceptions</button></div></div></div>
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>When the work happens</h3><div class="right"><div class="seg seg-row" id="heatSeg"><button data-m="thr" class="on">Volume</button><button data-m="exc">Issues</button></div></div></div>
         <div class="heat" id="heat"></div>
         <div class="heat"><div class="hl"></div><div class="axis"><span>8a</span><span>11a</span><span>2p</span><span>5p</span><span>8p</span></div></div>
-        <div class="heat-legend" id="heatLegend">Busier hours run brighter — hover any cell</div>
       </div>
       <div class="card c4">
         <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg></span><h3>Source mix</h3></div>
         <div class="donut-wrap"><svg class="donut" id="donut" viewBox="0 0 120 120"></svg><div class="donut-center" id="donutCenter"><b>12+</b><small>formats</small></div></div>
         <div class="dleg" id="donutLegend"></div>
       </div>
-      <div class="card c4">
-        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16M7 4v8l-3 8h16l-3-8V4"/></svg></span><h3>We read your stack</h3></div>
-        <p class="mut" style="font-size:13px;margin:0 0 13px;line-height:1.55">If you can export it, we can read it. No migration, no new tools for your team.</p>
-        <div class="chips"><span class="chip"><i></i>Excel</span><span class="chip"><i></i>CSV</span><span class="chip"><i></i>Sheets</span><span class="chip"><i></i>Salesforce</span><span class="chip"><i></i>HubSpot</span><span class="chip"><i></i>QuickBooks</span><span class="chip"><i></i>DB dumps</span></div>
+      <div class="card c4 radarcard">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 3v18M3 12h18"/></svg></span><h3>Capability profile</h3></div>
+        <svg class="chart" id="radar" viewBox="0 0 300 240" height="240" style="display:block;margin:-2px auto 0"></svg>
+        <div class="radar-legend" id="radarLegend"></div>
       </div>
     </div>
     <div class="board">
@@ -635,7 +665,7 @@
     </div>
   </section>
 
-  <footer class="foot"><span>© 2026 Avi Data Technologies</span><span class="sep">·</span><span>Software &amp; dashboards for companies with data</span><span class="sep">·</span><span>Greenville, SC</span><span style="margin-left:auto" class="sep">data in · decisions out</span></footer>
+  <footer class="foot"><span>© 2026 Avi Data Technologies</span></footer>
 
 </div></main>
 
@@ -760,7 +790,7 @@
 
   (function(){var heat=$('heat');if(!heat)return;var mode='thr',sc={thr:['#13192a','#16324a','#1c5e74','#23a08f','#34D8A0'],exc:['#1a1322','#3a2230','#5e2a47','#9a3563','#F2607D']},D=['Mon','Tue','Wed','Thu','Fri','Sat'];
     function hr(c){var h=8+c;return (h>12?h-12:h)+(h>=12?'p':'a');}
-    function paint(){heat.querySelectorAll('.cell').forEach(function(c){c.style.background=sc[mode][mode==='thr'?+c.dataset.thr:+c.dataset.exc];});var lg=$('heatLegend');if(lg)lg.textContent=mode==='thr'?'Busier hours run brighter \u2014 hover any cell':'Flagged exceptions in red \u2014 hover any cell';}
+    function paint(){heat.querySelectorAll('.cell').forEach(function(c){c.style.background=sc[mode][mode==='thr'?+c.dataset.thr:+c.dataset.exc];});}
     for(var r=0;r<6;r++){var lab=document.createElement('div');lab.className='hl';lab.textContent=D[r];heat.appendChild(lab);for(var c=0;c<12;c++){var cell=document.createElement('div');cell.className='cell';var bias=Math.max(0,1-Math.abs(c-6)/7)*Math.max(0,1-Math.abs(r-2)/4);var thr=Math.min(4,Math.round(bias*4+Math.random()*1.2)),exc=(Math.random()<0.1+bias*0.14)?Math.min(4,1+Math.round(Math.random()*3)):0;cell.dataset.thr=thr;cell.dataset.exc=exc;cell.dataset.thrv=18+thr*21+(c%3)*4;cell.dataset.day=D[r];cell.dataset.hour=hr(c);heat.appendChild(cell);}}
     paint();heat.addEventListener('mousemove',function(e){var c=e.target.closest('.cell');if(!c){hideTip();return;}showTip(c.dataset.day+' '+c.dataset.hour+' \u00b7 '+(mode==='thr'?c.dataset.thrv+' events':(+c.dataset.exc>0?c.dataset.exc+' flagged':'all clear')),e.clientX,e.clientY);});heat.addEventListener('mouseleave',hideTip);
     var hs=$('heatSeg');if(hs)hs.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;mode=b.dataset.m;hs.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x===b);});paint();});})();
@@ -788,7 +818,7 @@
   }
 
   if(!reduce){
-    var bg=document.createElement('div');bg.className='bgfx';bg.innerHTML='<span class="grid"></span><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span>';document.body.insertBefore(bg,document.body.firstChild);
+    var bg=document.createElement('div');bg.className='bgfx';bg.innerHTML='<span class="grid"></span><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span><span class="beam"></span><span class="orbit"><i class="o1"></i><i class="o2"></i><i class="o3"></i></span>';document.body.insertBefore(bg,document.body.firstChild);
     document.querySelectorAll('#shotDots circle').forEach(function(c,i){ if(c.getAttribute('fill')==='#67E6BD'){ c.classList.add('tk'); c.style.animationDelay=((i%9)*0.22)+'s'; } });
     document.querySelectorAll('#shotLolli circle').forEach(function(c){ if(c.getAttribute('fill')==='#67E6BD') c.classList.add('lp'); });
     document.querySelectorAll('#heroCandles rect.gb').forEach(function(r,i){ if(i%3===0){ r.classList.add('tk'); r.style.animationDelay=(i*0.18)+'s'; } });
@@ -882,6 +912,32 @@
     var t=document.getElementById('sbToggle');
     if(t) t.addEventListener('click',function(){ document.body.classList.toggle('sb-collapsed'); });
     document.querySelectorAll('#topnav a').forEach(function(a){ var s=a.querySelector('span'); if(s) a.setAttribute('data-tip', s.textContent); });
+  })();
+
+
+  (function(){
+    var s=document.getElementById('radar'); if(!s) return;
+    var AX=[['Real-time refresh',9.4],['Custom charts',9.7],['Role-based',9.5],['Data ingestion',9.3],['Mobile-ready',8.8],['White-label',9.6]];
+    var cx=130,cy=120,R=64,n=AX.length;
+    function pt(i,r){var a=(-Math.PI/2)+(i*2*Math.PI/n);return [cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+    var h='<defs><linearGradient id="radarGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(110,139,255,.55)"/><stop offset="1" stop-color="rgba(52,216,160,.35)"/></linearGradient></defs>';
+    for(var g=4;g>=1;g--){var p=[];for(var i=0;i<n;i++){p.push(pt(i,R*g/4).map(function(v){return v.toFixed(1);}).join(','));}h+='<polygon class="grid" points="'+p.join(' ')+'"/>';}
+    for(var i=0;i<n;i++){var e=pt(i,R);h+='<line class="axis" x1="'+cx+'" y1="'+cy+'" x2="'+e[0].toFixed(1)+'" y2="'+e[1].toFixed(1)+'"/>';
+      var lp=pt(i,R+26),ta=(lp[0]<cx-2)?'end':(lp[0]>cx+2?'start':'middle'),dy=(lp[1]<cy-2)?-2:(lp[1]>cy+2?10:4);
+      h+='<text class="lbl" x="'+lp[0].toFixed(1)+'" y="'+(lp[1]+dy).toFixed(1)+'" text-anchor="'+ta+'">'+AX[i][0]+'</text>';}
+    var poly=AX.map(function(a,i){return pt(i,R*a[1]/10).map(function(v){return v.toFixed(1);}).join(',');}).join(' ');
+    h+='<polygon class="area" points="'+poly+'" style="transform-origin:'+cx+'px '+cy+'px;transform:scale(.001);transition:transform 1s cubic-bezier(.2,.7,.2,1)"/>';
+    AX.forEach(function(a,i){var p=pt(i,R*a[1]/10);h+='<circle class="pt" data-i="'+i+'" data-n="'+a[0]+'" data-v="'+a[1]+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.6" opacity="0" style="transition:opacity .5s ease '+(0.7+i*0.07)+'s"/>';});
+    AX.forEach(function(a,i){var p=pt(i,R*a[1]/10);h+='<circle class="hit" data-i="'+i+'" data-n="'+a[0]+'" data-v="'+a[1]+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="22" fill="transparent"/>';});
+    s.innerHTML=h;
+    function play(){var ar=s.querySelector('.area');if(ar)ar.style.transform='scale(1)';s.querySelectorAll('.pt').forEach(function(c){c.setAttribute('opacity','1');});}
+    if(!reduce && 'IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){play();io.disconnect();}});},{threshold:.3});io.observe(s);} else {play();}
+    function highlight(i){s.querySelectorAll('.pt').forEach(function(c){c.classList.toggle('on',+c.dataset.i===i);});s.querySelectorAll('.axis').forEach(function(l,j){l.classList.toggle('hot',j===i);});}
+    s.addEventListener('mousemove',function(e){var c=e.target.closest('.hit, .pt');if(!c){hideTip();highlight(-1);return;}highlight(+c.dataset.i);showTip('<b>'+c.dataset.n+'</b><div class="vr"><i style="background:#67E6BD"></i>'+c.dataset.v+' / 10</div>',e.clientX,e.clientY);});
+    s.addEventListener('mouseleave',function(){hideTip();highlight(-1);});
+    var lg=document.getElementById('radarLegend');if(lg){lg.innerHTML=AX.map(function(a,i){return '<div class="row" data-i="'+i+'">'+a[0]+'<span>'+a[1].toFixed(1)+'</span></div>';}).join('');
+      lg.addEventListener('mousemove',function(e){var r=e.target.closest('.row');if(!r){highlight(-1);return;}highlight(+r.dataset.i);});
+      lg.addEventListener('mouseleave',function(){highlight(-1);});}
   })();
 
 })();
