@@ -738,7 +738,6 @@
       <input id="demoPass" type="password" autocomplete="off" placeholder="••••••••" />
       <div class="gerr" id="demoErr"></div>
       <button class="pill pill-grad" id="demoEnter" style="width:100%;justify-content:center;margin-top:14px">Enter &rarr;</button>
-      <div class="gnote"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg><span>This is a soft gate for scheduled demos. Each product still requires its own secure login.</span></div>
     </div>
 
     <!-- product launcher -->
@@ -1094,8 +1093,7 @@
         + '<h4>'+p.name+'</h4>'
         + '<p class="pd">'+p.desc+'</p>'
         + '<div class="pacts">'
-        +   '<button class="pill pill-grad" data-act="open" data-url="'+escAttr(p.url)+'" data-name="'+escAttr(p.name)+'">Launch &nearr;</button>'
-        +   '<button class="pill pill-ghost" data-act="embed" data-url="'+escAttr(p.url)+'" data-name="'+escAttr(p.name)+'">Preview here</button>'
+        +   '<button class="pill pill-grad" data-act="open" data-url="'+escAttr(p.url)+'" data-name="'+escAttr(p.name)+'">Open &nearr;</button>'
         + '</div></div>';
     }).join('');
   }
@@ -1104,8 +1102,7 @@
   /* ---- overlay open / close ---- */
   function openOverlay(){
     ov.classList.add('open'); ov.setAttribute('aria-hidden','false');
-    if(unlocked){ showLauncher(); }
-    else { gate.style.display=''; launcher.style.display='none'; err.textContent=''; pass.value=''; setTimeout(function(){pass.focus();},60); }
+    unlocked = true; showLauncher();
   }
   function closeOverlay(){ ov.classList.remove('open'); ov.setAttribute('aria-hidden','true'); }
   function showLauncher(){ gate.style.display='none'; launcher.style.display=''; }
