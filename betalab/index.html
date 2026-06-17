@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/betalab/assets/favicon-DnJDj-gX.svg" />
+    <title>Family Auto · BetaLab</title>
+    <!--
+      Webfont loading.
+
+      The app uses 'Poppins' for display/body and Arial (system font) for
+      these were never being loaded — every render was falling through
+      to the OS default sans / monospace (Courier on macOS, Consolas on
+      Windows, DejaVu Sans Mono on Linux). The OS monospace fonts don't
+      ship a slashed-zero glyph, so `font-variant-numeric: slashed-zero`
+      in the Collections table was correct CSS that had no font feature
+      to activate — 0 and 8 looked nearly identical.
+
+      Google Fonts preconnect + display=swap so we don't block first
+      paint waiting for the webfont download; the OS fallback renders
+      immediately and is replaced with the proper face once loaded.
+      data/numeric columns; Poppins weights 400/600/700/800
+      cover body/display weights used across the app.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      html, body, #root { margin: 0; padding: 0; min-height: 100vh; }
+      body {
+        background: #F8F6F0;
+        -webkit-font-smoothing: antialiased;
+        /* Belt-and-suspenders: slashed-zero + tabular-nums applied at the
+           body level so EVERY digit in the app — not just the cells where
+           cellMono is explicitly used — picks up the disambiguated zero
+           glyph. Browsers that don't understand these features ignore
+           them gracefully. */
+        font-variant-numeric: slashed-zero;
+        font-feature-settings: "zero" 1;
+      }
+
+      /* ─── B&W-friendly print mode ────────────────────────────────────────
+         Triggered by:
+           • Cmd+P / Ctrl+P (browser native — prints whatever's visible)
+           • A "Print" button on a printable table (sets body.print-isolate
+             and adds .print-target on the table's container)
+
+         Strategy:
+           1. Force all colors to black, all backgrounds to white. Joseph's
+              office printer is B&W; colored cells render as grey blobs that
+              wash out the text. Crisp black-on-white reads on any printer.
+           2. Replace status pills (background-color = identity) with bordered
+              outlines so the categories are still visually distinct.
+           3. Repeat thead on every printed page (long tables).
+           4. Avoid splitting a row across pages.
+           5. When a section is being print-isolated, hide everything else.
+         ─────────────────────────────────────────────────────────────────── */
+      @media print {
+        /* Page setup — landscape by default. Most TFAG tables (inventory
+           drilldown, past-due accounts, repo details) have enough columns
+           that portrait can't fit them; the user can override to portrait
+           in the print dialog if they want. Thin margins maximize usable
+           width before the page edges. */
+        @page {
+          margin: 0.35in;
+          size: landscape;
+        }
+
+        /* Strip the cream app background */
+        html, body, #root { background: #fff !important; }
+
+        /* Force B&W on every element. Backgrounds disappear, colors flatten
+           to black. !important is necessary to override inline styles, which
+           this codebase uses heavily. */
+        body, body * {
+          color: #000 !important;
+          background-color: transparent !important;
+          background-image: none !important;
+          background: transparent !important;
+          box-shadow: none !important;
+          text-shadow: none !important;
+        }
+
+        /* Bring tables back to clear black borders */
+        .printable, .printable * {
+          color: #000 !important;
+        }
+        /* Outer printable container — fit to page width, no horizontal
+           overflow. The container can't be wider than the page itself. */
+        .printable {
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow: hidden !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        /* Same height-cap release as the print-isolate rule, for the
+           whole-page print path: any inner scroll panel inside a .printable
+           must expand to its full content height so nothing is clipped. */
+        .printable * {
+          max-height: none !important;
+        }
+        .printable table {
+          border-collapse: collapse !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          border: 1px solid #000 !important;
+          /* table-layout: auto lets the browser size each column to its
+             content instead of dividing page width evenly. That avoids
+             the "column header stacked one letter per row" disaster when
+             a table has many columns. Cells with long content still wrap
+             via word-break below; cells with short content stay narrow.
+             Result: a layout that mirrors Excel's default behavior. */
+          table-layout: auto !important;
+          /* Slightly smaller font for print so more fits per page without
+             aggressive cell wrapping. Body remains readable. */
+          font-size: 8.5pt !important;
+        }
+        .printable th, .printable td {
+          border: 1px solid #000 !important;
+          padding: 3px 5px !important;
+          background: #fff !important;
+          /* Excel-style: wrap long content into the cell instead of
+             truncating with ellipsis — printers can't expand columns
+             to show the rest, so the data has to fit. */
+          white-space: normal !important;
+          overflow: visible !important;
+          text-overflow: clip !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+          font-size: 8.5pt !important;
+          line-height: 1.25 !important;
+          vertical-align: top !important;
+          /* Print color forcing — Chrome/Edge honor this even with B&W. */
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .printable thead {
+          display: table-header-group !important;  /* repeat on page breaks */
+        }
+        .printable thead th {
+          background: #f0f0f0 !important;
+          border-bottom: 2px solid #000 !important;
+          font-weight: 700 !important;
+          color: #000 !important;
+          font-size: 8pt !important;
+          /* Headers stay on one line so the column label is readable. With
+             auto table-layout the browser widens the column to fit the
+             header text — which is what we want. If the header would push
+             a wide-content column too far, the user can rotate to portrait
+             or zoom out in the dialog. */
+          white-space: nowrap !important;
+          word-break: keep-all !important;
+        }
+        .printable tfoot { display: table-footer-group !important; }
+        .printable tr { page-break-inside: avoid; }
+        /* Sticky positioning in the live UI ruins print layout — reset
+           every common sticky pattern when in printable mode. */
+        .printable [style*="sticky"], .printable [style*="fixed"] {
+          position: static !important;
+        }
+
+        /* Status pills — use bordered outline since background color
+           won't print in B&W. We tag pills with data-print-pill. */
+        [data-print-pill] {
+          display: inline-block !important;
+          border: 1px solid #000 !important;
+          padding: 1px 6px !important;
+          border-radius: 2px !important;
+          font-weight: 700 !important;
+          background: #fff !important;
+        }
+
+        /* "Off-target" rows / cells that should print but in grey to
+           differentiate (e.g., already-resolved aged units) */
+        [data-print-muted] { color: #555 !important; font-style: italic !important; }
+
+        /* Anything tagged "no-print" disappears in print mode.
+           Use this for: print buttons, filter toolbars, hover affordances,
+           modal close buttons, etc. */
+        .no-print, .no-print * { display: none !important; }
+
+        /* PRINT-ISOLATE mode — set when a Print button is clicked.
+           Hides everything in the body except the .print-target subtree.
+           We hide via visibility (not display) so layout doesn't reflow
+           weirdly during the brief moment between body.print-isolate and
+           window.print(). */
+        body.print-isolate > * { display: none !important; }
+        body.print-isolate .print-target,
+        body.print-isolate .print-target * {
+          visibility: visible !important;
+        }
+        body.print-isolate .print-target {
+          display: block !important;
+          position: static !important;
+          width: 100% !important;
+          max-height: none !important;
+          overflow: visible !important;
+        }
+        /* Inner scroll panels: in the live UI cards cap their list with
+           `max-height` + `overflow:auto` so they stay compact. Those panels
+           are DESCENDANTS of the print-target, not the target itself, so the
+           rule above doesn't reach them — and the printout would capture only
+           the on-screen slice, clipping the rest of the table off the page.
+           Release every descendant's height cap + scroll when printing. */
+        body.print-isolate .print-target * {
+          max-height: none !important;
+          overflow: visible !important;
+        }
+        /* When print-isolating, make any ancestor of .print-target visible
+           by traversing back up. We do this via a temporary class that the
+           print button JS adds to ancestors (.print-ancestor). */
+        body.print-isolate .print-ancestor {
+          display: block !important;
+          visibility: visible !important;
+          position: static !important;
+          background: #fff !important;
+          max-height: none !important;
+          overflow: visible !important;
+        }
+        body.print-isolate .print-ancestor > *:not(.print-ancestor):not(.print-target) {
+          display: none !important;
+        }
+
+        /* Modals: when a modal contains the print-target, suppress its
+           backdrop dim/blur so the printout is clean white. */
+        body.print-isolate [role="dialog"],
+        body.print-isolate .modal-backdrop {
+          background: #fff !important;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/betalab/assets/index-CUqOSp3d.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
