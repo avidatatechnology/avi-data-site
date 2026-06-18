@@ -121,6 +121,11 @@
   .cell{aspect-ratio:1;border-radius:4px;background:#13192a;transition:background .35s,outline .12s;cursor:default}
   .cell:hover{outline:1.5px solid rgba(255,255,255,.4);outline-offset:-1px}
   .heat .axis{grid-column:2/-1;display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;color:var(--muted-2);margin-top:5px}
+  /* heatmap fills its card so no dead space below the grid */
+  .heatcard{display:flex;flex-direction:column}
+  .heatcard #heat{flex:1 1 auto;grid-auto-rows:1fr;align-content:stretch}
+  .heatcard #heat .cell{aspect-ratio:auto;height:auto;min-height:14px}
+  .heatcard #heat .hl{align-items:center}
 
 
   /* donut */
@@ -148,6 +153,52 @@
   .roi-big span{font-family:var(--fd);font-size:38px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent} .roi-big small{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:3px}
   .roi-split{height:9px;border-radius:5px;background:#1c2740;overflow:hidden;margin-top:16px} .roi-split i{display:block;height:100%;width:85%;background:linear-gradient(90deg,var(--brand),var(--mint));border-radius:5px}
   .roi-note{font-size:11px;color:var(--muted-2);margin:12px 0 0;line-height:1.5} .roi-note span{color:var(--text);font-family:var(--fm)}
+
+  /* before / after toggle */
+  .baCard .chead .right{display:flex;align-items:center}
+  .ba-switch{position:relative;display:inline-flex;background:#0d1424;border:1px solid var(--line-soft);border-radius:11px;padding:3px}
+  .ba-switch button{position:relative;z-index:2;font-family:var(--fm);font-size:11px;letter-spacing:.03em;color:var(--muted);background:none;border:none;padding:7px 15px;border-radius:8px;cursor:pointer;transition:color .3s}
+  .ba-switch button.on{color:#0a0e1a;font-weight:700}
+  .ba-thumb{position:absolute;top:3px;left:3px;height:calc(100% - 6px);border-radius:8px;background:linear-gradient(120deg,var(--brand),var(--mint));transition:left .42s cubic-bezier(.16,1,.3,1),width .42s cubic-bezier(.16,1,.3,1);z-index:1;box-shadow:0 6px 18px -8px rgba(110,139,255,.75)}
+  .ba-stage{position:relative;margin-top:16px;min-height:340px;border-radius:14px;overflow:hidden;border:1px solid var(--line-soft);background:radial-gradient(420px 240px at 80% -10%,rgba(110,139,255,.06),transparent 60%),var(--panel-2)}
+  .ba-panel{position:absolute;inset:0;padding:18px;opacity:0;transform:scale(.985);transition:opacity .5s ease,transform .55s cubic-bezier(.16,1,.3,1);pointer-events:none;overflow:auto}
+  .ba-panel.show{opacity:1;transform:none;pointer-events:auto}
+  /* BEFORE: messy spreadsheet */
+  .ss-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+  .ss-tab{font-family:var(--fm);background:#141a2b;border:1px solid var(--line);border-radius:7px 7px 0 0;padding:5px 10px;color:var(--muted-2);font-size:10px;white-space:nowrap}
+  .ss-tab.act{background:#1a2236;color:var(--muted)}
+  .ss-tab.warn{color:var(--rose);border-color:rgba(242,96,125,.4)}
+  .ss-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+  .ss-grid .c{font-family:var(--fm);background:#0f1626;border:1px solid #16203a;border-radius:4px;padding:6px 7px;color:#9aa6c2;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ss-grid .c.h{background:#0c1322;color:var(--muted-2);font-size:9px;letter-spacing:.03em}
+  .ss-grid .c.err{color:var(--rose);background:rgba(242,96,125,.09);border-color:rgba(242,96,125,.35)}
+  .ss-grid .c.man{background:rgba(242,180,92,.12);border-color:rgba(242,180,92,.42);color:var(--gold)}
+  .ss-note{position:absolute;right:20px;top:60px;background:#f4dd72;color:#3a2e05;font-family:var(--fb);font-size:11px;font-weight:600;padding:10px 12px;border-radius:3px;max-width:158px;transform:rotate(2.6deg);box-shadow:0 14px 30px -12px rgba(0,0,0,.75);line-height:1.4}
+  .ss-warn{display:flex;align-items:center;gap:8px;margin-top:11px;color:var(--rose);font-family:var(--fm);font-size:10.5px}
+  /* AFTER: clean software */
+  .sw{display:flex;flex-direction:column;gap:12px}
+  .sw-head{display:flex;align-items:center;gap:12px}
+  .sw-title{font-family:var(--fd);font-weight:700;font-size:15px}
+  .sw-live{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mint);margin-left:auto}
+  .sw-live i{width:7px;height:7px;border-radius:50%;background:var(--mint);animation:livep 2.2s infinite}
+  .sw-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .sw-kpi{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:12px}
+  .sw-kpi .l{font-family:var(--fm);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2)}
+  .sw-kpi .v{font-family:var(--fd);font-size:21px;font-weight:800;letter-spacing:-.02em;margin-top:3px}
+  .sw-kpi .d{font-family:var(--fm);font-size:10px;color:var(--mint);margin-top:2px}
+  .sw-rows{display:flex;flex-direction:column;gap:6px}
+  .sw-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--muted)}
+  .sw-row .dot{width:7px;height:7px;border-radius:50%;background:var(--mint);flex:none}
+  .sw-row b{color:var(--text);font-weight:600}
+  .sw-row .pct{margin-left:auto;font-family:var(--fm);font-size:11px;color:var(--text)}
+  .sw-feed-label{margin-bottom:1px}
+  .sw-row .fi{width:24px;height:24px;border-radius:7px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;flex:none;color:var(--mint)}
+  .sw-row .fi.warn{color:var(--gold)}
+  .sw-row .ts{margin-left:auto;font-family:var(--fm);font-size:10px;color:var(--muted-2);white-space:nowrap}
+  .ba-cap{font-size:12.5px;color:var(--muted);margin:13px 0 0;line-height:1.55;min-height:18px;transition:opacity .3s}
+  .ba-cap b{color:var(--text);font-weight:600}
+  @media (max-width:560px){.ba-stage{min-height:430px}.ss-grid{grid-template-columns:repeat(4,1fr)}.ss-note{display:none}.sw-kpis{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){.ba-panel,.ba-thumb,.ba-cap{transition:none}.sw-live i{animation:none}}
 
   /* clients */
   .aud{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:18px;transition:.18s} .aud:hover{border-color:var(--line);transform:translateY(-2px)}
@@ -454,6 +505,19 @@
     .prod .pd{min-height:0}
     .frame-bar .fb-url{display:none}
   }
+
+  /* ---- "Talk to our team" expand-to-screen ---- */
+  .consult-backdrop{position:fixed;inset:0;z-index:190;background:rgba(6,9,18,.80);backdrop-filter:blur(11px);opacity:0;transition:opacity .45s ease;pointer-events:none}
+  .consult-backdrop.show{opacity:1;pointer-events:auto}
+  .consult-zoom{position:fixed;z-index:195;margin:0;transform:none!important;
+    box-shadow:0 50px 150px -40px rgba(0,0,0,.92),0 0 0 1px rgba(110,139,255,.20);
+    transition:top .55s cubic-bezier(.16,1,.3,1),left .55s cubic-bezier(.16,1,.3,1),width .55s cubic-bezier(.16,1,.3,1),height .55s cubic-bezier(.16,1,.3,1);
+    will-change:top,left,width,height}
+  .consult-zoom.zoomed{overflow:auto}
+  .consult-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;cursor:pointer;z-index:6;transition:opacity .35s ease,color .16s,border-color .16s;opacity:0}
+  .consult-close.show{opacity:1}
+  .consult-close:hover{color:var(--text);border-color:var(--brand)}
+  @media (prefers-reduced-motion:reduce){.consult-zoom,.consult-backdrop,.consult-close{transition:none}}
 </style>
 </head>
 <body>
@@ -579,7 +643,6 @@
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Queues, stock, or ticket boards built to your process</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Scoped logins per branch, team, and role</li>
         </ul>
-        <p style="font-size:12px;color:var(--muted-2);margin:14px 0 0;border-top:1px solid var(--line-soft);padding-top:12px">One source of data behind both the numbers and the workflow.</p>
       </div>
     </div>
   </section>
@@ -605,7 +668,7 @@
       </div>
     </div>
     <div class="board">
-      <div class="card c4">
+      <div class="card c4 heatcard">
         <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>When the work happens</h3><div class="right"><div class="seg seg-row" id="heatSeg"><button data-m="thr" class="on">Volume</button><button data-m="exc">Issues</button></div></div></div>
         <div class="heat" id="heat"></div>
         <div class="heat"><div class="hl"></div><div class="axis"><span>8a</span><span>11a</span><span>2p</span><span>5p</span><span>8p</span></div></div>
@@ -617,8 +680,51 @@
       </div>
       <div class="card c4 radarcard">
         <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 3v18M3 12h18"/></svg></span><h3>Capability profile</h3></div>
-        <svg class="chart" id="radar" viewBox="0 0 300 240" height="240" style="display:block;margin:-2px auto 0"></svg>
+        <svg class="chart" id="radar" viewBox="0 0 320 240" height="240" style="display:block;margin:-2px auto 0"></svg>
         <div class="radar-legend" id="radarLegend"></div>
+      </div>
+    </div>
+    <div class="board">
+      <div class="card c12 baCard">
+        <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4M3 8h13M17 20l4-4-4-4M21 16H8"/></svg></span><h3>Before and after</h3><div class="right"><div class="ba-switch" id="baSwitch" role="tablist"><span class="ba-thumb"></span><button data-s="before" class="on" role="tab">Before</button><button data-s="after" role="tab">After</button></div></div></div>
+        <div class="ba-stage" id="baStage">
+          <!-- BEFORE: messy spreadsheets -->
+          <div class="ba-panel ba-before show" data-s="before">
+            <div class="ss-tabs"><span class="ss-tab act">Sheet1</span><span class="ss-tab">Final_v2</span><span class="ss-tab">Final_v3_USE_THIS</span><span class="ss-tab">Copy of Copy</span><span class="ss-tab warn">⚠ conflict</span></div>
+            <div class="ss-grid">
+              <div class="c h">Branch</div><div class="c h">Sold</div><div class="c h">Collected</div><div class="c h">Past due</div><div class="c h">On-time%</div><div class="c h">Notes</div>
+              <div class="c">North</div><div class="c">$84,210</div><div class="c">$71,900</div><div class="c man">$12,310?</div><div class="c err">#REF!</div><div class="c">ck w/ Dave</div>
+              <div class="c">Lakeside</div><div class="c">$66,540</div><div class="c err">#N/A</div><div class="c">$9,120</div><div class="c">81%</div><div class="c man">manual</div>
+              <div class="c">Westgate</div><div class="c man">$52,000</div><div class="c">$48,300</div><div class="c">$6,400</div><div class="c err">#DIV/0!</div><div class="c">old?</div>
+              <div class="c">Summit</div><div class="c">$73,880</div><div class="c">$60,110</div><div class="c">$13,770</div><div class="c">76%</div><div class="c">paste-in</div>
+              <div class="c err">TOTAL</div><div class="c err">=SUM(??)</div><div class="c">$180,310</div><div class="c err">mismatch</div><div class="c">—</div><div class="c">v3 only</div>
+            </div>
+            <div class="ss-warn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>4 versions in the folder · last edited 6 days ago · totals don't tie</div>
+          </div>
+          <!-- AFTER: streamlined software -->
+          <div class="ba-panel ba-after" data-s="after">
+            <div class="sw">
+              <div class="sw-head"><span class="sw-title">Operations · Daily</span></div>
+              <div class="sw-kpis">
+                <div class="sw-kpi"><div class="l">Collected today</div><div class="v">$188,410</div><div class="d">▲ 6.2% vs avg</div></div>
+                <div class="sw-kpi"><div class="l">On-time rate</div><div class="v">92.4%</div><div class="d">▲ 3.1 pts</div></div>
+                <div class="sw-kpi"><div class="l">Past due</div><div class="v">$41,600</div><div class="d">▼ 8.7%</div></div>
+              </div>
+              <svg viewBox="0 0 560 90" height="74" preserveAspectRatio="none" style="width:100%;display:block">
+                <defs><linearGradient id="baSpark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(52,216,160,.34)"/><stop offset="1" stop-color="rgba(52,216,160,0)"/></linearGradient></defs>
+                <path d="M0 70 L62 60 L124 64 L186 48 L248 52 L310 36 L372 40 L434 24 L496 30 L560 16 L560 90 L0 90 Z" fill="url(#baSpark)"/>
+                <path d="M0 70 L62 60 L124 64 L186 48 L248 52 L310 36 L372 40 L434 24 L496 30 L560 16" fill="none" stroke="#34D8A0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+              </svg>
+              <div class="sw-rows">
+                <div class="sw-feed-label"><span class="sw-live"><i></i>Auto-logged today</span></div>
+                <div class="sw-row"><span class="fi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg></span><b>Payment posted</b> &mdash; $1,240<span class="ts">2m ago</span></div>
+                <div class="sw-row"><span class="fi warn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4l9 3v10M4 21h12"/></svg></span><b>Account flagged</b> &mdash; 31 days past due<span class="ts">14m ago</span></div>
+                <div class="sw-row"><span class="fi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9 6 9-6M3 8v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8M3 8l9-5 9 5"/></svg></span><b>Reconciled to bank feed</b> &mdash; 0 mismatches<span class="ts">1h ago</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="ba-cap" id="baCap"></p>
       </div>
     </div>
     <div class="board">
@@ -700,7 +806,6 @@
     <div class="board">
       <div class="card about c7">
         <p class="lead">We become your software team. Avi Data Technologies operates as your company&rsquo;s dedicated software and data department &mdash; designing, building, and running the production-grade dashboards and tools your business runs on, without the cost and overhead of building that team in-house.</p>
-        <p>From a single department to an entire organization, everything runs on one governed data model and integrates the systems you already have &mdash; so adoption is immediate and the numbers always reconcile.</p>
         <div class="principles">
           <div class="pr"><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span><div><h5>Production-grade software</h5><p>Reliable apps your teams depend on daily &mdash; not prototypes.</p></div></div>
           <div class="pr"><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg></span><div><h5>One governed source of truth</h5><p>Every view computes from one clean, reconciled data model.</p></div></div>
@@ -708,7 +813,7 @@
           <div class="pr"><span class="pi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M4 20h16"/></svg></span><div><h5>Built on your stack</h5><p>We integrate the exports, systems, and tools you already run.</p></div></div>
         </div>
       </div>
-      <div class="card cta c5">
+      <div class="card cta c5" id="talkCard">
         <div class="chead"><span class="pi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg></span><h3>Talk to our team</h3></div>
         <p class="mut" style="font-size:13px;margin:-2px 0 14px;line-height:1.55">Tell us where your data lives and what you need to see. We&rsquo;ll get back to you within one business day.</p>
         <div class="field"><label for="f-name">Name</label><input id="f-name" type="text" placeholder="Your name"></div>
@@ -716,7 +821,7 @@
         <div class="field"><label for="f-email">Work email</label><input id="f-email" type="email" placeholder="you@company.com"></div>
         <div class="field"><label for="f-msg">What do you need to see?</label><textarea id="f-msg" rows="3" placeholder="e.g. company-wide performance pulled from Excel and our CRM, in one secure dashboard&hellip;"></textarea></div>
         <button class="pill pill-grad" id="sendBtn" style="width:100%;justify-content:center">Request a walkthrough &rarr;</button>
-        <div class="reach"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg></span><div><div class="rl">Email</div><div class="rv"><a href="mailto:hello@avidatatech.com">hello@avidatatech.com</a></div></div></div>
+        <div class="reach"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg></span><div><div class="rl">Email</div><div class="rv"><a href="mailto:connect@avidatatechnology.com">connect@avidatatechnology.com</a></div></div></div>
       </div>
     </div>
   </section>
@@ -912,10 +1017,36 @@
     function calc(){var h=+rh.value,p=+rp.value;rhv.textContent=h;rpv.textContent=p;var manual=h*p*52;rm.textContent=manual.toLocaleString();tw(rs,Math.round(manual*0.85));}
     rh.addEventListener('input',calc);rp.addEventListener('input',calc);calc();})();
 
+  /* before / after toggle */
+  (function(){var sw=$('baSwitch');if(!sw)return;var stage=$('baStage'),cap=$('baCap'),thumb=sw.querySelector('.ba-thumb');
+    var caps={before:'<b>Four spreadsheets, three of them wrong</b> &mdash; and a number nobody fully trusts, rebuilt by hand every week.',after:'<b>Everything ties out.</b> The same numbers, live and reconciled, scoped to each person &mdash; the report builds itself.'};
+    function seat(){var a=sw.querySelector('button.on');if(a){thumb.style.left=a.offsetLeft+'px';thumb.style.width=a.offsetWidth+'px';}}
+    function set(state,init){
+      sw.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.s===state);});
+      stage.querySelectorAll('.ba-panel').forEach(function(p){p.classList.toggle('show',p.dataset.s===state);});
+      seat();
+      if(init){cap.innerHTML=caps[state];return;}
+      cap.style.opacity=0;setTimeout(function(){cap.innerHTML=caps[state];cap.style.opacity=1;},reduce?0:150);
+    }
+    /* auto-advance every 8s; pause on hover, stop for good once the visitor clicks */
+    var timer=null,userTook=false;
+    function cur(){var a=sw.querySelector('button.on');return a?a.dataset.s:'before';}
+    function stop(){if(timer){clearInterval(timer);timer=null;}}
+    function start(){if(reduce||userTook)return;stop();timer=setInterval(function(){set(cur()==='before'?'after':'before');},8000);}
+    sw.addEventListener('click',function(e){var b=e.target.closest('button');if(b){userTook=true;stop();set(b.dataset.s);}});
+    stage.addEventListener('mouseenter',function(){if(!userTook)stop();});
+    stage.addEventListener('mouseleave',function(){if(!userTook)start();});
+    set('before',true);
+    window.addEventListener('resize',seat);
+    if(document.fonts&&document.fonts.ready)document.fonts.ready.then(seat);else setTimeout(seat,200);
+    /* only run the loop while the widget is on screen */
+    if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)start();else stop();});},{threshold:.25});io.observe(stage);}else{start();}
+  })();
+
   (function(){var ids=['top','work','platform','clients','process','contact'],links=document.querySelectorAll('#topnav a');function set(id){links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+id);});}
     if('IntersectionObserver' in window){var sp=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)set(e.target.id);});},{rootMargin:'-45% 0px -50% 0px'});ids.forEach(function(id){var s=$(id);if(s)sp.observe(s);});}})();
 
-  var sb=$('sendBtn');if(sb)sb.addEventListener('click',function(){function v(id){var e=$(id);return e?e.value.trim():'';}var co=v('f-co');var body='Name: '+v('f-name')+'\nCompany: '+co+'\nEmail: '+v('f-email')+'\n\nReports on today:\n'+v('f-msg');window.location.href='mailto:hello@avidatatech.com?subject='+encodeURIComponent('New inquiry'+(co?' \u2014 '+co:''))+'&body='+encodeURIComponent(body);});
+  var sb=$('sendBtn');if(sb)sb.addEventListener('click',function(){function v(id){var e=$(id);return e?e.value.trim():'';}var co=v('f-co');var body='Name: '+v('f-name')+'\nCompany: '+co+'\nEmail: '+v('f-email')+'\n\nReports on today:\n'+v('f-msg');window.location.href='mailto:connect@avidatatechnology.com?subject='+encodeURIComponent('New inquiry'+(co?' \u2014 '+co:''))+'&body='+encodeURIComponent(body);});
 
   /* reveal-on-scroll */
   if('IntersectionObserver' in window && !reduce){
@@ -1024,7 +1155,7 @@
   (function(){
     var s=document.getElementById('radar'); if(!s) return;
     var AX=[['Real-time refresh',9.4],['Custom charts',9.7],['Role-based',9.5],['Data ingestion',9.3],['Mobile-ready',8.8],['White-label',9.6]];
-    var cx=130,cy=120,R=64,n=AX.length;
+    var cx=160,cy=120,R=64,n=AX.length;
     function pt(i,r){var a=(-Math.PI/2)+(i*2*Math.PI/n);return [cx+r*Math.cos(a),cy+r*Math.sin(a)];}
     var h='<defs><linearGradient id="radarGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(110,139,255,.55)"/><stop offset="1" stop-color="rgba(52,216,160,.35)"/></linearGradient></defs>';
     for(var g=4;g>=1;g--){var p=[];for(var i=0;i<n;i++){p.push(pt(i,R*g/4).map(function(v){return v.toFixed(1);}).join(','));}h+='<polygon class="grid" points="'+p.join(' ')+'"/>';}
@@ -1173,11 +1304,120 @@
 
   /* ---- consult button ---- */
   var consultBtn = el('consultBtn');
+  var talkCard = el('talkCard');
   if(consultBtn && DEMO.consultUrl){
     consultBtn.removeAttribute('data-scroll'); /* neutralizes the scroll handler */
     consultBtn.addEventListener('click', function(){ window.open(DEMO.consultUrl, '_blank', 'noopener'); });
+  } else if(consultBtn && talkCard){
+    /* no scheduler URL → expand the "Talk to our team" card to fill the screen */
+    consultBtn.removeAttribute('data-scroll'); /* take over from the generic scroll handler */
+    consultBtn.addEventListener('click', openTalk);
   }
-  /* if no consultUrl, the existing data-scroll handler already scrolls to #contact */
+
+  function reduceMo(){ return window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches; }
+
+  function measureTalkHeight(w){
+    var clone = talkCard.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.classList.remove('consult-zoom','zoomed');
+    clone.style.cssText = 'position:fixed;left:-99999px;top:0;width:'+w+'px;height:auto;max-height:none;margin:0;visibility:hidden;pointer-events:none';
+    document.body.appendChild(clone);
+    var h = clone.offsetHeight;
+    document.body.removeChild(clone);
+    return h;
+  }
+
+  function talkTarget(){
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var w = Math.min(640, vw - 36);
+    var maxH = vh - 48;
+    var h = Math.min(measureTalkHeight(w), maxH);
+    return { w:w, h:h, left:(vw - w)/2, top:Math.max(24,(vh - h)/2) };
+  }
+
+  function openTalk(){
+    if(talkCard.classList.contains('consult-zoom')) return;
+    var r = talkCard.getBoundingClientRect();
+
+    /* placeholder keeps the grid slot from collapsing */
+    var ph = document.createElement('div');
+    ph.id = 'talkPlaceholder';
+    ph.style.width = r.width+'px'; ph.style.height = r.height+'px';
+    talkCard.parentNode.insertBefore(ph, talkCard);
+
+    /* backdrop */
+    var bd = document.createElement('div');
+    bd.className = 'consult-backdrop'; bd.id = 'consultBackdrop';
+    document.body.appendChild(bd);
+
+    /* close button */
+    var x = document.createElement('button');
+    x.className = 'consult-close'; x.id = 'consultClose'; x.setAttribute('aria-label','Close');
+    x.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    talkCard.appendChild(x);
+
+    /* pin to current spot, then animate to the centered target */
+    talkCard.classList.add('consult-zoom');
+    talkCard.style.top = r.top+'px'; talkCard.style.left = r.left+'px';
+    talkCard.style.width = r.width+'px'; talkCard.style.height = r.height+'px';
+    void talkCard.offsetWidth; /* reflow so the FROM state is committed */
+
+    var go = function(){
+      var t = talkTarget();
+      bd.classList.add('show'); x.classList.add('show');
+      talkCard.classList.add('zoomed');
+      talkCard.style.maxHeight = (window.innerHeight - 48)+'px';
+      talkCard.style.width = t.w+'px'; talkCard.style.height = t.h+'px';
+      talkCard.style.left = t.left+'px'; talkCard.style.top = t.top+'px';
+    };
+    if(reduceMo()) go(); else requestAnimationFrame(go);
+
+    x.addEventListener('click', closeTalk);
+    bd.addEventListener('click', closeTalk);
+    document.addEventListener('keydown', talkEsc);
+    window.addEventListener('resize', repositionTalk);
+  }
+
+  function repositionTalk(){
+    if(!talkCard.classList.contains('zoomed')) return;
+    var t = talkTarget();
+    talkCard.style.maxHeight = (window.innerHeight - 48)+'px';
+    talkCard.style.width = t.w+'px'; talkCard.style.height = t.h+'px';
+    talkCard.style.left = t.left+'px'; talkCard.style.top = t.top+'px';
+  }
+
+  function talkEsc(e){ if(e.key === 'Escape') closeTalk(); }
+
+  function closeTalk(){
+    if(!talkCard.classList.contains('consult-zoom')) return;
+    var ph = el('talkPlaceholder'), bd = el('consultBackdrop'), x = el('consultClose');
+    document.removeEventListener('keydown', talkEsc);
+    window.removeEventListener('resize', repositionTalk);
+    if(bd) bd.classList.remove('show');
+    if(x) x.classList.remove('show');
+
+    var finish = function(){
+      talkCard.classList.remove('consult-zoom','zoomed');
+      talkCard.style.top = talkCard.style.left = talkCard.style.width = talkCard.style.height = talkCard.style.maxHeight = '';
+      if(x && x.parentNode) x.parentNode.removeChild(x);
+      if(ph && ph.parentNode) ph.parentNode.removeChild(ph);
+      if(bd && bd.parentNode) bd.parentNode.removeChild(bd);
+    };
+
+    if(reduceMo() || !ph){ finish(); return; }
+
+    /* animate back into the (current) page slot */
+    var rr = ph.getBoundingClientRect();
+    talkCard.classList.remove('zoomed');
+    talkCard.style.top = rr.top+'px'; talkCard.style.left = rr.left+'px';
+    talkCard.style.width = rr.width+'px'; talkCard.style.height = rr.height+'px';
+
+    var done = false, run = function(){ if(done) return; done = true; finish(); };
+    talkCard.addEventListener('transitionend', function te(ev){
+      if(ev.propertyName === 'width'){ talkCard.removeEventListener('transitionend', te); run(); }
+    });
+    setTimeout(run, 650); /* fallback */
+  }
 })();
 </script>
 </body>
