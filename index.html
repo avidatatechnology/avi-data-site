@@ -1403,6 +1403,9 @@
     ph.className = spanCls.join(' '); /* e.g. "c5" → grid-column:span 5, no visual styling */
     ph.style.minHeight = r.height+'px';
     talkCard.parentNode.insertBefore(ph, talkCard);
+    /* move the card out to <body> so a transformed ancestor (e.g. an un-revealed
+       .reveal section on first load) can't hijack its fixed positioning */
+    document.body.appendChild(talkCard);
 
     /* backdrop */
     var bd = document.createElement('div');
@@ -1459,7 +1462,8 @@
       talkCard.classList.remove('consult-zoom','zoomed');
       talkCard.style.top = talkCard.style.left = talkCard.style.width = talkCard.style.height = talkCard.style.maxHeight = '';
       if(x && x.parentNode) x.parentNode.removeChild(x);
-      if(ph && ph.parentNode) ph.parentNode.removeChild(ph);
+      /* return the card to its original grid slot, then drop the placeholder */
+      if(ph && ph.parentNode){ ph.parentNode.insertBefore(talkCard, ph); ph.parentNode.removeChild(ph); }
       if(bd && bd.parentNode) bd.parentNode.removeChild(bd);
     };
 
