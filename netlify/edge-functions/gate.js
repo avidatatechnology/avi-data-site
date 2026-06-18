@@ -62,11 +62,24 @@ export default async (request, context) => {
     });
   }
 
-  // Already authorized → serve the real content.
+  // Already authorized → serve the real content, with a Log out button injected.
   const cookie = request.headers.get("cookie") || "";
   const match = cookie.match(new RegExp(COOKIE + "=([a-f0-9]+)"));
   if (match && match[1] === expected) {
-    return context.next();
+    const res = await context.next();
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("text/html")) return res; // only inject into HTML pages, not assets
+
+    let html = await res.text();
+    const widget =
+      '<style>#avi-logout{position:fixed;right:16px;bottom:16px;z-index:2147483647;display:inline-flex;align-items:center;gap:7px;font:600 12px/1 Inter,system-ui,sans-serif;color:#EAF0FB;text-decoration:none;background:rgba(17,23,38,.92);border:1px solid #1F2A44;border-radius:10px;padding:9px 12px;box-shadow:0 10px 30px -12px rgba(0,0,0,.8);backdrop-filter:blur(6px)}#avi-logout:hover{border-color:#6E8BFF;color:#fff}#avi-logout svg{width:14px;height:14px}</style>' +
+      '<a id="avi-logout" href="?logout" title="Log out of the demo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Log out</a>';
+    html = html.includes("</body>") ? html.replace("</body>", widget + "</body>") : html + widget;
+
+    const headers = new Headers(res.headers);
+    headers.delete("content-length");   // body length changed
+    headers.delete("content-encoding"); // body is now plain text
+    return new Response(html, { status: res.status, headers });
   }
 
   // Form submitted → verify.
