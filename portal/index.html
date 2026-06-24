@@ -76,6 +76,45 @@
   .kpi .v.warn{color:var(--rose)}
   .kpi .d{font-family:var(--fm);font-size:11px;font-weight:600;color:var(--muted)}
   .secttitle{font-family:var(--fd);font-weight:700;font-size:15px;margin:22px 0 12px}
+  .pback{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);margin-bottom:14px;cursor:pointer;background:none;border:none;font-family:var(--fb)}
+  .pback:hover{color:var(--brand-2)}
+  .phead{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+  .phead h1{font-family:var(--fd);font-weight:700;font-size:clamp(20px,3vw,28px);letter-spacing:-.025em;margin:6px 0 0}
+  .phead .sub{font-size:13px;color:var(--muted);margin-top:4px}
+  .pgrid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:18px;align-items:start}
+  .pgrid .stack{display:flex;flex-direction:column;gap:18px;min-width:0}
+  .card .ch{font-family:var(--fd);font-weight:700;font-size:15px;margin:0 0 4px}
+  .card .csub{font-size:12.5px;color:var(--muted);margin:0 0 6px}
+  @media (max-width:920px){.pgrid{grid-template-columns:1fr}}
+  .snrow{margin-bottom:12px}
+  .snrow label{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+  .snd{width:9px;height:9px;border-radius:50%;background:var(--line);display:inline-block;flex:none}
+  .snd.done{background:var(--brand)} .snd.now{background:var(--mint);box-shadow:0 0 8px var(--mint)}
+  .pipe-click .pstep{cursor:pointer}
+  .pipe-click .pstep:hover .pnum{border-color:var(--brand-2)}
+  .pstep.sel .pnum{box-shadow:0 0 0 3px rgba(159,176,255,.4),0 0 22px rgba(110,139,255,.5)}
+  .pstep.sel .plabel{color:var(--text)}
+  .sd-wrap{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:16px;animation:rise .35s ease both}
+  .sd-tag{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-2);margin-bottom:8px}
+  .sd-desc{font-size:14px;color:var(--text);line-height:1.6}
+  .sd-pts{list-style:none;padding:0;margin:13px 0 0;display:flex;flex-direction:column;gap:8px}
+  .sd-pts li{font-size:13px;color:var(--muted);padding-left:24px;position:relative}
+  .sd-pts li::before{content:"";position:absolute;left:0;top:4px;width:14px;height:14px;border-radius:50%;background:rgba(52,216,160,.14);border:1px solid rgba(52,216,160,.5)}
+  .sd-note{margin-top:15px;background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.55}
+  .sd-note .sd-nl{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-2);margin-bottom:5px}
+  .sd-signed{margin-top:15px;color:var(--mint);font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:7px}
+  .sd-actions{margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .sd-actions .btn,.sd-actions .pill-pay{width:auto;margin-top:0}
+  .mnt{margin-top:16px;background:linear-gradient(160deg,rgba(110,139,255,.1),rgba(52,216,160,.06));border:1px solid var(--line);border-radius:13px;padding:18px}
+  .mnt h4{font-family:var(--fd);font-size:15px;margin:0 0 4px}
+  .mnt .lede{font-size:13px;color:var(--muted);margin:0 0 12px}
+  .mnt .mr{display:flex;gap:11px;padding:8px 0;font-size:13px;color:var(--text);align-items:flex-start;border-top:1px solid var(--line-soft)}
+  .mnt .mr:first-of-type{border-top:none}
+  .mnt .mr svg{flex:none;color:var(--mint);margin-top:2px}
+  .mnt .mr b{font-weight:600} .mnt .mr span{color:var(--muted)}
+  .mnt .price{font-family:var(--fd);font-weight:800;font-size:24px;letter-spacing:-.02em;margin-top:14px}
+  .mnt .price small{font-size:13px;color:var(--muted);font-weight:600}
+  .mnt .pinc{font-size:12px;color:var(--muted);margin-top:4px}
   .inv{display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;margin-bottom:12px;flex-wrap:wrap;animation:rise .5s cubic-bezier(.2,.7,.2,1) both;transition:border-color .18s,transform .18s,box-shadow .18s}
   .inv:hover{border-color:var(--brand);transform:translateY(-2px);box-shadow:0 18px 40px -28px rgba(110,139,255,.6)}
   .inv.overdue{border-color:rgba(242,96,125,.4)}
@@ -241,6 +280,11 @@
     <div class="secttitle">Clients</div>
     <div id="clientList"></div>
   </div>
+
+  <!-- ADMIN: CLIENT PAGE -->
+  <div id="clientPage" style="display:none"></div>
+  <!-- ADMIN: PROJECT PAGE -->
+  <div id="projectPage" style="display:none"></div>
 </div></main>
 
 <div class="overlay" id="overlay"><div class="card pay"><div class="ptop"><div><h2 id="payTitle">Pay invoice</h2><div class="psub" id="payNum"></div></div><div class="total" id="payTotal"></div></div><div id="payment-element"></div><button class="btn full" id="payBtn">Pay</button><button class="btn btn-ghost full" id="payCancel" style="margin-top:10px">Cancel</button><div class="msg" id="payMsg"></div></div></div>
@@ -258,6 +302,20 @@
   const esc=(s)=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const dShort=(d)=>new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
   const STAGES=["Discovery","Mockup","Build & wire","Launch","Iterate & Maintain"];
+  const STAGE_DESC=[
+    "We start with what you already have — your exports, your spreadsheets, and the questions you wish you could answer in one click. Nothing changes for your team yet.",
+    "We design a clickable, branded mockup of your dashboard or tool first — so you react to something real before a single line of production code is written.",
+    "We build the real app: charts, tables, and tools wired to one clean data model, with role-based logins so each person sees only their slice.",
+    "Your team logs in. From then on it refreshes itself from your exports — the Monday-morning rebuild is gone for good.",
+    "Software is never really finished — dependencies shift, APIs change, edge cases surface, and the business keeps moving. Because we built it, we know how it's wired and why every decision was made, so changes land fast and safely."
+  ];
+  const STAGE_PTS=[
+    ["Walk through your current reports & exports","Define the numbers that actually matter","Map who needs to see what"],
+    ["A branded, interactive mockup","You point, we adjust — fast","Lock the layout before we build"],
+    ["Custom charts & tools, white-labeled","One clean model behind every view","Role-based logins & permissions"],
+    ["Live on the web, on your own domain","Automatic refresh from your data","Hands-on onboarding for your team"],
+    ["We know how it's built — no ramp-up","Dependencies, security & fixes kept current","New views, metrics & logins as you grow"]
+  ];
   const today=new Date().toISOString().slice(0,10);
   let elements=null, activeInvoice=null, me=null;
 
@@ -300,25 +358,28 @@
 
   /* ---------- auth ---------- */
   async function boot(){ const { data:{ session } }=await sb.auth.getSession(); if(session) enterApp(session); else showLogin(); }
-  function showLogin(){ document.body.classList.remove("authed"); show($("loginView"),true); show($("clientView"),false); show($("adminView"),false); show($("logout"),false); $("who").textContent=""; }
+  function showLogin(){ document.body.classList.remove("authed"); show($("loginView"),true); show($("clientView"),false); show($("adminView"),false); show($("clientPage"),false); show($("projectPage"),false); show($("logout"),false); $("who").textContent=""; }
   async function enterApp(session){
     document.body.classList.add("authed"); show($("loginView"),false); show($("logout"),true);
     let role="client", name=session.user.email;
     try{ const { data }=await sb.from("profiles").select("role,company_name").eq("id",session.user.id).maybeSingle(); if(data){ role=data.role||"client"; if(data.company_name) name=data.company_name; } }catch(e){}
     me={ id:session.user.id, email:session.user.email, role, name };
-    $("who").textContent=session.user.email;
-    if(role==="admin"){ $("navPrimaryLabel").textContent="Dashboard"; show($("clientView"),false); show($("adminView"),true); loadAdmin(); }
-    else { $("navPrimaryLabel").textContent="My account"; show($("adminView"),false); show($("clientView"),true); $("greeting").textContent="Welcome, "+name; loadClient(); }
+    $("who").textContent=name;
+    if(role==="admin"){ $("navPrimaryLabel").textContent="Dashboard"; show($("clientView"),false); adminShow("dash"); loadAdmin(); }
+    else { $("navPrimaryLabel").textContent="My account"; show($("adminView"),false); show($("clientPage"),false); show($("projectPage"),false); show($("clientView"),true); $("greeting").textContent="Welcome, "+name; loadClient(); }
   }
+  function adminShow(which){ show($("adminView"),which==="dash"); show($("clientPage"),which==="client"); show($("projectPage"),which==="project"); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
   /* ---------- CLIENT ---------- */
   async function loadClient(){
-    let projs=[], updates=[], invs=[];
-    try{ const [p,u,i]=await Promise.all([
-      sb.from("projects").select("id,name,stage,note,value_cents").eq("client_id",me.id).order("created_at"),
+    let projs=[], updates=[], invs=[], snotes=[], signoffs=[];
+    try{ const [p,u,i,sn,so]=await Promise.all([
+      sb.from("projects").select("id,name,stage,note,value_cents,maintenance_cents").eq("client_id",me.id).order("created_at"),
       sb.from("project_updates").select("project_id,body,created_at").order("created_at",{ascending:false}),
-      sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at").order("created_at",{ascending:false})
-    ]); projs=p.data||[]; updates=u.data||[]; invs=i.data||[]; }catch(e){}
+      sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at,milestone_stage").order("created_at",{ascending:false}),
+      sb.from("stage_notes").select("project_id,stage,body").order("stage"),
+      sb.from("stage_signoffs").select("project_id,stage,approved_at")
+    ]); projs=p.data||[]; updates=u.data||[]; invs=i.data||[]; snotes=sn.data||[]; signoffs=so.data||[]; }catch(e){}
     // KPIs
     const open=invs.filter(i=>i.status==="open"); const outstanding=open.reduce((s,i)=>s+i.amount_cents,0);
     const paid=invs.filter(i=>i.status==="paid"); const paidTotal=paid.reduce((s,i)=>s+i.amount_cents,0);
@@ -327,24 +388,62 @@
     $("cKpis").innerHTML=kpi("Balance due",'<span data-cents="'+outstanding+'">$0</span>',open.length+" open",'grad')+
       kpi("Paid to date",'<span data-cents="'+paidTotal+'">$0</span>',"thank you")+
       kpi("Active projects",String(active),projs.length+" total")+
-      kpi("Account",'<span style="font-size:16px">'+esc(me.name)+'</span>',"Avi Data Technology");
+      kpi("Account",'<span style="font-size:16px">'+esc(me.name)+'</span>',"");
     $("cKpis").querySelectorAll("[data-cents]").forEach(el=>countUp(el,+el.getAttribute("data-cents")));
-    // projects
+    // projects — interactive timeline
     const updBy={}; updates.forEach(u=>{ (updBy[u.project_id]=updBy[u.project_id]||[]).push(u); });
-    const pbox=$("projects");
+    const notesBy={}; snotes.forEach(s=>{ if(s.body){ (notesBy[s.project_id]=notesBy[s.project_id]||{})[s.stage]=s.body; } });
+    const soBy={}; signoffs.forEach(s=>{ (soBy[s.project_id]=soBy[s.project_id]||{})[s.stage]=s.approved_at; });
+    const msBy={}; invs.forEach(i=>{ if(i.milestone_stage!=null){ (msBy[i.project_id]=msBy[i.project_id]||{})[i.milestone_stage]=i; } });
+    const pbox=$("projects"); pbox.innerHTML="";
     if(!projs.length){ pbox.innerHTML='<div class="card" style="margin-bottom:14px;color:var(--muted)">Your project will appear here once we kick things off.</div>'; }
-    else pbox.innerHTML=projs.map(p=>{ const st=p.stage||0; const ups=updBy[p.id]||[];
-      const feed = ups.length? '<div class="feed"><div class="fttl">Project updates</div>'+ups.map(u=>'<div class="upd"><div class="dot"></div><div><div class="ub">'+esc(u.body)+'</div><div class="ud">'+dShort(u.created_at)+'</div></div></div>').join('')+'</div>':'';
-      return '<div class="card" style="margin-bottom:14px"><div class="pchead"><h3>'+esc(p.name||"Project")+'</h3>'+(p.value_cents>0?'<span class="pval">'+fmt(p.value_cents)+' project</span>':'<span class="badge stage">'+STAGES[st]+'</span>')+'</div><div class="pipe">'+pipeHtml(st)+'</div>'+(p.note?'<div class="pnote">'+esc(p.note)+'</div>':'')+feed+'</div>'; }).join('');
-    // invoices to pay
+    else projs.forEach(p=>{ const ctx={ notes:notesBy[p.id]||{}, signoffs:soBy[p.id]||{}, milestones:msBy[p.id]||{}, updates:updBy[p.id]||[] }; pbox.appendChild(buildClientProjectCard(p,ctx)); });
+    // invoices to pay (exclude milestone invoices — those live on the timeline)
+    const openList=open.filter(i=>i.milestone_stage==null);
     const lbox=$("list");
-    if(!open.length){ lbox.innerHTML='<div class="empty"><div class="big">You\'re all paid up</div>No invoices due right now.</div>'; }
-    else lbox.innerHTML="", open.forEach((inv,i)=>{ const el=invRow(inv); el.style.animationDelay=(i*55)+"ms"; lbox.appendChild(el); });
+    if(!openList.length){ lbox.innerHTML='<div class="empty"><div class="big">You\'re all paid up</div>No invoices due right now.</div>'; }
+    else { lbox.innerHTML=""; openList.forEach((inv,i)=>{ const el=invRow(inv); el.style.animationDelay=(i*55)+"ms"; lbox.appendChild(el); }); }
     // payment history
     const hbox=$("history");
     if(paid.length){ hbox.innerHTML='<div class="secttitle">Payment history</div>'+paid.map(i=>'<div class="inv"><div class="meta"><div class="num">'+esc(i.number)+'</div><div class="desc">'+esc(i.description)+'</div><div class="due">Paid '+(i.paid_at?dShort(i.paid_at):"")+'</div></div><div class="right"><div class="amt">'+fmt(i.amount_cents)+'</div><span class="badge paid"><span class="bd"></span>Paid</span><button class="rcpt" data-rcpt="'+i.id+'">Receipt</button></div></div>').join(''); 
       hbox.querySelectorAll("[data-rcpt]").forEach(b=>b.addEventListener("click",()=>{ const inv=paid.find(x=>x.id===b.getAttribute("data-rcpt")); receipt(inv,me.name); }));
     } else hbox.innerHTML="";
+  }
+  function pipeStepsClickable(stage, sel){ let h=""; STAGES.forEach((label,i)=>{ const cls=(i<stage?"done":(i===stage?"now":""))+(i===sel?" sel":""); const inner=i<stage?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>':(i+1); h+='<div class="pstep '+cls+'" data-pstage="'+i+'"><div class="pnum">'+inner+'</div><div class="plabel">'+label+'</div></div>'; }); return h; }
+  function maintenanceHtml(p){
+    const ck='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    let h='<div class="mnt"><h4>Why this stage never really ends</h4><p class="lede">Custom software isn\'t a finished object — keeping it healthy is ongoing, real work.</p>'+
+      '<div class="mr">'+ck+'<div><b>Security & dependencies</b> — <span>the libraries and APIs your app relies on change constantly; we keep them patched so nothing breaks or becomes a liability.</span></div></div>'+
+      '<div class="mr">'+ck+'<div><b>Fixes under real use</b> — <span>real users surface edge cases no testing catches. We handle them before they slow you down.</span></div></div>'+
+      '<div class="mr">'+ck+'<div><b>Your business keeps moving</b> — <span>new reports, metrics, and logins as you grow — built by the people who already know every decision in the code.</span></div></div>';
+    if(p.maintenance_cents>0){ h+='<div class="price">'+fmt(p.maintenance_cents)+'<small> / month</small></div><div class="pinc">Covers priority support, security & dependency updates, fixes, and small changes. Larger new features are quoted separately.</div>'; }
+    else { h+='<div class="pinc" style="margin-top:12px">Ask us about an ongoing care plan tailored to this project.</div>'; }
+    h+='</div>'; return h;
+  }
+  function stageDetailHtml(p, i, ctx){
+    let h='<div class="sd-wrap"><div class="sd-tag">Step '+(i+1)+' · '+esc(STAGES[i])+'</div><div class="sd-desc">'+esc(STAGE_DESC[i])+'</div><ul class="sd-pts">'+STAGE_PTS[i].map(pt=>'<li>'+esc(pt)+'</li>').join('')+'</ul>';
+    if(ctx.notes[i]) h+='<div class="sd-note"><div class="sd-nl">Note from Avi Data</div>'+esc(ctx.notes[i])+'</div>';
+    if(i===4) h+=maintenanceHtml(p);
+    // actions: sign-off (1,3,4) and milestone pay (1,3)
+    let acts="";
+    if(i===1||i===3||i===4){ if(ctx.signoffs[i]) acts+='<div class="sd-signed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>You signed off on '+dShort(ctx.signoffs[i])+'</div>'; else acts+='<button class="btn" data-signoff="'+i+'">'+(i===4?'Agree to maintenance plan':'Approve & sign off')+'</button>'; }
+    const ms=ctx.milestones[i];
+    if(ms){ if(ms.status==="paid") acts+='<span class="badge paid"><span class="bd"></span>'+(i===1?'Deposit paid':'Balance paid')+'</span>'; else if(ms.status==="open") acts+='<button class="pill-pay" data-mpay="'+i+'">'+(i===1?'Pay 30% deposit':'Pay balance')+' — '+fmt(ms.amount_cents)+'</button>'; }
+    if(acts) h+='<div class="sd-actions">'+acts+'</div>';
+    h+='</div>'; return h;
+  }
+  function buildClientProjectCard(p, ctx){
+    const card=document.createElement("div"); card.className="card"; card.style.marginBottom="14px";
+    let sel=p.stage||0;
+    function render(){
+      const st=p.stage||0;
+      card.innerHTML='<div class="pchead"><h3>'+esc(p.name||"Project")+'</h3>'+(p.value_cents>0?'<span class="pval">'+fmt(p.value_cents)+' project</span>':'<span class="badge stage">'+STAGES[st]+'</span>')+'</div>'+
+        '<div class="pipe pipe-click">'+pipeStepsClickable(st,sel)+'</div>'+(p.note?'<div class="pnote">'+esc(p.note)+'</div>':'')+stageDetailHtml(p,sel,ctx);
+      card.querySelectorAll("[data-pstage]").forEach(s=>s.addEventListener("click",()=>{ sel=+s.getAttribute("data-pstage"); render(); }));
+      const sb1=card.querySelector("[data-signoff]"); if(sb1) sb1.addEventListener("click",async()=>{ const idx=+sb1.getAttribute("data-signoff"); sb1.disabled=true; sb1.textContent="Saving…"; const { error }=await sb.from("stage_signoffs").upsert({project_id:p.id,stage:idx,client_id:me.id,approved_at:new Date().toISOString()},{onConflict:"project_id,stage"}); if(!error){ ctx.signoffs[idx]=new Date().toISOString(); render(); } else { sb1.disabled=false; sb1.textContent="Try again"; } });
+      const pb=card.querySelector("[data-mpay]"); if(pb) pb.addEventListener("click",()=>{ const inv=ctx.milestones[+pb.getAttribute("data-mpay")]; if(inv) openPay(inv); });
+    }
+    render(); return card;
   }
   function countUp(el,cents){ const dur=700,t0=performance.now(); (function step(t){const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fmt(Math.round(cents*e));if(p<1)requestAnimationFrame(step);})(performance.now()); }
   function invRow(inv){
@@ -382,9 +481,10 @@
     invoices.forEach(i=>{ if(i.status==="open"){ balBy[i.client_id]=(balBy[i.client_id]||0)+i.amount_cents; if(i.due_date&&i.due_date<today) odBy[i.client_id]=true; } });
     list.innerHTML="";
     clients.forEach(cl=>{ const np=projCount[cl.id]||0, bal=balBy[cl.id]||0, od=odBy[cl.id];
-      const el=document.createElement("div"); el.className="crow";
+      const el=document.createElement("div"); el.className="crow"; el.style.cursor="pointer";
       el.innerHTML='<div class="cmeta"><div class="cname">'+esc(cl.company_name||cl.email||"Client")+(od?'<span class="od-dot" title="Has an overdue invoice"></span>':'')+'</div><div class="cmail">'+esc(cl.email||"")+'</div></div><div class="cstat"><span class="badge stage">'+np+' project'+(np===1?"":"s")+'</span><div class="cbal">'+fmt(bal)+'<small>balance due</small></div><button class="pill pill-ghost" style="width:auto" data-manage="'+cl.id+'">Manage</button></div>';
-      el.querySelector("[data-manage]").addEventListener("click",()=>manageClient(cl));
+      el.addEventListener("click",()=>clientPageProjects(cl));
+      el.querySelector("[data-manage]").addEventListener("click",(e)=>{ e.stopPropagation(); clientDetailsModal(cl); });
       list.appendChild(el);
     });
   }
@@ -403,21 +503,14 @@
       }catch(e){ m.className="msg err"; m.textContent="Network error."; $("ncSave").disabled=false; }
     });
   }
-  async function manageClient(cl){
-    let prof={}, intNote="";
-    try{ const { data }=await sb.from("profiles").select("company_name,contact_name,phone,email").eq("id",cl.id).maybeSingle(); prof=data||{}; }catch(e){}
-    try{ const { data }=await sb.from("internal_notes").select("note").eq("ref_type","client").eq("ref_id",cl.id).maybeSingle(); if(data) intNote=data.note||""; }catch(e){}
-    openModal('<h2>'+esc(prof.company_name||cl.email)+'</h2><div class="psub" style="font-size:12.5px;color:var(--muted);margin:4px 0 6px">'+esc(prof.email||cl.email||"")+'</div>'+
-      '<div class="subhead first">Client details</div><label>Company name</label><input id="clCompany" value="'+esc(prof.company_name||"")+'"/><label>Contact name</label><input id="clContact" value="'+esc(prof.contact_name||"")+'"/><label>Phone</label><input id="clPhone" value="'+esc(prof.phone||"")+'"/><label>Private note (only you see this)</label><textarea id="clNote" placeholder="Internal note…">'+esc(intNote)+'</textarea><button class="btn full" id="clSave">Save details</button><div class="msg" id="clMsg"></div>'+
-      '<div class="subhead">Projects</div><div id="mcProjects" class="mut" style="margin-bottom:6px">Loading…</div>'+
-      '<div class="subhead">Add a project</div><label>Project name</label><input id="apName" placeholder="Operations dashboard"/><div class="f2"><div><label>Starting stage</label><select id="apStage">'+STAGES.map((s,i)=>'<option value="'+i+'">'+s+'</option>').join('')+'</select></div><div><label>Project value (USD)</label><input id="apValue" type="number" step="0.01" min="0" placeholder="optional"/></div></div><label>Note to client (optional)</label><textarea id="apNote" placeholder="e.g. waiting on your logo files"></textarea><button class="btn full" id="apSave">Add project</button><div class="msg" id="apMsg"></div>');
-    $("clSave").addEventListener("click",async()=>{
-      const m=$("clMsg"); $("clSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
-      const e1=(await sb.from("profiles").update({company_name:$("clCompany").value.trim()||null,contact_name:$("clContact").value.trim()||null,phone:$("clPhone").value.trim()||null}).eq("id",cl.id)).error;
-      const e2=(await sb.from("internal_notes").upsert({ref_type:"client",ref_id:cl.id,note:$("clNote").value.trim()||null,updated_at:new Date().toISOString()},{onConflict:"ref_type,ref_id"})).error;
-      if(e1||e2){ m.className="msg err"; m.textContent="Couldn't save. "+((e1||e2).message||""); $("clSave").disabled=false; return; }
-      cl.company_name=$("clCompany").value.trim(); m.className="msg ok"; m.textContent="Saved."; $("clSave").disabled=false; loadAdmin();
-    });
+  function clientPageProjects(cl){
+    $("clientPage").innerHTML='<button class="pback" id="backDash"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Dashboard</button>'+
+      '<div class="phead"><div><div class="eyebrow">Client</div><h1 id="cpTitle">'+esc(cl.company_name||cl.email)+'</h1><div class="sub">'+esc(cl.email||"")+'</div></div><button class="btn btn-ghost" id="manageBtn" style="width:auto;margin-top:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Manage client</button></div>'+
+      '<div class="pgrid"><div class="card"><div class="ch">Projects</div><div id="mcProjects" style="margin-top:6px">Loading…</div></div>'+
+      '<div class="card"><div class="ch">Add a project</div><label>Project name</label><input id="apName" placeholder="Operations dashboard"/><div class="f2"><div><label>Starting stage</label><select id="apStage">'+STAGES.map((s,i)=>'<option value="'+i+'">'+s+'</option>').join('')+'</select></div><div><label>Project value (USD)</label><input id="apValue" type="number" step="0.01" min="0" placeholder="optional"/></div></div><label>Note to client (optional)</label><textarea id="apNote" placeholder="e.g. waiting on your logo files"></textarea><button class="btn full" id="apSave">Add project</button><div class="msg" id="apMsg"></div></div></div>';
+    adminShow("client");
+    $("backDash").addEventListener("click",()=>{ adminShow("dash"); loadAdmin(); });
+    $("manageBtn").addEventListener("click",()=>clientDetailsModal(cl));
     $("apSave").addEventListener("click",async()=>{
       const m=$("apMsg"); const name=$("apName").value.trim(); if(!name){ m.className="msg err"; m.textContent="Give the project a name."; return; }
       $("apSave").disabled=true; m.className="msg info"; m.textContent="Adding…";
@@ -426,6 +519,21 @@
       $("apName").value="";$("apNote").value="";$("apValue").value="";$("apStage").value="0"; m.className="msg ok"; m.textContent="Project added."; $("apSave").disabled=false; loadClientProjectsAdmin(cl); loadAdmin();
     });
     loadClientProjectsAdmin(cl);
+  }
+  async function clientDetailsModal(cl){
+    let prof={}, intNote="";
+    try{ const { data }=await sb.from("profiles").select("company_name,contact_name,phone,email").eq("id",cl.id).maybeSingle(); prof=data||{}; }catch(e){}
+    try{ const { data }=await sb.from("internal_notes").select("note").eq("ref_type","client").eq("ref_id",cl.id).maybeSingle(); if(data) intNote=data.note||""; }catch(e){}
+    openModal('<h2>Manage client</h2><div class="psub" style="font-size:12.5px;color:var(--muted);margin:4px 0 12px">'+esc(prof.email||cl.email||"")+' · email is their login and can\'t be changed here</div>'+
+      '<label>Company name</label><input id="clCompany" value="'+esc(prof.company_name||"")+'"/><label>Contact name</label><input id="clContact" value="'+esc(prof.contact_name||"")+'"/><label>Phone</label><input id="clPhone" value="'+esc(prof.phone||"")+'"/><label>Private note (only you see this)</label><textarea id="clNote" placeholder="Internal note…">'+esc(intNote)+'</textarea><button class="btn full" id="clSave">Save</button><div class="msg" id="clMsg"></div>');
+    $("clSave").addEventListener("click",async()=>{
+      const m=$("clMsg"); $("clSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
+      const e1=(await sb.from("profiles").update({company_name:$("clCompany").value.trim()||null,contact_name:$("clContact").value.trim()||null,phone:$("clPhone").value.trim()||null}).eq("id",cl.id)).error;
+      const e2=(await sb.from("internal_notes").upsert({ref_type:"client",ref_id:cl.id,note:$("clNote").value.trim()||null,updated_at:new Date().toISOString()},{onConflict:"ref_type,ref_id"})).error;
+      if(e1||e2){ m.className="msg err"; m.textContent="Couldn't save. "+((e1||e2).message||""); $("clSave").disabled=false; return; }
+      cl.company_name=$("clCompany").value.trim(); const h=$("cpTitle"); if(h) h.textContent=cl.company_name||cl.email;
+      m.className="msg ok"; m.textContent="Saved."; $("clSave").disabled=false; loadAdmin();
+    });
   }
   async function loadClientProjectsAdmin(cl){
     const box=$("mcProjects"); if(!box)return;
@@ -436,18 +544,33 @@
     box.querySelectorAll("[data-proj]").forEach(b=>b.addEventListener("click",()=>{ const proj=data.find(x=>x.id===b.getAttribute("data-proj")); manageProject(cl,proj); }));
   }
   function manageProject(cl, proj){
-    const suggested="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0");
-    openModal('<button class="linkx" id="backClient" style="color:var(--brand-2);margin-bottom:8px">← '+esc(cl.company_name||cl.email)+'</button><h2>'+esc(proj.name||"Project")+'</h2>'+
-      '<div class="subhead first">Pipeline & details</div><label>Project name</label><input id="pName" value="'+esc(proj.name||"")+'"/><div class="f2"><div><label>Current stage</label><select id="pStage">'+STAGES.map((s,i)=>'<option value="'+i+'"'+(i===(proj.stage||0)?" selected":"")+'>'+s+'</option>').join('')+'</select></div><div><label>Project value (USD)</label><input id="pValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/></div></div><label>Note to client (optional)</label><textarea id="pNote">'+esc(proj.note||"")+'</textarea><button class="btn full" id="pSave">Save</button><div class="msg" id="pMsg"></div>'+
-      '<div class="subhead">Post an update (client sees this)</div><textarea id="upBody" placeholder="e.g. Mockup delivered — your feedback next"></textarea><button class="btn full" id="upSave">Post update</button><div class="msg" id="upMsg"></div><div id="upList" style="margin-top:8px"></div>'+
-      '<div class="subhead">New invoice</div><div class="f2"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="2500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Phase 1 — dashboard build"/><label>Due date (optional)</label><input id="inDue" type="date"/><button class="btn full" id="inSave">Add invoice</button><div class="msg" id="inMsg"></div>'+
-      '<div class="subhead">Invoices</div><div id="pInvoices" class="mut">Loading…</div>');
-    $("backClient").addEventListener("click",()=>manageClient(cl));
+    const suggested="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); const st=proj.stage||0;
+    $("projectPage").innerHTML='<button class="pback" id="backClient"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'+esc(cl.company_name||cl.email)+'</button>'+
+      '<div class="phead"><div><div class="eyebrow">Project</div><h1 id="ppTitle">'+esc(proj.name||"Project")+'</h1><div class="sub">'+esc(cl.company_name||cl.email)+(proj.value_cents>0?' · '+fmt(proj.value_cents):'')+'</div></div><span class="badge stage" id="ppBadge">'+STAGES[st]+'</span></div>'+
+      '<div class="card" style="margin-bottom:18px"><div class="pipe" id="ppPipe">'+pipeHtml(st)+'</div></div>'+
+      '<div class="card" style="margin-bottom:18px"><div class="ch">Timeline notes</div><div class="csub">Write a note at any stage — your client sees it on that point of their progress bar.</div><div id="stageNotes" style="margin-top:10px"></div><button class="btn" id="snSave" style="width:auto;margin-top:6px">Save timeline notes</button><div class="msg" id="snMsg"></div></div>'+
+      '<div class="pgrid"><div class="card"><div class="ch">Pipeline & details</div><label>Project name</label><input id="pName" value="'+esc(proj.name||"")+'"/><div class="f2"><div><label>Current stage</label><select id="pStage">'+STAGES.map((s,i)=>'<option value="'+i+'"'+(i===st?" selected":"")+'>'+s+'</option>').join('')+'</select></div><div><label>Project value (USD)</label><input id="pValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/></div></div><label>Note to client (optional)</label><textarea id="pNote">'+esc(proj.note||"")+'</textarea><button class="btn full" id="pSave">Save</button><div class="msg" id="pMsg"></div></div>'+
+      '<div class="stack"><div class="card"><div class="ch">Updates</div><div class="csub">Clients see these on their project.</div><textarea id="upBody" placeholder="e.g. Mockup delivered — your feedback next"></textarea><button class="btn full" id="upSave">Post update</button><div class="msg" id="upMsg"></div><div id="upList" style="margin-top:10px"></div></div>'+
+      '<div class="card"><div class="ch">Invoices</div><div class="f2" style="margin-top:6px"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="2500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Phase 1 — dashboard build"/><label>Due date (optional)</label><input id="inDue" type="date"/><button class="btn full" id="inSave">Add invoice</button><div class="msg" id="inMsg"></div><div id="pInvoices" style="margin-top:12px">Loading…</div></div></div></div>'+
+      '<div class="pgrid" style="margin-top:18px"><div class="card"><div class="ch">Milestone billing</div><div class="csub">Split this project into a 30% deposit at Mockup and 70% at Launch.</div><div id="msBox" style="margin-top:10px">Loading…</div></div>'+
+      '<div class="stack"><div class="card"><div class="ch">Monthly maintenance</div><div class="csub">Sets the ongoing fee the client sees on Iterate & Maintain.</div><label>Monthly fee (USD)</label><input id="mtAmt" type="number" step="0.01" min="0" value="'+(proj.maintenance_cents?(proj.maintenance_cents/100):"")+'"/><button class="btn full" id="mtSave">Save monthly fee</button><div class="msg" id="mtMsg"></div></div>'+
+      '<div class="card"><div class="ch">Client sign-offs</div><div id="soBox" style="margin-top:8px">Loading…</div></div></div></div>';
+    adminShow("project");
+    $("backClient").addEventListener("click",()=>clientPageProjects(cl));
+    renderStageNoteInputs(proj); loadStageNotes(proj);
+    $("snSave").addEventListener("click",async()=>{
+      const m=$("snMsg"); $("snSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
+      const rows=STAGES.map((s,i)=>({project_id:proj.id,stage:i,client_id:cl.id,body:(($("sn"+i)?$("sn"+i).value.trim():"")||null),updated_at:new Date().toISOString()}));
+      const { error }=await sb.from("stage_notes").upsert(rows,{onConflict:"project_id,stage"});
+      if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("snSave").disabled=false; return; }
+      m.className="msg ok"; m.textContent="Timeline notes saved."; $("snSave").disabled=false;
+    });
     $("pSave").addEventListener("click",async()=>{
       const m=$("pMsg"); $("pSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
       const val=parseFloat($("pValue").value); const { error }=await sb.from("projects").update({name:$("pName").value.trim()||null,stage:Number($("pStage").value),value_cents:val>0?Math.round(val*100):0,note:$("pNote").value.trim()||null,updated_at:new Date().toISOString()}).eq("id",proj.id);
       if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("pSave").disabled=false; return; }
       proj.name=$("pName").value.trim(); proj.stage=Number($("pStage").value); proj.note=$("pNote").value.trim(); proj.value_cents=val>0?Math.round(val*100):0;
+      $("ppTitle").textContent=proj.name||"Project"; $("ppBadge").textContent=STAGES[proj.stage]; $("ppPipe").innerHTML=pipeHtml(proj.stage);
       m.className="msg ok"; m.textContent="Saved."; $("pSave").disabled=false; loadAdmin();
     });
     $("upSave").addEventListener("click",async()=>{
@@ -465,7 +588,40 @@
       if(error){ m.className="msg err"; m.textContent="Couldn't add. "+(error.message||""); $("inSave").disabled=false; return; }
       m.className="msg ok"; m.textContent="Invoice added."; $("inSave").disabled=false; $("inDesc").value="";$("inAmt").value=""; cacheInvoiceCount++; $("inNum").value="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); loadProjectInvoices(cl,proj); loadAdmin();
     });
-    loadUpdates(proj); loadProjectInvoices(cl,proj);
+    $("mtSave").addEventListener("click",async()=>{
+      const m=$("mtMsg"); $("mtSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
+      const v=parseFloat($("mtAmt").value); const { error }=await sb.from("projects").update({maintenance_cents:v>0?Math.round(v*100):0}).eq("id",proj.id);
+      if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("mtSave").disabled=false; return; }
+      proj.maintenance_cents=v>0?Math.round(v*100):0; m.className="msg ok"; m.textContent="Saved. Client sees this on Iterate & Maintain."; $("mtSave").disabled=false;
+    });
+    loadUpdates(proj); loadProjectInvoices(cl,proj); loadMilestones(cl,proj); loadSignoffs(proj);
+  }
+  async function loadMilestones(cl,proj){
+    const box=$("msBox"); if(!box)return;
+    if(!(proj.value_cents>0)){ box.innerHTML='<div style="color:var(--muted);font-size:13px">Set a project value above (and Save) to enable 30/70 milestone billing.</div>'; return; }
+    const dep=Math.round(proj.value_cents*0.30), fin=proj.value_cents-dep;
+    const { data }=await sb.from("invoices").select("id,number,description,amount_cents,status,milestone_stage").eq("project_id",proj.id).not("milestone_stage","is",null).order("milestone_stage");
+    if(data&&data.length){
+      box.innerHTML=data.map(i=>'<div class="miniinv"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:2px">'+(i.status==="paid"?'<span class="badge paid" style="padding:3px 8px"><span class="bd"></span>Paid</span>':(i.status==="void"?'<span class="badge void" style="padding:3px 8px">Void</span>':'<span style="font-size:12px;color:var(--muted)">awaiting client payment</span>'))+'</span></div>').join('');
+    } else {
+      box.innerHTML='<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Deposit (30%): <b style="color:var(--text)">'+fmt(dep)+'</b> &nbsp;·&nbsp; Final (70%): <b style="color:var(--text)">'+fmt(fin)+'</b></div><button class="btn" id="msGen" style="width:auto">Create deposit + final invoices</button><div class="msg" id="msMsg"></div>';
+      $("msGen").addEventListener("click",async()=>{
+        const m=$("msMsg"); $("msGen").disabled=true; m.className="msg info"; m.textContent="Creating…";
+        const n1="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"), n2="AVI-"+String(cacheInvoiceCount+2).padStart(4,"0");
+        const e=(await sb.from("invoices").insert([
+          {client_id:cl.id,project_id:proj.id,number:n1,description:"Deposit (30%) — "+(proj.name||"project"),amount_cents:dep,milestone_stage:1},
+          {client_id:cl.id,project_id:proj.id,number:n2,description:"Final payment (70%) — "+(proj.name||"project"),amount_cents:fin,milestone_stage:3}
+        ])).error;
+        if(e){ m.className="msg err"; m.textContent="Couldn't create. "+(e.message||""); $("msGen").disabled=false; return; }
+        cacheInvoiceCount+=2; loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin();
+      });
+    }
+  }
+  async function loadSignoffs(proj){
+    const box=$("soBox"); if(!box)return;
+    const { data }=await sb.from("stage_signoffs").select("stage,approved_at").eq("project_id",proj.id);
+    const map={}; (data||[]).forEach(s=>map[s.stage]=s.approved_at);
+    box.innerHTML=[1,3,4].map(i=>'<div class="miniinv" style="padding:7px 0"><span>'+esc(STAGES[i])+'</span><span class="ma" style="font-size:12px;font-weight:600">'+(map[i]?'<span style="color:var(--mint)">✓ '+dShort(map[i])+'</span>':'<span style="color:var(--muted-2)">awaiting</span>')+'</span></div>').join('');
   }
   async function loadUpdates(proj){
     const box=$("upList"); if(!box)return;
@@ -473,6 +629,13 @@
     if(!data||!data.length){ box.innerHTML=""; return; }
     box.innerHTML=data.map(u=>'<div class="upd"><div class="dot"></div><div style="flex:1"><div class="ub">'+esc(u.body)+'</div><div class="ud">'+dShort(u.created_at)+' · <button class="linkx del" data-delup="'+u.id+'">delete</button></div></div></div>').join('');
     box.querySelectorAll("[data-delup]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("project_updates").delete().eq("id",b.getAttribute("data-delup")); loadUpdates(proj); }));
+  }
+  function renderStageNoteInputs(proj){
+    const box=$("stageNotes"); if(!box)return; const st=proj.stage||0;
+    box.innerHTML=STAGES.map((s,i)=>{ const cls=i<st?"done":(i===st?"now":""); return '<div class="snrow"><label><span class="snd '+cls+'"></span>'+esc(s)+'</label><textarea id="sn'+i+'" placeholder="Note for '+esc(s)+'…"></textarea></div>'; }).join('');
+  }
+  async function loadStageNotes(proj){
+    try{ const { data }=await sb.from("stage_notes").select("stage,body").eq("project_id",proj.id); (data||[]).forEach(r=>{ const t=$("sn"+r.stage); if(t) t.value=r.body||""; }); }catch(e){}
   }
   async function loadProjectInvoices(cl,proj){
     const box=$("pInvoices"); if(!box)return;
@@ -526,6 +689,7 @@
   $("payBtn").addEventListener("click",pay);
   $("payCancel").addEventListener("click",closePay);
   $("overlay").addEventListener("click",e=>{ if(e.target===$("overlay")) closePay(); });
+  $("navPrimary").addEventListener("click",e=>{ e.preventDefault(); if(me&&me.role==="admin"){ adminShow("dash"); loadAdmin(); } document.body.classList.remove("nav-open"); });
   $("hamb").addEventListener("click",()=>document.body.classList.toggle("nav-open"));
   $("scrim").addEventListener("click",()=>document.body.classList.remove("nav-open"));
   boot().then(handleReturn);
