@@ -1,0 +1,11 @@
+# Avi Data Technology — Netlify config
+# Declares the serverless functions folder and pins a modern Node runtime.
+# Node 18+ gives the functions a built-in fetch(), so they need NO npm packages
+# and NO build step — they deploy the same way your edge function does.
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[build.environment]
+  NODE_VERSION = "20"
