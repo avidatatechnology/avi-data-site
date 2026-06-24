@@ -217,6 +217,11 @@
   .badge.paid{color:var(--mint);background:rgba(52,216,160,.1);border:1px solid rgba(52,216,160,.28)}
   .badge.void{color:var(--muted);background:rgba(135,147,174,.08);border:1px solid var(--line)}
   .badge.pend{color:var(--gold);background:rgba(242,180,92,.1);border:1px solid rgba(242,180,92,.3)}
+  .pendbanner{display:flex;align-items:center;gap:14px;background:rgba(242,180,92,.08);border:1px solid rgba(242,180,92,.3);border-radius:14px;padding:16px 18px;margin-bottom:22px}
+  .pendbanner .pbi{width:38px;height:38px;border-radius:11px;background:rgba(242,180,92,.16);display:grid;place-items:center;color:var(--gold);flex-shrink:0}
+  .pendbanner .pbt{font-family:var(--fd);font-weight:700;font-size:14.5px;color:var(--text)}
+  .pendbanner .pbs{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .pendbanner .pba{margin-left:auto;font-family:var(--fd);font-weight:800;font-size:18px;color:var(--gold);white-space:nowrap}
   .badge.stage{color:var(--brand-2);background:rgba(110,139,255,.12);border:1px solid rgba(110,139,255,.3)}
   .badge.od{color:var(--rose);background:rgba(242,96,125,.1);border:1px solid rgba(242,96,125,.3)}
   .badge .bd{width:6px;height:6px;border-radius:50%;background:currentColor}
@@ -347,6 +352,7 @@
   <div id="clientView" style="display:none">
     <div class="head"><div class="eyebrow">Your account</div><h1 id="greeting">Welcome</h1></div>
     <div class="summary" id="cKpis" style="display:none"></div>
+    <div id="cPending"></div>
     <div class="secttitle">Projects</div>
     <div id="projects"></div>
     <div class="secttitle" id="billTitle">Billing</div>
@@ -499,6 +505,10 @@
       kpi("Account",'<span style="font-size:16px">'+esc(me.name)+'</span>',"");
     $("cKpis").querySelectorAll("[data-cents]").forEach(el=>countUp(el,+el.getAttribute("data-cents")));
     if(dueNow.length){ const balNode=$("cKpis").firstElementChild; if(balNode){ balNode.classList.add("kpi-click"); balNode.addEventListener("click",()=>showBalanceBreakdown(dueNow,projs)); } }
+    // pending banner — make clearing ACH payments obvious
+    const proc=invs.filter(i=>i.status==="processing"); const procTotal=proc.reduce((s,i)=>s+i.amount_cents,0);
+    const pendBox=$("cPending");
+    if(pendBox){ if(proc.length){ pendBox.innerHTML='<div class="pendbanner"><div class="pbi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><div class="pbt">'+(proc.length===1?'A payment is clearing':proc.length+' payments are clearing')+'</div><div class="pbs">Your bank transfer was received and is settling — this takes a few business days. It\'ll be marked paid automatically once it clears.</div></div><div class="pba">'+fmt(procTotal)+'</div></div>'; } else pendBox.innerHTML=""; }
     // projects — interactive timeline
     const logsBy={}; logs.forEach(u=>{ const m=(logsBy[u.project_id]=logsBy[u.project_id]||{}); (m[u.stage]=m[u.stage]||[]).push(u); });
     const datesBy={}; snotes.forEach(s=>{ if(s.start_date||s.end_date){ (datesBy[s.project_id]=datesBy[s.project_id]||{})[s.stage]={start:s.start_date,end:s.end_date}; } });
@@ -936,7 +946,18 @@
       const cls=i.status==="processing"?' pend':(open?(due?' due':' sched'):'');
       return '<div class="miniinv'+cls+'"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+(i.milestone_stage!=null?' <span style="color:var(--muted-2);font-size:11px">· milestone</span>':'')+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;display:flex;gap:8px;align-items:center;margin-top:2px">'+actions+'</span></div>'; }).join('');
     box.querySelectorAll("[data-paid]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("invoices").update({status:"paid",paid_at:new Date().toISOString()}).eq("id",b.getAttribute("data-paid")); loadProjectInvoices(cl,proj); loadAdmin(); }));
-    box.querySelectorAll("[data-void]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("invoices").update({status:"void"}).eq("id",b.getAttribute("data-void")); loadProjectInvoices(cl,proj); loadAdmin(); }));
+    box.querySelectorAll("[data-void]").forEach(b=>b.addEventListener("click",async()=>{
+      const id=b.getAttribute("data-void"); b.disabled=true; b.textContent="voiding…";
+      let note="Invoice voided.";
+      try{ const token=(await sb.auth.getSession()).data.session.access_token;
+        const r=await fetch("/.netlify/functions/admin-cancel-payment",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({invoice_id:id})}); const j=await r.json();
+        if(j.canceled) note="Invoice voided and the Stripe payment was canceled.";
+        else if(j.reason==="processing") note="Invoice voided — but the bank payment is already clearing and can't be stopped. Refund it in Stripe once it settles.";
+        else if(j.reason==="succeeded") note="Invoice voided — but this payment already cleared. Refund it in Stripe if needed.";
+      }catch(e){}
+      await sb.from("invoices").update({status:"void"}).eq("id",id);
+      alert(note); loadProjectInvoices(cl,proj); loadAdmin();
+    }));
     box.querySelectorAll("[data-rcpt]").forEach(b=>b.addEventListener("click",()=>{ const inv=data.find(x=>x.id===b.getAttribute("data-rcpt")); receipt(inv,cl.company_name||cl.email); }));
   }
 
@@ -989,4 +1010,3 @@
 </script>
 </body>
 </html>
-
