@@ -9,102 +9,155 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-
-<!-- Stripe + Supabase (loaded from their CDNs; no install needed) -->
 <script src="https://js.stripe.com/v3/"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
 <style>
   :root{
-    --bg:#0A0E1A; --panel:#111726; --panel-2:#0D1322; --raised:#16203A;
+    --bg:#0A0E1A; --bg-2:#0C1120; --panel:#111726; --panel-2:#0D1322; --raised:#16203A;
     --line:#1F2A44; --line-soft:#172033;
     --text:#EAF0FB; --muted:#8793AE; --muted-2:#566179;
-    --brand:#6E8BFF; --brand-2:#9FB0FF; --mint:#34D8A0; --rose:#F2607D; --gold:#F2B45C;
-    --r:18px; --top:62px;
-    --fd:'Plus Jakarta Sans',system-ui,sans-serif;
-    --fb:'Inter',system-ui,sans-serif;
-    --fm:'JetBrains Mono',ui-monospace,monospace;
+    --brand:#6E8BFF; --brand-2:#9FB0FF; --mint:#34D8A0; --mint-2:#67E6BD; --gold:#F2B45C; --rose:#F2607D;
+    --r:18px; --sb:250px; --maxw:1320px;
+    --fd:'Plus Jakarta Sans',system-ui,sans-serif; --fb:'Inter',system-ui,sans-serif; --fm:'JetBrains Mono',ui-monospace,monospace;
   }
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;background:
+  html{scroll-behavior:smooth}
+  body{margin:0;background:
       radial-gradient(1200px 700px at 82% -12%,rgba(110,139,255,.12),transparent 55%),
       radial-gradient(1000px 600px at -8% 4%,rgba(52,216,160,.08),transparent 55%),var(--bg);
-    color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+    color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
   a{color:inherit;text-decoration:none}
   .mono{font-family:var(--fm)}
   ::selection{background:rgba(110,139,255,.32)}
 
-  /* Topbar */
-  .topbar{position:sticky;top:0;z-index:40;height:var(--top);display:flex;align-items:center;gap:14px;
-    padding:0 20px;background:rgba(10,14,26,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line-soft)}
-  .brand{display:flex;align-items:center;gap:11px}
-  .brand .mark{width:32px;height:32px;border-radius:9px;overflow:hidden;flex:none}
-  .brand b{font-family:var(--fd);font-weight:700;font-size:15.5px;letter-spacing:-.02em}
-  .brand b span{color:var(--muted);font-weight:600}
-  .brand .tag{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);
-    border:1px solid var(--line);border-radius:6px;padding:3px 7px;margin-left:2px}
-  .top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
-  .who{font-size:13px;color:var(--muted);display:none}
-  .linkbtn{font-size:13px;color:var(--muted);cursor:pointer;border:none;background:none;font-family:var(--fb)}
-  .linkbtn:hover{color:var(--text)}
+  /* ---------- Ambient background (grid + blobs + dots) ---------- */
+  .bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .bgfx .blob{position:absolute;border-radius:50%;filter:blur(90px)}
+  .bgfx .b1{width:540px;height:540px;background:radial-gradient(circle,rgba(110,139,255,.16),transparent 70%);top:-180px;right:-60px;animation:drift1 28s ease-in-out infinite}
+  .bgfx .b2{width:480px;height:480px;background:radial-gradient(circle,rgba(52,216,160,.12),transparent 70%);bottom:-200px;left:-140px;animation:drift2 34s ease-in-out infinite}
+  .bgfx .b3{width:400px;height:400px;background:radial-gradient(circle,rgba(110,139,255,.09),transparent 70%);top:42%;left:52%;animation:drift3 40s ease-in-out infinite}
+  .bgfx .b4{width:600px;height:600px;background:radial-gradient(circle,rgba(159,176,255,.07),transparent 70%);top:16%;left:-12%;animation:drift4 46s ease-in-out infinite}
+  .bgfx .grid{position:absolute;inset:-60%;background:linear-gradient(rgba(110,139,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(110,139,255,.045) 1px,transparent 1px);background-size:48px 48px;opacity:.45;animation:gridmove 42s linear infinite}
+  .bgfx .pdot{position:absolute;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint);opacity:.45;animation:swirl ease-in-out infinite}
+  @keyframes gridmove{to{transform:translate(48px,48px)}}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-46px,34px) scale(1.09)}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(54px,-30px) scale(1.12)}}
+  @keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-34px,-44px) scale(.92)}}
+  @keyframes drift4{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(90px,42px) scale(1.06)}}
+  @keyframes swirl{0%,100%{transform:translate(0,0)}50%{transform:translate(var(--dx,40px),var(--dy,-30px))}}
 
-  /* Layout */
-  .wrap{max-width:860px;margin:0 auto;padding:30px 20px 60px}
+  /* ---------- Sidebar (the app frame) ---------- */
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sb);z-index:60;display:flex;flex-direction:column;padding:20px 16px;background:linear-gradient(180deg,#0b1020,#090d18);border-right:1px solid var(--line-soft)}
+  .sb-brand{display:flex;align-items:center;gap:11px;padding:6px 8px 18px;margin-bottom:6px;border-bottom:1px solid var(--line-soft)}
+  .sb-brand .mark{width:34px;height:34px;border-radius:9px;overflow:hidden;flex:none;filter:drop-shadow(0 4px 12px rgba(110,139,255,.35))}
+  .sb-name b{font-family:var(--fd);font-weight:700;font-size:14.5px;letter-spacing:-.02em;display:block;line-height:1.15}
+  .sb-name small{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)}
+  .sb-nav{display:flex;flex-direction:column;gap:3px;margin-top:8px}
+  .sb-nav a{display:flex;align-items:center;gap:12px;font-size:13.5px;font-weight:500;color:var(--muted);padding:10px 12px;border-radius:10px;transition:color .16s,background .16s;position:relative}
+  .sb-nav a svg{flex:none;color:var(--muted-2);transition:color .16s}
+  .sb-nav a:hover{color:var(--text);background:rgba(255,255,255,.045)}
+  .sb-nav a.active{color:var(--text);background:rgba(110,139,255,.12)}
+  .sb-nav a.active svg{color:var(--brand-2)}
+  .sb-nav a.active::before{content:"";position:absolute;left:-16px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,var(--brand),var(--mint))}
+  .sb-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding-top:16px;border-top:1px solid var(--line-soft)}
+  .sb-who{font-size:12px;color:var(--muted);padding:0 4px;word-break:break-all}
 
-  /* Login */
-  .center{min-height:calc(100vh - var(--top));display:grid;place-items:center;padding:24px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
-    box-shadow:0 40px 120px -50px rgba(0,0,0,.9)}
-  .login{width:100%;max-width:380px;padding:30px}
-  .login .mark{width:46px;height:46px;border-radius:13px;overflow:hidden;margin-bottom:16px}
-  .login h1{font-family:var(--fd);font-size:20px;letter-spacing:-.02em;margin:0 0 6px}
-  .login p{color:var(--muted);font-size:13px;margin:0 0 20px}
-  label{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
-    color:var(--muted);margin:14px 0 7px}
-  input{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;color:var(--text);
-    font-size:15px;font-family:var(--fb);padding:12px 14px;outline:none;transition:.16s}
+  /* ---------- Content shell ---------- */
+  .shell{margin-left:var(--sb);padding:28px 30px 40px;min-height:100vh}
+  .wrap{max-width:var(--maxw);margin:0 auto}
+  .head{margin:4px 0 20px}
+  .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
+  .head h1{font-family:var(--fd);font-weight:700;font-size:clamp(22px,3.4vw,30px);letter-spacing:-.025em;margin:7px 0 0}
+
+  /* ---------- Grid + cards ---------- */
+  .board{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;align-items:stretch}
+  .c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+  .card{background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--r);padding:20px;position:relative;overflow:hidden;transition:transform .22s cubic-bezier(.2,.7,.2,1),border-color .22s,box-shadow .22s}
+  .card:hover{transform:translateY(-3px);box-shadow:0 16px 40px -22px rgba(0,0,0,.85),0 0 0 1px rgba(110,139,255,.14)}
+
+  /* dashboard "shot" mock */
+  .shot{background:var(--panel-2);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px -40px rgba(0,0,0,.8)}
+  .shot-bar{display:flex;align-items:center;gap:9px;padding:10px 14px;border-bottom:1px solid var(--line-soft);background:#0b1120}
+  .shot-bar .d{display:flex;gap:6px}.shot-bar .d i{width:9px;height:9px;border-radius:50%;background:#2a3550;display:block}
+  .shot-bar .ttl{font-family:var(--fm);font-size:11px;color:var(--muted);margin-left:4px}
+  .shot-bar .live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;color:var(--mint)}
+  .shot-bar .live i{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint);animation:dotp 2.4s ease-in-out infinite}
+  .shot-body{padding:14px;display:grid;gap:12px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mini{background:var(--panel);border:1px solid var(--line-soft);border-radius:13px;padding:13px}
+  .mini .mh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .mini .mh h4{margin:0;font-family:var(--fd);font-size:12.5px;font-weight:600}
+  .mini .mh .t{margin-left:auto;font-family:var(--fm);font-size:10px;color:var(--muted-2)}
+  .chart{width:100%;display:block}
+  .kpi{background:var(--panel);border:1px solid var(--line-soft);border-radius:13px;padding:14px;transition:transform .22s,border-color .22s}
+  .kpi:hover{transform:translateY(-2px);border-color:rgba(110,139,255,.3)}
+  .kpi .l{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)}
+  .kpi .v{font-family:var(--fd);font-weight:700;font-size:23px;letter-spacing:-.02em;margin:7px 0 3px}
+  .kpi .v.grad{background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .kpi .v small{font-size:12px;color:var(--muted-2);font-weight:600}
+  .kpi .d{font-family:var(--fm);font-size:11px;font-weight:600;color:var(--muted)}
+  .kpi .d.up{color:var(--mint)}
+
+  /* chart reveal */
+  .gchart .gb{transform:scaleY(0);transition:transform .6s cubic-bezier(.2,.7,.2,1)} .gchart.in .gb{transform:scaleY(1)}
+  .gchart .gd{opacity:0;transform:scale(0);transition:opacity .4s ease,transform .45s cubic-bezier(.2,.7,.2,1)} .gchart.in .gd{opacity:1;transform:scale(1)}
+  .gchart .gl{transition:stroke-dashoffset 1.1s ease}
+  .gchart.in .tk{animation:tw 3.4s ease-in-out infinite}
+  #heroArea path{animation:breathe 7s ease-in-out infinite}
+  #heroGauge text{animation:gtxt 3.6s ease-in-out infinite}
+  @keyframes breathe{50%{filter:brightness(1.13)}}
+  @keyframes gtxt{0%,100%{opacity:.82}50%{opacity:1}}
+  @keyframes tw{0%,100%{filter:drop-shadow(0 0 0 rgba(103,230,189,0))}50%{filter:drop-shadow(0 0 5px rgba(103,230,189,.85))}}
+  @keyframes dotp{0%,100%{box-shadow:0 0 6px var(--mint)}50%{box-shadow:0 0 12px var(--mint)}}
+
+  /* ---------- Login panel ---------- */
+  .login h1{font-family:var(--fd);font-size:21px;letter-spacing:-.02em;margin:14px 0 6px}
+  .login p{color:var(--muted);font-size:13px;margin:0 0 18px}
+  .lmark{width:46px;height:46px;border-radius:13px;overflow:hidden}
+  label{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 7px}
+  input{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;color:var(--text);font-size:15px;font-family:var(--fb);padding:12px 14px;outline:none;transition:.16s}
   input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(110,139,255,.16)}
-  .btn{width:100%;margin-top:18px;border:none;border-radius:11px;padding:13px;font-size:14px;font-weight:700;
-    font-family:var(--fd);color:#fff;background:linear-gradient(110deg,var(--brand),#4a5fd6);cursor:pointer;
-    transition:.18s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  .btn{width:100%;margin-top:18px;border:none;border-radius:11px;padding:13px;font-size:14px;font-weight:700;font-family:var(--fd);color:#fff;background:linear-gradient(110deg,var(--brand),#4a5fd6);cursor:pointer;transition:.18s;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 22px -8px rgba(110,139,255,.7)}
   .btn:hover{transform:translateY(-1px)}
   .btn:disabled{opacity:.55;cursor:default;transform:none}
-  .btn-ghost{background:var(--raised);color:var(--text);border:1px solid var(--line)}
+  .btn-ghost{background:var(--raised);color:var(--text);border:1px solid var(--line);box-shadow:none}
   .btn-ghost:hover{border-color:var(--brand);transform:none}
   .msg{font-size:12.5px;font-weight:600;margin-top:12px;min-height:15px}
   .msg.err{color:var(--rose)} .msg.ok{color:var(--mint)} .msg.info{color:var(--muted)}
 
-  /* Dashboard */
-  .head{margin:6px 0 22px}
-  .head .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
-  .head h1{font-family:var(--fd);font-weight:700;font-size:clamp(22px,4vw,30px);letter-spacing:-.025em;margin:6px 0 0}
+  /* ---------- Pills ---------- */
+  .pill{font-family:var(--fd);font-weight:600;font-size:13px;padding:10px 16px;border-radius:11px;cursor:pointer;border:none;transition:.18s;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
+  .pill-ghost{background:#121a2c;color:var(--text);border:1px solid var(--line)}
+  .pill-ghost:hover{border-color:var(--brand)}
 
-  .inv{display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--panel);
-    border:1px solid var(--line-soft);border-radius:14px;margin-bottom:12px;flex-wrap:wrap}
+  /* ---------- Invoices ---------- */
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 18px}
+  .inv{display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;margin-bottom:12px;flex-wrap:wrap;animation:rise .5s cubic-bezier(.2,.7,.2,1) both;transition:border-color .18s,transform .18s,box-shadow .18s}
+  .inv:hover{border-color:var(--brand);transform:translateY(-2px);box-shadow:0 18px 40px -28px rgba(110,139,255,.6)}
   .inv .meta{flex:1;min-width:200px}
   .inv .num{font-family:var(--fm);font-size:11px;letter-spacing:.06em;color:var(--brand-2)}
   .inv .desc{font-weight:600;margin:3px 0 2px;letter-spacing:-.01em}
   .inv .due{font-size:12.5px;color:var(--muted)}
   .inv .right{display:flex;align-items:center;gap:14px;margin-left:auto}
   .inv .amt{font-family:var(--fd);font-weight:700;font-size:19px;letter-spacing:-.02em}
-  .pill{font-size:12px;font-weight:700;font-family:var(--fd);padding:9px 16px;border-radius:10px;border:none;cursor:pointer;transition:.18s}
-  .pill-pay{color:#fff;background:linear-gradient(110deg,var(--brand),#4a5fd6)}
+  .pill-pay{font-size:12px;font-weight:700;font-family:var(--fd);padding:9px 16px;border-radius:10px;border:none;cursor:pointer;color:#fff;background:linear-gradient(110deg,var(--brand),#4a5fd6);width:auto;position:relative;overflow:hidden;transition:.18s}
   .pill-pay:hover{transform:translateY(-1px)}
-  .badge{font-size:11px;font-weight:700;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;
-    padding:6px 11px;border-radius:8px;display:inline-flex;align-items:center;gap:6px}
+  .pill-pay::after{content:"";position:absolute;top:0;left:-60%;width:42%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg)}
+  .pill-pay:hover::after{animation:sheen .9s ease}
+  @keyframes sheen{0%{left:-60%}60%,100%{left:130%}}
+  .badge{font-size:11px;font-weight:700;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;padding:6px 11px;border-radius:8px;display:inline-flex;align-items:center;gap:6px}
   .badge.paid{color:var(--mint);background:rgba(52,216,160,.1);border:1px solid rgba(52,216,160,.28)}
   .badge.void{color:var(--muted);background:rgba(135,147,174,.08);border:1px solid var(--line)}
-  .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-
-  .empty{text-align:center;color:var(--muted);padding:60px 20px}
+  .badge .bd{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .empty{text-align:center;color:var(--muted);padding:54px 20px;background:var(--panel);border:1px solid var(--line-soft);border-radius:14px}
   .empty .big{font-family:var(--fd);font-weight:700;font-size:18px;color:var(--text);margin-bottom:6px}
-  .skel{height:78px;border-radius:14px;background:linear-gradient(90deg,var(--panel),var(--raised),var(--panel));
-    background-size:200% 100%;animation:sh 1.3s linear infinite;margin-bottom:12px}
+  .skel{height:78px;border-radius:14px;background:linear-gradient(90deg,var(--panel),var(--raised),var(--panel));background-size:200% 100%;animation:sh 1.3s linear infinite;margin-bottom:12px}
   @keyframes sh{to{background-position:-200% 0}}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
-  /* Payment overlay */
-  .overlay{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:20px;
-    background:rgba(5,7,14,.72);backdrop-filter:blur(6px)}
+  /* ---------- Payment overlay ---------- */
+  .overlay{position:fixed;inset:0;z-index:120;display:none;place-items:center;padding:20px;background:rgba(5,7,14,.74);backdrop-filter:blur(6px)}
   .overlay.on{display:grid}
   .pay{width:100%;max-width:440px;padding:26px;max-height:92vh;overflow:auto}
   .pay .ptop{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:4px}
@@ -114,127 +167,123 @@
   .x{border:none;background:none;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;padding:0 2px}
   .x:hover{color:var(--text)}
   #payment-element{margin:6px 0 4px;min-height:40px}
+  .pay .btn-ghost{width:100%}
 
   .cfg{max-width:560px;margin:40px auto;padding:24px;color:var(--gold);font-size:13.5px;line-height:1.7}
   .cfg code{font-family:var(--fm);color:var(--text);background:var(--panel-2);padding:2px 6px;border-radius:5px}
 
-  /* ---- Motion & bling (matches the main site's feel) ---- */
-  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-  @keyframes spin{to{transform:rotate(1turn)}}
-  @keyframes drift{0%{transform:translate(0,0)}50%{transform:translate(42px,-28px)}100%{transform:translate(0,0)}}
-  @keyframes sheen{0%{left:-60%}60%,100%{left:130%}}
+  /* ---------- Custom cursor ---------- */
+  body.cz, body.cz a, body.cz button, body.cz input{cursor:none}
+  body.cz input{cursor:text}
+  #cursor{position:fixed;top:0;left:0;z-index:200;pointer-events:none}
+  #cursor .ring{position:absolute;width:26px;height:26px;border:1px solid rgba(159,176,255,.25);border-radius:50%;transform:translate(-50%,-50%);transition:width .18s ease,height .18s ease,border-color .18s ease,background .18s ease}
+  #cursor .cd{position:absolute;width:5px;height:5px;background:#34D8A0;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 8px rgba(52,216,160,.8)}
+  body.curhot #cursor .ring{width:42px;height:42px;border-color:#34D8A0;background:rgba(52,216,160,.06)}
+  body.curdown #cursor .ring{width:20px;height:20px}
 
-  .bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
-  .bgfx i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.5}
-  .bgfx i:nth-child(1){width:420px;height:420px;top:-120px;right:-60px;
-    background:radial-gradient(circle,rgba(110,139,255,.32),transparent 70%);animation:drift 22s ease-in-out infinite}
-  .bgfx i:nth-child(2){width:380px;height:380px;bottom:-150px;left:-90px;
-    background:radial-gradient(circle,rgba(52,216,160,.20),transparent 70%);animation:drift 28s ease-in-out infinite reverse}
-
-  /* Rotating gradient ring — the signature flourish */
-  .glow{position:relative}
-  .glow::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
-    background:conic-gradient(from 0deg,transparent 0 58%,var(--brand) 74%,var(--mint) 86%,transparent 100%);
-    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-    -webkit-mask-composite:xor;mask-composite:exclude;
-    animation:spin 7s linear infinite;opacity:.65;pointer-events:none}
-
-  .brand .mark{filter:drop-shadow(0 4px 12px rgba(110,139,255,.35))}
-  .login{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
-
-  .inv{animation:rise .5s cubic-bezier(.2,.7,.2,1) both;transition:border-color .18s,transform .18s,box-shadow .18s}
-  .inv:hover{border-color:var(--brand);transform:translateY(-2px);box-shadow:0 18px 40px -28px rgba(110,139,255,.6)}
-
-  .pill-pay{position:relative;overflow:hidden}
-  .pill-pay::after{content:"";position:absolute;top:0;left:-60%;width:42%;height:100%;
-    background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg)}
-  .pill-pay:hover::after{animation:sheen .9s ease}
-
-  /* Summary strip */
-  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 24px}
-  .kpi{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:16px 18px;
-    animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
-  .kpi .l{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
-  .kpi .v{font-family:var(--fd);font-weight:800;font-size:clamp(20px,3.4vw,28px);letter-spacing:-.02em;margin-top:7px}
-  .kpi .v.grad{background:linear-gradient(110deg,var(--brand-2),var(--mint));
-    -webkit-background-clip:text;background-clip:text;color:transparent}
-  .kpi .s{font-size:12px;color:var(--muted);margin-top:4px}
-  @media (max-width:560px){.summary{grid-template-columns:1fr 1fr}.summary .kpi:nth-child(3){grid-column:1/-1}}
-
-  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-  @media (max-width:520px){.inv .right{margin-left:0;width:100%;justify-content:space-between}}
+  /* ---------- Mobile ---------- */
+  .mobilebar{display:none}
+  .scrim{position:fixed;inset:0;background:rgba(5,8,16,.62);opacity:0;pointer-events:none;transition:opacity .25s;z-index:55}
+  body.nav-open .scrim{opacity:1;pointer-events:auto}
+  @media (max-width:900px){
+    .shell{margin-left:0;padding-top:74px}
+    .sidebar{transform:translateX(-100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);width:min(80vw,290px);box-shadow:0 0 70px rgba(0,0,0,.6)}
+    body.nav-open .sidebar{transform:none}
+    .mobilebar{display:flex;align-items:center;gap:12px;position:fixed;top:0;left:0;right:0;height:58px;z-index:58;padding:0 16px;background:rgba(10,14,26,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
+    .hamb{border:1px solid var(--line);background:#121a2c;border-radius:9px;width:38px;height:38px;display:grid;place-items:center;color:var(--text);cursor:pointer}
+    .c4,.c5,.c6,.c7,.c8{grid-column:span 12}
+    body.cz,body.cz *{cursor:auto}
+    #cursor{display:none}
+  }
+  @media (max-width:560px){.summary{grid-template-columns:1fr 1fr}.summary .kpi:nth-child(3){grid-column:1/-1}.inv .right{margin-left:0;width:100%;justify-content:space-between}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.bgfx .grid,.bgfx .pdot{display:none}}
 </style>
 </head>
 <body>
 
-<!-- ============================================================
-     CONFIG — replace the three values below with YOUR keys.
-       SUPABASE_URL        : Supabase -> Project Settings -> API -> Project URL
-       SUPABASE_ANON_KEY   : same page -> Project API keys -> anon / public
-       STRIPE_PUBLISHABLE  : Stripe -> Developers -> API keys -> Publishable key (pk_test_...)
-     These three are safe to be public. NEVER put secret keys here.
-     ============================================================ -->
+<!-- CONFIG (public values only — safe in the page) -->
 <script>
   const SUPABASE_URL        = "https://fyaofskaqiilcokyaesx.supabase.co";
   const SUPABASE_ANON_KEY   = "sb_publishable__Kvkqp6_FO16tJ-SJ0vi_w_Dq5p1s8w";
   const STRIPE_PUBLISHABLE  = "pk_live_51TlqoPQzdT3FH1O6fTiZphcuPskVpdjeO4hIhGyPCA6yR8VL4kqmRHdhLRBKMkT6VfQiwNPBwm8L4Vrcr5Cavpu500JFfFPKKp";
 </script>
 
-<div class="bgfx"><i></i><i></i></div>
+<div class="bgfx" id="bgfx"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span><span class="grid"></span></div>
 
-<div class="topbar">
-  <div class="brand">
-    <span class="mark"><svg viewBox="0 0 512 512" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block"><defs><linearGradient id="avilogo" gradientUnits="userSpaceOnUse" x1="65.4" y1="123.6" x2="446.6" y2="388.4"><stop offset="0" stop-color="#6E8BFF"/><stop offset="1" stop-color="#34D8A0"/></linearGradient></defs><rect width="512" height="512" rx="115" fill="#0A0E1A"/><g transform="translate(65.4,123.6) scale(1.22)" fill="url(#avilogo)"><g transform="translate(19748.998 1200.591)"><g transform="translate(2067 6153.53)"><path d="M12.2,221.485A19.5,19.5,0,0,1,1.424,196.1L73.349,18.08a19.553,19.553,0,0,1,36.236,0L181.509,196.1a19.5,19.5,0,0,1-36.16,14.61L91.467,77.346,37.585,210.709A19.484,19.484,0,0,1,12.2,221.485Z" transform="translate(-21815.998 -7360)"/></g><g transform="translate(-19676.998 -1200.59)"><path d="M91.467,217.03a19.5,19.5,0,0,1-18.118-12.2L1.425,26.81A19.5,19.5,0,1,1,37.585,12.2L91.467,145.563,145.349,12.2a19.5,19.5,0,0,1,36.16,14.61L109.585,204.829A19.506,19.506,0,0,1,91.5,217.03Z" transform="translate(-0.001 0)"/></g><rect width="39" height="39" rx="19.5" transform="translate(-19677.031 -1022.561)"/><rect width="39" height="149.029" rx="19.5" transform="translate(-19475.492 -1132.59)"/><rect width="39" height="39" rx="19.5" transform="translate(-19475.492 -1200.59)"/></g></g></svg></span>
-    <b>Avi Data <span>Technology</span></b><span class="tag">Client Portal</span>
-  </div>
-  <div class="top-right">
-    <span class="who" id="who"></span>
-    <a class="linkbtn" href="https://avidatatechnology.com">← Site</a>
-    <button class="linkbtn" id="logout" style="display:none">Log out</button>
-  </div>
+<!-- Mobile bar -->
+<div class="mobilebar">
+  <button class="hamb" id="hamb" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <b style="font-family:var(--fd);font-size:15px">Avi Data <span style="color:var(--muted)">Technology</span></b>
 </div>
+<div class="scrim" id="scrim"></div>
 
-<!-- Config-not-set notice -->
-<div class="cfg card" id="cfgNotice" style="display:none">
-  ⚙️ This portal isn't configured yet. Open <code>portal/index.html</code> and replace the three values
-  in the CONFIG block at the top with your Supabase URL, Supabase anon key, and Stripe publishable key.
-</div>
-
-<!-- LOGIN -->
-<div class="center" id="loginView" style="display:none">
-  <div class="card login glow">
-    <div class="mark"><svg viewBox="0 0 512 512" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block"><defs><linearGradient id="avilogo2" gradientUnits="userSpaceOnUse" x1="65.4" y1="123.6" x2="446.6" y2="388.4"><stop offset="0" stop-color="#6E8BFF"/><stop offset="1" stop-color="#34D8A0"/></linearGradient></defs><rect width="512" height="512" rx="115" fill="#0A0E1A"/><g transform="translate(65.4,123.6) scale(1.22)" fill="url(#avilogo2)"><g transform="translate(19748.998 1200.591)"><g transform="translate(2067 6153.53)"><path d="M12.2,221.485A19.5,19.5,0,0,1,1.424,196.1L73.349,18.08a19.553,19.553,0,0,1,36.236,0L181.509,196.1a19.5,19.5,0,0,1-36.16,14.61L91.467,77.346,37.585,210.709A19.484,19.484,0,0,1,12.2,221.485Z" transform="translate(-21815.998 -7360)"/></g><g transform="translate(-19676.998 -1200.59)"><path d="M91.467,217.03a19.5,19.5,0,0,1-18.118-12.2L1.425,26.81A19.5,19.5,0,1,1,37.585,12.2L91.467,145.563,145.349,12.2a19.5,19.5,0,0,1,36.16,14.61L109.585,204.829A19.506,19.506,0,0,1,91.5,217.03Z" transform="translate(-0.001 0)"/></g><rect width="39" height="39" rx="19.5" transform="translate(-19677.031 -1022.561)"/><rect width="39" height="149.029" rx="19.5" transform="translate(-19475.492 -1132.59)"/><rect width="39" height="39" rx="19.5" transform="translate(-19475.492 -1200.59)"/></g></g></svg></div>
-    <h1>Client sign in</h1>
-    <p>Enter the email and password provided by Avi Data Technology.</p>
-    <label for="email">Email</label>
-    <input id="email" type="email" autocomplete="email" placeholder="you@company.com" />
-    <label for="password">Password</label>
-    <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
-    <button class="btn" id="signin">Sign in →</button>
-    <div class="msg err" id="loginMsg"></div>
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <span class="mark"><svg viewBox="0 0 512 512" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block"><defs><linearGradient id="lg1" gradientUnits="userSpaceOnUse" x1="65.4" y1="123.6" x2="446.6" y2="388.4"><stop offset="0" stop-color="#6E8BFF"/><stop offset="1" stop-color="#34D8A0"/></linearGradient></defs><rect width="512" height="512" rx="115" fill="#0A0E1A"/><g transform="translate(65.4,123.6) scale(1.22)" fill="url(#lg1)"><g transform="translate(19748.998 1200.591)"><g transform="translate(2067 6153.53)"><path d="M12.2,221.485A19.5,19.5,0,0,1,1.424,196.1L73.349,18.08a19.553,19.553,0,0,1,36.236,0L181.509,196.1a19.5,19.5,0,0,1-36.16,14.61L91.467,77.346,37.585,210.709A19.484,19.484,0,0,1,12.2,221.485Z" transform="translate(-21815.998 -7360)"/></g><g transform="translate(-19676.998 -1200.59)"><path d="M91.467,217.03a19.5,19.5,0,0,1-18.118-12.2L1.425,26.81A19.5,19.5,0,1,1,37.585,12.2L91.467,145.563,145.349,12.2a19.5,19.5,0,0,1,36.16,14.61L109.585,204.829A19.506,19.506,0,0,1,91.5,217.03Z" transform="translate(-0.001 0)"/></g><rect width="39" height="39" rx="19.5" transform="translate(-19677.031 -1022.561)"/><rect width="39" height="149.029" rx="19.5" transform="translate(-19475.492 -1132.59)"/><rect width="39" height="39" rx="19.5" transform="translate(-19475.492 -1200.59)"/></g></g></svg></span>
+    <div class="sb-name"><b>Avi Data</b><small>Technology</small></div>
   </div>
-</div>
-
-<!-- DASHBOARD -->
-<div class="wrap" id="dashView" style="display:none">
-  <div class="head">
-    <div class="eyebrow">Your invoices</div>
-    <h1 id="greeting">Welcome</h1>
+  <nav class="sb-nav">
+    <a class="active" href="#"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span>Invoices</span></a>
+    <a href="https://avidatatechnology.com"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg><span>Back to site</span></a>
+  </nav>
+  <div class="sb-foot">
+    <div class="sb-who" id="who"></div>
+    <button class="pill pill-ghost" id="logout" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>Log out</span></button>
   </div>
-  <div class="summary" id="summary" style="display:none"></div>
-  <div id="list"></div>
-</div>
+</aside>
+
+<main class="shell"><div class="wrap">
+
+  <!-- config not set -->
+  <div class="cfg card" id="cfgNotice" style="display:none">⚙️ This portal isn't configured yet. Add your Supabase URL, anon key, and Stripe publishable key in the CONFIG block at the top of <code>portal/index.html</code>.</div>
+
+  <!-- LOGIN (dashboard-styled) -->
+  <div id="loginView" style="display:none">
+    <div class="head"><div class="eyebrow">Secure client access</div><h1>Client Portal</h1></div>
+    <div class="board">
+      <div class="card c5 login">
+        <span class="lmark"><svg viewBox="0 0 512 512" width="46" height="46" xmlns="http://www.w3.org/2000/svg" style="display:block"><defs><linearGradient id="lg2" gradientUnits="userSpaceOnUse" x1="65.4" y1="123.6" x2="446.6" y2="388.4"><stop offset="0" stop-color="#6E8BFF"/><stop offset="1" stop-color="#34D8A0"/></linearGradient></defs><rect width="512" height="512" rx="115" fill="#0A0E1A"/><g transform="translate(65.4,123.6) scale(1.22)" fill="url(#lg2)"><g transform="translate(19748.998 1200.591)"><g transform="translate(2067 6153.53)"><path d="M12.2,221.485A19.5,19.5,0,0,1,1.424,196.1L73.349,18.08a19.553,19.553,0,0,1,36.236,0L181.509,196.1a19.5,19.5,0,0,1-36.16,14.61L91.467,77.346,37.585,210.709A19.484,19.484,0,0,1,12.2,221.485Z" transform="translate(-21815.998 -7360)"/></g><g transform="translate(-19676.998 -1200.59)"><path d="M91.467,217.03a19.5,19.5,0,0,1-18.118-12.2L1.425,26.81A19.5,19.5,0,1,1,37.585,12.2L91.467,145.563,145.349,12.2a19.5,19.5,0,0,1,36.16,14.61L109.585,204.829A19.506,19.506,0,0,1,91.5,217.03Z" transform="translate(-0.001 0)"/></g><rect width="39" height="39" rx="19.5" transform="translate(-19677.031 -1022.561)"/><rect width="39" height="149.029" rx="19.5" transform="translate(-19475.492 -1132.59)"/><rect width="39" height="39" rx="19.5" transform="translate(-19475.492 -1200.59)"/></g></g></svg></span>
+        <h1>Sign in</h1>
+        <p>Enter the email and password provided by Avi Data Technology.</p>
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" placeholder="you@company.com" />
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+        <button class="btn" id="signin">Sign in →</button>
+        <div class="msg err" id="loginMsg"></div>
+      </div>
+      <div class="shot c7">
+        <div class="shot-bar"><span class="d"><i></i><i></i><i></i></span><span class="ttl">avidata · live dashboard</span><span class="live"><i></i>live</span></div>
+        <div class="shot-body">
+          <div class="grid3">
+            <div class="kpi"><div class="l">Collected</div><div class="v">$248K</div><div class="d up">▲ 9.1%</div></div>
+            <div class="kpi"><div class="l">Open invoices</div><div class="v">12</div><div class="d up">▲ 3</div></div>
+            <div class="kpi"><div class="l">On-time rate</div><div class="v">96<small>%</small></div><div class="d up">▲ 2%</div></div>
+          </div>
+          <div class="grid2">
+            <div class="mini"><div class="mh"><h4>Activity</h4><span class="t">W1–W12</span></div><svg class="chart" id="heroCandles" viewBox="0 0 300 110" height="96"></svg></div>
+            <div class="mini"><div class="mh"><h4>Sources</h4><span class="t">234</span></div><svg class="chart" id="heroGauge" viewBox="0 0 220 130" height="96" style="margin:0 auto;display:block"></svg></div>
+          </div>
+          <div class="mini"><div class="mh"><h4>Collections trend</h4><span class="t">sourced → paid</span></div><svg class="chart" id="heroArea" viewBox="0 0 560 130" height="110" preserveAspectRatio="none"></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashView" style="display:none">
+    <div class="head"><div class="eyebrow">Your account</div><h1 id="greeting">Welcome</h1></div>
+    <div class="summary" id="summary" style="display:none"></div>
+    <div id="list"></div>
+  </div>
+
+</div></main>
 
 <!-- PAYMENT OVERLAY -->
 <div class="overlay" id="overlay">
   <div class="card pay">
-    <div class="ptop">
-      <div>
-        <h2 id="payTitle">Pay invoice</h2>
-        <div class="psub" id="payNum"></div>
-      </div>
-      <div class="total" id="payTotal"></div>
-    </div>
+    <div class="ptop"><div><h2 id="payTitle">Pay invoice</h2><div class="psub" id="payNum"></div></div><div class="total" id="payTotal"></div></div>
     <div id="payment-element"></div>
     <button class="btn" id="payBtn">Pay</button>
     <button class="btn btn-ghost" id="payCancel" style="margin-top:10px">Cancel</button>
@@ -244,232 +293,189 @@
 
 <script>
 (function(){
-  // --- Guard: config filled in? ---
+  const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   if (SUPABASE_URL.includes("YOUR-PROJECT") || SUPABASE_ANON_KEY.includes("YOUR_") || STRIPE_PUBLISHABLE.includes("YOUR_")) {
-    document.getElementById("cfgNotice").style.display = "block";
-    return;
+    document.getElementById("cfgNotice").style.display = "block"; return;
   }
-
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const stripe = Stripe(STRIPE_PUBLISHABLE);
-
   const $ = (id) => document.getElementById(id);
-  const fmt = (cents) => (cents/100).toLocaleString("en-US",{style:"currency",currency:"USD"});
+  const fmt = (c) => (c/100).toLocaleString("en-US",{style:"currency",currency:"USD"});
   const show = (el,on) => { el.style.display = on ? "" : "none"; };
+  let elements = null, activeInvoice = null, chartsDone = false;
 
-  let elements = null, activeInvoice = null;
+  /* ---------- ambient dots ---------- */
+  (function dots(){
+    if (reduce) return;
+    const fx = $("bgfx"); if(!fx) return;
+    for (let i=0;i<16;i++){
+      const d = document.createElement("span"); d.className="pdot";
+      const sz = 2+Math.random()*3;
+      d.style.width=d.style.height=sz+"px";
+      d.style.top=(Math.random()*100)+"%"; d.style.left=(Math.random()*100)+"%";
+      d.style.setProperty("--dx",((Math.random()*120-60)).toFixed(0)+"px");
+      d.style.setProperty("--dy",((Math.random()*120-60)).toFixed(0)+"px");
+      d.style.animationDuration=(14+Math.random()*22).toFixed(0)+"s";
+      d.style.animationDelay=(-Math.random()*20).toFixed(0)+"s";
+      d.style.opacity=(0.25+Math.random()*0.35).toFixed(2);
+      fx.appendChild(d);
+    }
+  })();
 
-  // ---------- Auth state ----------
-  async function boot(){
-    const { data:{ session } } = await sb.auth.getSession();
-    if (session) enterApp(session); else showLogin();
+  /* ---------- custom cursor ---------- */
+  (function cursor(){
+    if (reduce) return;
+    if (!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+    document.body.classList.add('cz');
+    const c=document.createElement('div'); c.id='cursor'; c.innerHTML='<div class="ring"></div><div class="cd"></div>'; document.body.appendChild(c);
+    const ring=c.querySelector('.ring'), dot=c.querySelector('.cd');
+    let rx=innerWidth/2, ry=innerHeight/2, mx=rx, my=ry;
+    addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';});
+    (function loop(){rx+=(mx-rx)*0.2;ry+=(my-ry)*0.2;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+    const hot='a,button,input,.pill,.inv,.card';
+    document.addEventListener('mouseover',e=>{if(e.target.closest&&e.target.closest(hot))document.body.classList.add('curhot');});
+    document.addEventListener('mouseout',e=>{const t=e.relatedTarget;if(!(t&&t.closest&&t.closest(hot)))document.body.classList.remove('curhot');});
+    document.addEventListener('mousedown',()=>document.body.classList.add('curdown'));
+    document.addEventListener('mouseup',()=>document.body.classList.remove('curdown'));
+  })();
+
+  /* ---------- live charts (login backdrop) ---------- */
+  function appearNow(s){ if(!s)return; s.classList.add('gchart');
+    s.querySelectorAll('.ln').forEach(l=>{const L=l.getTotalLength();l.style.strokeDasharray=L;l.style.strokeDashoffset=L;l.classList.add('gl');});
+    requestAnimationFrame(()=>{ s.classList.add('in'); s.querySelectorAll('.gl').forEach(l=>l.style.strokeDashoffset='0'); });
   }
+  function smooth(p){ if(p.length<2)return''; let d='M'+p[0][0].toFixed(1)+','+p[0][1].toFixed(1); for(let i=0;i<p.length-1;i++){const a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c; d+=' C'+(b[0]+(c[0]-a[0])/6).toFixed(1)+','+(b[1]+(c[1]-a[1])/6).toFixed(1)+' '+(c[0]-(e[0]-b[0])/6).toFixed(1)+','+(c[1]-(e[1]-b[1])/6).toFixed(1)+' '+c[0].toFixed(1)+','+c[1].toFixed(1);} return d; }
+  function candles(id){const s=$(id);if(!s)return;const W=300,H=110,PB=10,PT=8,MIN=2,MAX=12;
+    const D=[[6,8,5,7],[7,9,6,6],[6,7,4,5],[5,8,5,8],[8,10,7,7],[7,9,5,9],[9,11,8,8],[8,9,6,7],[7,10,6,10],[10,12,9,9],[9,10,7,11],[11,12,9,12]];
+    const n=D.length,cw=(W-12)/n,bw=cw*0.5;function y(v){return PT+(H-PT-PB)*(1-(v-MIN)/(MAX-MIN));}
+    let h='';for(let i=0;i<n;i++){const x=6+cw*i+cw/2,o=D[i][0],hi=D[i][1],lo=D[i][2],c=D[i][3],up=c>=o,col=up?'#34D8A0':'#F2607D';
+      h+='<line x1="'+x.toFixed(1)+'" y1="'+y(hi).toFixed(1)+'" x2="'+x.toFixed(1)+'" y2="'+y(lo).toFixed(1)+'" stroke="'+col+'" stroke-width="1.4" opacity="0.7"/>';
+      const yt=y(Math.max(o,c)),yb=y(Math.min(o,c));h+='<rect class="gb'+(i%3===0?' tk':'')+'" style="transform-box:fill-box;transform-origin:50% 100%;transition-delay:'+(i*35)+'ms" x="'+(x-bw/2).toFixed(1)+'" y="'+yt.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(2,yb-yt).toFixed(1)+'" rx="1.5" fill="'+col+'"/>';}
+    s.innerHTML=h;appearNow(s);}
+  function gauge(id){const s=$(id);if(!s)return;const cx=110,cy=112,r=82;
+    const seg=[['AI Sourced',38,'#6E8BFF'],['Inbound',30,'#34D8A0'],['Referrals',20,'#F2B45C'],['Events',12,'#F2607D']];
+    function pt(a){return [cx+r*Math.cos(a*Math.PI/180),cy+r*Math.sin(a*Math.PI/180)];}
+    let h='',a=180;seg.forEach(g=>{const a1=a+180*g[1]/100,p0=pt(a),p1=pt(a1),d='M'+p0[0].toFixed(1)+','+p0[1].toFixed(1)+' A'+r+' '+r+' 0 0 1 '+p1[0].toFixed(1)+','+p1[1].toFixed(1);
+      h+='<path class="ln" d="'+d+'" fill="none" stroke="'+g[2]+'" stroke-width="13" stroke-linecap="round"/>';a=a1+1.5;});
+    h+='<text x="110" y="104" text-anchor="middle" fill="#EAF0FB" font-family="Plus Jakarta Sans" font-weight="700" font-size="26">234</text>';
+    h+='<text x="110" y="120" text-anchor="middle" fill="#566179" font-family="JetBrains Mono" font-size="9" letter-spacing="2">LEADS</text>';
+    s.innerHTML=h;appearNow(s);}
+  function stream(id){const s=$(id);if(!s)return;const W=560,H=130,PB=4;
+    const L=[[40,42,44,48,52,58,66,76,88,100,112,120],[24,26,27,30,34,40,48,58,70,82,92,100],[10,11,12,14,17,22,28,36,46,56,66,74]];
+    const cols=['#6E8BFF','#5570d8','#3f50c4'],n=L[0].length;function pts(arr){return arr.map((v,i)=>[(W)*(i/(n-1)),H-PB-(H-PB-6)*(v/130)]);}
+    let h='';for(let k=0;k<L.length;k++){const P=pts(L[k]),d=smooth(P)+' L'+W+','+(H-PB)+' L0,'+(H-PB)+' Z';h+='<path d="'+d+'" fill="'+cols[k]+'" opacity="'+(0.32+k*0.18)+'"/>';}
+    h+='<path class="ln" d="'+smooth(pts(L[0]))+'" fill="none" stroke="#9FB0FF" stroke-width="2"/>';s.innerHTML=h;appearNow(s);}
+  function drawCharts(){ if(chartsDone) return; chartsDone=true; candles('heroCandles'); gauge('heroGauge'); stream('heroArea'); }
 
-  function showLogin(){
-    show($("loginView"), true); show($("dashView"), false);
-    show($("logout"), false); $("who").style.display = "none";
-  }
-
+  /* ---------- auth ---------- */
+  async function boot(){ const { data:{ session } } = await sb.auth.getSession(); if (session) enterApp(session); else showLogin(); }
+  function showLogin(){ show($("loginView"),true); show($("dashView"),false); show($("logout"),false); $("who").textContent=""; drawCharts(); }
   async function enterApp(session){
-    show($("loginView"), false); show($("dashView"), true);
-    show($("logout"), true);
-    // Greeting from profile (company / contact), falling back to email.
+    show($("loginView"),false); show($("dashView"),true); show($("logout"),true);
     let name = session.user.email;
-    try {
-      const { data } = await sb.from("profiles").select("company_name,contact_name").maybeSingle();
-      if (data && (data.company_name || data.contact_name)) name = data.company_name || data.contact_name;
-    } catch(e){}
+    try { const { data } = await sb.from("profiles").select("company_name,contact_name").maybeSingle();
+      if (data && (data.company_name || data.contact_name)) name = data.company_name || data.contact_name; } catch(e){}
     $("greeting").textContent = "Welcome, " + name;
-    $("who").textContent = session.user.email; $("who").style.display = "inline";
+    $("who").textContent = session.user.email;
     loadInvoices();
   }
 
-  // ---------- Invoices ----------
+  /* ---------- invoices ---------- */
   async function loadInvoices(){
-    const list = $("list"), summary = $("summary");
-    list.innerHTML = '<div class="skel"></div><div class="skel"></div>';
-    const { data, error } = await sb.from("invoices")
-      .select("id,number,description,amount_cents,status,due_date,paid_at")
-      .order("created_at",{ascending:false});
-    if (error){ summary.style.display="none"; list.innerHTML = '<div class="empty"><div class="big">Couldn\'t load your invoices</div>Please refresh the page, or contact us if it keeps happening.</div>'; return; }
-    if (!data.length){ summary.style.display="none"; list.innerHTML = '<div class="empty"><div class="big">No invoices yet</div>When Avi Data sends you one, it\'ll appear here.</div>'; return; }
+    const list=$("list"), summary=$("summary");
+    list.innerHTML='<div class="skel"></div><div class="skel"></div>';
+    const { data, error } = await sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at").order("created_at",{ascending:false});
+    if (error){ summary.style.display="none"; list.innerHTML='<div class="empty"><div class="big">Couldn\'t load your invoices</div>Please refresh, or contact us if it keeps happening.</div>'; return; }
+    if (!data.length){ summary.style.display="none"; list.innerHTML='<div class="empty"><div class="big">No invoices yet</div>When Avi Data sends you one, it\'ll appear here.</div>'; return; }
     renderSummary(data);
-    list.innerHTML = "";
-    data.forEach((inv,i) => { const el = row(inv); el.style.animationDelay = (i*55)+"ms"; list.appendChild(el); });
+    list.innerHTML="";
+    data.forEach((inv,i)=>{ const el=row(inv); el.style.animationDelay=(i*55)+"ms"; list.appendChild(el); });
   }
-
   function renderSummary(data){
-    const summary = $("summary");
-    const open = data.filter(i => i.status === "open");
-    const outstanding = open.reduce((s,i) => s+i.amount_cents, 0);
-    const paidTotal = data.filter(i => i.status === "paid").reduce((s,i) => s+i.amount_cents, 0);
-    const dues = open.filter(i => i.due_date).map(i => i.due_date).sort();
-    const nextDue = dues[0] ? new Date(dues[0]+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "—";
-    summary.style.display = "grid";
-    summary.innerHTML =
-      '<div class="kpi glow" style="animation-delay:0ms"><div class="l">Balance due</div>'+
-        '<div class="v grad" data-cents="'+outstanding+'">$0</div>'+
-        '<div class="s">'+open.length+' open invoice'+(open.length===1?"":"s")+'</div></div>'+
-      '<div class="kpi" style="animation-delay:70ms"><div class="l">Paid to date</div>'+
-        '<div class="v" data-cents="'+paidTotal+'">$0</div><div class="s">thank you</div></div>'+
-      '<div class="kpi" style="animation-delay:140ms"><div class="l">Next due</div>'+
-        '<div class="v" style="font-size:clamp(18px,3vw,24px)">'+nextDue+'</div>'+
-        '<div class="s">'+(dues[0] ? "soonest invoice" : "nothing scheduled")+'</div></div>';
-    summary.querySelectorAll(".v[data-cents]").forEach(el => countUp(el, +el.getAttribute("data-cents")));
+    const summary=$("summary");
+    const open=data.filter(i=>i.status==="open");
+    const outstanding=open.reduce((s,i)=>s+i.amount_cents,0);
+    const paidTotal=data.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount_cents,0);
+    const dues=open.filter(i=>i.due_date).map(i=>i.due_date).sort();
+    const nextDue=dues[0]?new Date(dues[0]+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}):"—";
+    summary.style.display="grid";
+    summary.innerHTML=
+      '<div class="kpi"><div class="l">Balance due</div><div class="v grad" data-cents="'+outstanding+'">$0</div><div class="d">'+open.length+' open invoice'+(open.length===1?"":"s")+'</div></div>'+
+      '<div class="kpi"><div class="l">Paid to date</div><div class="v" data-cents="'+paidTotal+'">$0</div><div class="d">thank you</div></div>'+
+      '<div class="kpi"><div class="l">Next due</div><div class="v" style="font-size:19px">'+nextDue+'</div><div class="d">'+(dues[0]?"soonest invoice":"nothing scheduled")+'</div></div>';
+    summary.querySelectorAll(".v[data-cents]").forEach(el=>countUp(el,+el.getAttribute("data-cents")));
   }
-
-  function countUp(el, cents){
-    const dur = 700, t0 = performance.now();
-    (function step(t){
-      const p = Math.min(1,(t-t0)/dur), e = 1-Math.pow(1-p,3);
-      el.textContent = fmt(Math.round(cents*e));
-      if (p < 1) requestAnimationFrame(step);
-    })(performance.now());
-  }
-
+  function countUp(el,cents){ const dur=700,t0=performance.now(); (function step(t){const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fmt(Math.round(cents*e));if(p<1)requestAnimationFrame(step);})(performance.now()); }
   function row(inv){
-    const el = document.createElement("div");
-    el.className = "inv";
-    const due = inv.due_date ? "Due " + new Date(inv.due_date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "";
+    const el=document.createElement("div"); el.className="inv";
+    const due=inv.due_date?"Due "+new Date(inv.due_date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"";
     let right;
-    if (inv.status === "paid"){
-      const when = inv.paid_at ? " · " + new Date(inv.paid_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "";
-      right = `<span class="badge paid"><span class="dot"></span>Paid${when}</span>`;
-    } else if (inv.status === "void"){
-      right = `<span class="badge void">Void</span>`;
-    } else {
-      right = `<button class="pill pill-pay" data-pay="${inv.id}">Pay ${fmt(inv.amount_cents)}</button>`;
-    }
-    el.innerHTML = `
-      <div class="meta">
-        <div class="num">${inv.number}</div>
-        <div class="desc">${escapeHtml(inv.description)}</div>
-        <div class="due">${due}</div>
-      </div>
-      <div class="right">
-        <div class="amt">${fmt(inv.amount_cents)}</div>
-        ${right}
-      </div>`;
-    const btn = el.querySelector("[data-pay]");
-    if (btn) btn.addEventListener("click", () => openPay(inv));
+    if (inv.status==="paid"){ const when=inv.paid_at?" · "+new Date(inv.paid_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}):""; right='<span class="badge paid"><span class="bd"></span>Paid'+when+'</span>'; }
+    else if (inv.status==="void"){ right='<span class="badge void">Void</span>'; }
+    else { right='<button class="pill-pay" data-pay="'+inv.id+'">Pay '+fmt(inv.amount_cents)+'</button>'; }
+    el.innerHTML='<div class="meta"><div class="num">'+inv.number+'</div><div class="desc">'+esc(inv.description)+'</div><div class="due">'+due+'</div></div><div class="right"><div class="amt">'+fmt(inv.amount_cents)+'</div>'+right+'</div>';
+    const b=el.querySelector("[data-pay]"); if(b)b.addEventListener("click",()=>openPay(inv));
     return el;
   }
+  function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-
-  // ---------- Payment ----------
+  /* ---------- payment ---------- */
   async function openPay(inv){
-    activeInvoice = inv;
-    $("payTitle").textContent = "Pay " + inv.number;
-    $("payNum").textContent = inv.description;
-    $("payTotal").textContent = fmt(inv.amount_cents);
-    setPayMsg("Setting up secure payment…","info");
-    $("payBtn").disabled = true; $("payBtn").textContent = "Pay " + fmt(inv.amount_cents);
-    show($("overlay"), true); $("overlay").classList.add("on");
-
-    const token = (await sb.auth.getSession()).data.session.access_token;
-    let res;
-    try {
-      res = await fetch("/.netlify/functions/create-payment-intent", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token },
-        body: JSON.stringify({ invoice_id: inv.id })
-      });
-    } catch(e){ setPayMsg("Network error. Please try again.","err"); return; }
-    const j = await res.json();
-    if (!res.ok){ setPayMsg(j.error || "Couldn't start payment.","err"); return; }
-
-    const appearance = { theme:"night", variables:{
-      colorPrimary:"#6E8BFF", colorBackground:"#0D1322", colorText:"#EAF0FB",
-      colorTextSecondary:"#8793AE", colorDanger:"#F2607D",
-      fontFamily:"Inter, system-ui, sans-serif", borderRadius:"11px"
-    }};
-    elements = stripe.elements({ clientSecret: j.client_secret, appearance });
-    const pe = elements.create("payment", { layout:"tabs" });
-    pe.mount("#payment-element");
-    setPayMsg("","info");
-    $("payBtn").disabled = false;
+    activeInvoice=inv;
+    $("payTitle").textContent="Pay "+inv.number; $("payNum").textContent=inv.description; $("payTotal").textContent=fmt(inv.amount_cents);
+    setPayMsg("Setting up secure payment…","info"); $("payBtn").disabled=true; $("payBtn").textContent="Pay "+fmt(inv.amount_cents);
+    show($("overlay"),true); $("overlay").classList.add("on");
+    const token=(await sb.auth.getSession()).data.session.access_token;
+    let res; try{ res=await fetch("/.netlify/functions/create-payment-intent",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({invoice_id:inv.id})}); }
+    catch(e){ setPayMsg("Network error. Please try again.","err"); return; }
+    const j=await res.json(); if(!res.ok){ setPayMsg(j.error||"Couldn't start payment.","err"); return; }
+    const appearance={theme:"night",variables:{colorPrimary:"#6E8BFF",colorBackground:"#0D1322",colorText:"#EAF0FB",colorTextSecondary:"#8793AE",colorDanger:"#F2607D",fontFamily:"Inter, system-ui, sans-serif",borderRadius:"11px"}};
+    elements=stripe.elements({clientSecret:j.client_secret,appearance});
+    elements.create("payment",{layout:"tabs"}).mount("#payment-element");
+    setPayMsg("","info"); $("payBtn").disabled=false;
   }
-
   async function pay(){
-    if (!elements) return;
-    $("payBtn").disabled = true; setPayMsg("Processing…","info");
-    // Remember which invoice, in case a payment method redirects us away.
-    sessionStorage.setItem("avi_pay_invoice", activeInvoice.id);
-
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams:{ return_url: location.origin + location.pathname },
-      redirect:"if_required"
-    });
-
-    if (error){ setPayMsg(error.message || "Payment failed.","err"); $("payBtn").disabled = false; return; }
+    if(!elements)return; $("payBtn").disabled=true; setPayMsg("Processing…","info");
+    sessionStorage.setItem("avi_pay_invoice",activeInvoice.id);
+    const { error, paymentIntent } = await stripe.confirmPayment({ elements, confirmParams:{ return_url: location.origin+location.pathname }, redirect:"if_required" });
+    if(error){ setPayMsg(error.message||"Payment failed.","err"); $("payBtn").disabled=false; return; }
     await finalize(activeInvoice.id, paymentIntent.id);
   }
-
-  async function finalize(invoiceId, paymentIntentId){
+  async function finalize(invoiceId,piId){
     setPayMsg("Confirming…","info");
-    const token = (await sb.auth.getSession()).data.session.access_token;
-    let j;
-    try {
-      const r = await fetch("/.netlify/functions/confirm-payment", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token },
-        body: JSON.stringify({ invoice_id: invoiceId, payment_intent_id: paymentIntentId })
-      });
-      j = await r.json();
-    } catch(e){ setPayMsg("Couldn't confirm. If money left your account, contact us.","err"); return; }
-
+    const token=(await sb.auth.getSession()).data.session.access_token;
+    let j; try{ const r=await fetch("/.netlify/functions/confirm-payment",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({invoice_id:invoiceId,payment_intent_id:piId})}); j=await r.json(); }
+    catch(e){ setPayMsg("Couldn't confirm. If money left your account, contact us.","err"); return; }
     sessionStorage.removeItem("avi_pay_invoice");
-    if (j.status === "paid"){
-      setPayMsg("Paid in full — thank you!","ok");
-      setTimeout(closePay, 1400); loadInvoices();
-    } else if (j.status === "processing"){
-      setPayMsg("Bank payment submitted. It clears in a few business days.","ok");
-      setTimeout(closePay, 2200); loadInvoices();
-    } else {
-      setPayMsg("Payment status: " + j.status + ".","info");
-      $("payBtn").disabled = false;
-    }
+    if(j.status==="paid"){ setPayMsg("Paid in full — thank you!","ok"); setTimeout(closePay,1400); loadInvoices(); }
+    else if(j.status==="processing"){ setPayMsg("Bank payment submitted. It clears in a few business days.","ok"); setTimeout(closePay,2200); loadInvoices(); }
+    else { setPayMsg("Payment status: "+j.status+".","info"); $("payBtn").disabled=false; }
   }
-
-  function closePay(){
-    $("overlay").classList.remove("on"); show($("overlay"), false);
-    if (elements){ try{ document.getElementById("payment-element").innerHTML=""; }catch(e){} elements=null; }
-    setPayMsg("","info"); activeInvoice=null;
-  }
+  function closePay(){ $("overlay").classList.remove("on"); show($("overlay"),false); if(elements){try{$("payment-element").innerHTML="";}catch(e){} elements=null;} setPayMsg("","info"); activeInvoice=null; }
   function setPayMsg(t,k){ const m=$("payMsg"); m.textContent=t; m.className="msg "+(k||"info"); }
-
-  // Handle a redirect back from a payment method (e.g. some bank flows).
   async function handleReturn(){
-    const params = new URLSearchParams(location.search);
-    const piClientSecret = params.get("payment_intent_client_secret");
-    const piId = params.get("payment_intent");
-    const invoiceId = sessionStorage.getItem("avi_pay_invoice");
-    if (piId && invoiceId){
-      history.replaceState({}, "", location.pathname);
-      // ensure we're signed in before finalizing
-      const { data:{ session } } = await sb.auth.getSession();
-      if (session){ show($("overlay"), true); $("overlay").classList.add("on"); await finalize(invoiceId, piId); }
-    }
+    const params=new URLSearchParams(location.search); const piId=params.get("payment_intent"); const invoiceId=sessionStorage.getItem("avi_pay_invoice");
+    if(piId&&invoiceId){ history.replaceState({},"",location.pathname); const { data:{ session } }=await sb.auth.getSession(); if(session){ show($("overlay"),true); $("overlay").classList.add("on"); await finalize(invoiceId,piId); } }
   }
 
-  // ---------- Wire up ----------
-  $("signin").addEventListener("click", signIn);
-  $("password").addEventListener("keydown", e => { if(e.key==="Enter") signIn(); });
+  /* ---------- wiring ---------- */
+  $("signin").addEventListener("click",signIn);
+  $("password").addEventListener("keydown",e=>{ if(e.key==="Enter") signIn(); });
   async function signIn(){
-    const email = $("email").value.trim(), password = $("password").value;
-    if(!email || !password){ $("loginMsg").textContent="Enter your email and password."; return; }
-    $("signin").disabled = true; $("loginMsg").textContent="";
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    $("signin").disabled = false;
-    if (error){ $("loginMsg").textContent = "That email or password didn't work."; return; }
+    const email=$("email").value.trim(), password=$("password").value;
+    if(!email||!password){ $("loginMsg").textContent="Enter your email and password."; return; }
+    $("signin").disabled=true; $("loginMsg").textContent="";
+    const { data, error }=await sb.auth.signInWithPassword({email,password});
+    $("signin").disabled=false;
+    if(error){ $("loginMsg").textContent="That email or password didn't work."; return; }
     enterApp(data.session);
   }
-  $("logout").addEventListener("click", async () => { await sb.auth.signOut(); showLogin(); });
-  $("payBtn").addEventListener("click", pay);
-  $("payCancel").addEventListener("click", closePay);
-  $("overlay").addEventListener("click", e => { if(e.target===$("overlay")) closePay(); });
+  $("logout").addEventListener("click",async()=>{ await sb.auth.signOut(); showLogin(); });
+  $("payBtn").addEventListener("click",pay);
+  $("payCancel").addEventListener("click",closePay);
+  $("overlay").addEventListener("click",e=>{ if(e.target===$("overlay")) closePay(); });
+  $("hamb").addEventListener("click",()=>document.body.classList.toggle("nav-open"));
+  $("scrim").addEventListener("click",()=>document.body.classList.remove("nav-open"));
 
   boot().then(handleReturn);
 })();
