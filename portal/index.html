@@ -38,9 +38,9 @@
   .topbar{position:sticky;top:0;z-index:40;height:var(--top);display:flex;align-items:center;gap:14px;
     padding:0 20px;background:rgba(10,14,26,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line-soft)}
   .brand{display:flex;align-items:center;gap:11px}
-  .brand .mark{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
-    background:linear-gradient(150deg,var(--brand),var(--mint))}
+  .brand .mark{width:32px;height:32px;border-radius:9px;overflow:hidden;flex:none}
   .brand b{font-family:var(--fd);font-weight:700;font-size:15.5px;letter-spacing:-.02em}
+  .brand b span{color:var(--muted);font-weight:600}
   .brand .tag{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);
     border:1px solid var(--line);border-radius:6px;padding:3px 7px;margin-left:2px}
   .top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
@@ -56,8 +56,7 @@
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
     box-shadow:0 40px 120px -50px rgba(0,0,0,.9)}
   .login{width:100%;max-width:380px;padding:30px}
-  .login .mark{width:46px;height:46px;border-radius:13px;background:linear-gradient(150deg,var(--brand),var(--mint));
-    display:grid;place-items:center;margin-bottom:16px}
+  .login .mark{width:46px;height:46px;border-radius:13px;overflow:hidden;margin-bottom:16px}
   .login h1{font-family:var(--fd);font-size:20px;letter-spacing:-.02em;margin:0 0 6px}
   .login p{color:var(--muted);font-size:13px;margin:0 0 20px}
   label{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
@@ -119,6 +118,49 @@
   .cfg{max-width:560px;margin:40px auto;padding:24px;color:var(--gold);font-size:13.5px;line-height:1.7}
   .cfg code{font-family:var(--fm);color:var(--text);background:var(--panel-2);padding:2px 6px;border-radius:5px}
 
+  /* ---- Motion & bling (matches the main site's feel) ---- */
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes spin{to{transform:rotate(1turn)}}
+  @keyframes drift{0%{transform:translate(0,0)}50%{transform:translate(42px,-28px)}100%{transform:translate(0,0)}}
+  @keyframes sheen{0%{left:-60%}60%,100%{left:130%}}
+
+  .bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .bgfx i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.5}
+  .bgfx i:nth-child(1){width:420px;height:420px;top:-120px;right:-60px;
+    background:radial-gradient(circle,rgba(110,139,255,.32),transparent 70%);animation:drift 22s ease-in-out infinite}
+  .bgfx i:nth-child(2){width:380px;height:380px;bottom:-150px;left:-90px;
+    background:radial-gradient(circle,rgba(52,216,160,.20),transparent 70%);animation:drift 28s ease-in-out infinite reverse}
+
+  /* Rotating gradient ring — the signature flourish */
+  .glow{position:relative}
+  .glow::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
+    background:conic-gradient(from 0deg,transparent 0 58%,var(--brand) 74%,var(--mint) 86%,transparent 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    animation:spin 7s linear infinite;opacity:.65;pointer-events:none}
+
+  .brand .mark{filter:drop-shadow(0 4px 12px rgba(110,139,255,.35))}
+  .login{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+
+  .inv{animation:rise .5s cubic-bezier(.2,.7,.2,1) both;transition:border-color .18s,transform .18s,box-shadow .18s}
+  .inv:hover{border-color:var(--brand);transform:translateY(-2px);box-shadow:0 18px 40px -28px rgba(110,139,255,.6)}
+
+  .pill-pay{position:relative;overflow:hidden}
+  .pill-pay::after{content:"";position:absolute;top:0;left:-60%;width:42%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg)}
+  .pill-pay:hover::after{animation:sheen .9s ease}
+
+  /* Summary strip */
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 24px}
+  .kpi{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:16px 18px;
+    animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+  .kpi .l{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
+  .kpi .v{font-family:var(--fd);font-weight:800;font-size:clamp(20px,3.4vw,28px);letter-spacing:-.02em;margin-top:7px}
+  .kpi .v.grad{background:linear-gradient(110deg,var(--brand-2),var(--mint));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .kpi .s{font-size:12px;color:var(--muted);margin-top:4px}
+  @media (max-width:560px){.summary{grid-template-columns:1fr 1fr}.summary .kpi:nth-child(3){grid-column:1/-1}}
+
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   @media (max-width:520px){.inv .right{margin-left:0;width:100%;justify-content:space-between}}
 </style>
@@ -138,10 +180,12 @@
   const STRIPE_PUBLISHABLE  = "pk_live_51TlqoPQzdT3FH1O6fTiZphcuPskVpdjeO4hIhGyPCA6yR8VL4kqmRHdhLRBKMkT6VfQiwNPBwm8L4Vrcr5Cavpu500JFfFPKKp";
 </script>
 
+<div class="bgfx"><i></i><i></i></div>
+
 <div class="topbar">
   <div class="brand">
-    <span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
-    <b>Avi Data</b><span class="tag">Client Portal</span>
+    <span class="mark"><svg viewBox="0 0 512 512" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block"><defs><linearGradient id="avilogo" gradientUnits="userSpaceOnUse" x1="65.4" y1="123.6" x2="446.6" y2="388.4"><stop offset="0" stop-color="#6E8BFF"/><stop offset="1" stop-color="#34D8A0"/></linearGradient></defs><rect width="512" height="512" rx="115" fill="#0A0E1A"/><g transform="translate(65.4,123.6) scale(1.22)" fill="url(#avilogo)"><g transform="translate(19748.998 1200.591)"><g transform="translate(2067 6153.53)"><path d="M12.2,221.485A19.5,19.5,0,0,1,1.424,196.1L73.349,18.08a19.553,19.553,0,0,1,36.236,0L181.509,196.1a19.5,19.5,0,0,1-36.16,14.61L91.467,77.346,37.585,210.709A19.484,19.484,0,0,1,12.2,221.485Z" transform="translate(-21815.998 -7360)"/></g><g transform="translate(-19676.998 -1200.59)"><path d="M91.467,217.03a19.5,19.5,0,0,1-18.118-12.2L1.425,26.81A19.5,19.5,0,1,1,37.585,12.2L91.467,145.563,145.349,12.2a19.5,19.5,0,0,1,36.16,14.61L109.585,204.829A19.506,19.506,0,0,1,91.5,217.03Z" transform="translate(-0.001 0)"/></g><rect width="39" height="39" rx="19.5" transform="translate(-19677.031 -1022.561)"/><rect width="39" height="149.029" rx="19.5" transform="translate(-19475.492 -1132.59)"/><rect width="39" height="39" rx="19.5" transform="translate(-19475.492 -1200.59)"/></g></g></svg></span>
+    <b>Avi Data <span>Technology</span></b><span class="tag">Client Portal</span>
   </div>
   <div class="top-right">
     <span class="who" id="who"></span>
@@ -158,8 +202,8 @@
 
 <!-- LOGIN -->
 <div class="center" id="loginView" style="display:none">
-  <div class="card login">
-    <div class="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+  <div class="card login glow">
+    <div class="mark"><svg viewBox="0 0 512 512" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block"><defs><linearGradient id="avilogo2" gradientUnits="userSpaceOnUse" x1="65.4" y1="123.6" x2="446.6" y2="388.4"><stop offset="0" stop-color="#6E8BFF"/><stop offset="1" stop-color="#34D8A0"/></linearGradient></defs><rect width="512" height="512" rx="115" fill="#0A0E1A"/><g transform="translate(65.4,123.6) scale(1.22)" fill="url(#avilogo2)"><g transform="translate(19748.998 1200.591)"><g transform="translate(2067 6153.53)"><path d="M12.2,221.485A19.5,19.5,0,0,1,1.424,196.1L73.349,18.08a19.553,19.553,0,0,1,36.236,0L181.509,196.1a19.5,19.5,0,0,1-36.16,14.61L91.467,77.346,37.585,210.709A19.484,19.484,0,0,1,12.2,221.485Z" transform="translate(-21815.998 -7360)"/></g><g transform="translate(-19676.998 -1200.59)"><path d="M91.467,217.03a19.5,19.5,0,0,1-18.118-12.2L1.425,26.81A19.5,19.5,0,1,1,37.585,12.2L91.467,145.563,145.349,12.2a19.5,19.5,0,0,1,36.16,14.61L109.585,204.829A19.506,19.506,0,0,1,91.5,217.03Z" transform="translate(-0.001 0)"/></g><rect width="39" height="39" rx="19.5" transform="translate(-19677.031 -1022.561)"/><rect width="39" height="149.029" rx="19.5" transform="translate(-19475.492 -1132.59)"/><rect width="39" height="39" rx="19.5" transform="translate(-19475.492 -1200.59)"/></g></g></svg></div>
     <h1>Client sign in</h1>
     <p>Enter the email and password provided by Avi Data Technology.</p>
     <label for="email">Email</label>
@@ -177,6 +221,7 @@
     <div class="eyebrow">Your invoices</div>
     <h1 id="greeting">Welcome</h1>
   </div>
+  <div class="summary" id="summary" style="display:none"></div>
   <div id="list"></div>
 </div>
 
@@ -241,15 +286,45 @@
 
   // ---------- Invoices ----------
   async function loadInvoices(){
-    const list = $("list");
+    const list = $("list"), summary = $("summary");
     list.innerHTML = '<div class="skel"></div><div class="skel"></div>';
     const { data, error } = await sb.from("invoices")
       .select("id,number,description,amount_cents,status,due_date,paid_at")
       .order("created_at",{ascending:false});
-    if (error){ list.innerHTML = '<div class="empty"><div class="big">Couldn\'t load your invoices</div>Please refresh the page, or contact us if it keeps happening.</div>'; return; }
-    if (!data.length){ list.innerHTML = '<div class="empty"><div class="big">No invoices yet</div>When Avi Data sends you one, it\'ll appear here.</div>'; return; }
+    if (error){ summary.style.display="none"; list.innerHTML = '<div class="empty"><div class="big">Couldn\'t load your invoices</div>Please refresh the page, or contact us if it keeps happening.</div>'; return; }
+    if (!data.length){ summary.style.display="none"; list.innerHTML = '<div class="empty"><div class="big">No invoices yet</div>When Avi Data sends you one, it\'ll appear here.</div>'; return; }
+    renderSummary(data);
     list.innerHTML = "";
-    data.forEach(inv => list.appendChild(row(inv)));
+    data.forEach((inv,i) => { const el = row(inv); el.style.animationDelay = (i*55)+"ms"; list.appendChild(el); });
+  }
+
+  function renderSummary(data){
+    const summary = $("summary");
+    const open = data.filter(i => i.status === "open");
+    const outstanding = open.reduce((s,i) => s+i.amount_cents, 0);
+    const paidTotal = data.filter(i => i.status === "paid").reduce((s,i) => s+i.amount_cents, 0);
+    const dues = open.filter(i => i.due_date).map(i => i.due_date).sort();
+    const nextDue = dues[0] ? new Date(dues[0]+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "—";
+    summary.style.display = "grid";
+    summary.innerHTML =
+      '<div class="kpi glow" style="animation-delay:0ms"><div class="l">Balance due</div>'+
+        '<div class="v grad" data-cents="'+outstanding+'">$0</div>'+
+        '<div class="s">'+open.length+' open invoice'+(open.length===1?"":"s")+'</div></div>'+
+      '<div class="kpi" style="animation-delay:70ms"><div class="l">Paid to date</div>'+
+        '<div class="v" data-cents="'+paidTotal+'">$0</div><div class="s">thank you</div></div>'+
+      '<div class="kpi" style="animation-delay:140ms"><div class="l">Next due</div>'+
+        '<div class="v" style="font-size:clamp(18px,3vw,24px)">'+nextDue+'</div>'+
+        '<div class="s">'+(dues[0] ? "soonest invoice" : "nothing scheduled")+'</div></div>';
+    summary.querySelectorAll(".v[data-cents]").forEach(el => countUp(el, +el.getAttribute("data-cents")));
+  }
+
+  function countUp(el, cents){
+    const dur = 700, t0 = performance.now();
+    (function step(t){
+      const p = Math.min(1,(t-t0)/dur), e = 1-Math.pow(1-p,3);
+      el.textContent = fmt(Math.round(cents*e));
+      if (p < 1) requestAnimationFrame(step);
+    })(performance.now());
   }
 
   function row(inv){
