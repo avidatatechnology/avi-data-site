@@ -94,6 +94,22 @@
   .pipe-click .pstep:hover .pnum{border-color:var(--brand-2)}
   .pstep.sel .pnum{box-shadow:0 0 0 3px rgba(159,176,255,.4),0 0 22px rgba(110,139,255,.5)}
   .pstep.sel .plabel{color:var(--text)}
+  .pstep.alert .pnum{border-color:var(--rose)!important;color:var(--rose);box-shadow:0 0 0 3px rgba(242,96,125,.25),0 0 20px rgba(242,96,125,.6);animation:apulse 1.5s ease-in-out infinite}
+  @keyframes apulse{50%{box-shadow:0 0 0 6px rgba(242,96,125,.1),0 0 26px rgba(242,96,125,.9)}}
+  .palert{display:block;font-family:var(--fm);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin-top:4px;font-weight:600;animation:apblink 1.5s ease-in-out infinite}
+  @keyframes apblink{50%{opacity:.4}}
+  .sd-sched{margin-top:14px;font-size:13px;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .ch2{font-family:var(--fd);font-weight:600;font-size:15px;margin:0 0 3px}
+  .billdiv{height:1px;background:var(--line-soft);margin:22px 0}
+  .sostrip{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft)}
+  .sochip{display:flex;align-items:center;gap:9px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 13px;font-size:12.5px;color:var(--muted)}
+  .sochip b{font-family:var(--fd);font-weight:600;color:var(--text)}
+  .sochip.signed{border-color:rgba(52,216,160,.4)}
+  .sochip .sok{color:var(--mint)}
+  .sochip.await{border-color:rgba(242,96,125,.4)}
+  .sochip .sawait{color:var(--rose)}
+  .miniinv.due{box-shadow:inset 3px 0 0 var(--rose);padding-left:11px;border-radius:4px}
+  .miniinv.due .ma{color:var(--rose)}
   .sd-wrap{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:16px;animation:rise .35s ease both}
   .sd-tag{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-2);margin-bottom:8px}
   .sd-dates{font-family:var(--fm);font-size:11.5px;color:var(--mint);margin-bottom:11px;display:flex;align-items:center}
@@ -441,16 +457,18 @@
     try{ const [p,u,i,sn,so]=await Promise.all([
       sb.from("projects").select("id,name,stage,note,value_cents,maintenance_cents,maintenance_status").eq("client_id",me.id).order("created_at"),
       sb.from("stage_logs").select("project_id,stage,body,note_date").order("note_date",{ascending:false}).order("created_at",{ascending:false}),
-      sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at,milestone_stage").order("created_at",{ascending:false}),
+      sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at,milestone_stage,project_id").order("created_at",{ascending:false}),
       sb.from("stage_notes").select("project_id,stage,start_date,end_date").order("stage"),
       sb.from("stage_signoffs").select("project_id,stage,approved_at")
     ]); projs=p.data||[]; logs=u.data||[]; invs=i.data||[]; snotes=sn.data||[]; signoffs=so.data||[]; }catch(e){}
-    // KPIs
-    const open=invs.filter(i=>i.status==="open"); const outstanding=open.reduce((s,i)=>s+i.amount_cents,0);
+    // KPIs — only count what's actually due now (milestones not yet reached are upcoming)
+    const projStageById={}; projs.forEach(p=>{ projStageById[p.id]=(p.stage||0); });
+    const isDue=(i)=> i.status==="open" && (i.milestone_stage==null || i.milestone_stage <= (projStageById[i.project_id]!=null?projStageById[i.project_id]:99));
+    const dueNow=invs.filter(isDue); const outstanding=dueNow.reduce((s,i)=>s+i.amount_cents,0);
     const paid=invs.filter(i=>i.status==="paid"); const paidTotal=paid.reduce((s,i)=>s+i.amount_cents,0);
     const active=projs.filter(p=>(p.stage||0)<4).length;
     $("cKpis").style.display="grid";
-    $("cKpis").innerHTML=kpi("Balance due",'<span data-cents="'+outstanding+'">$0</span>',open.length+" open",'grad')+
+    $("cKpis").innerHTML=kpi("Balance due",'<span data-cents="'+outstanding+'">$0</span>',dueNow.length+" due now",'grad')+
       kpi("Paid to date",'<span data-cents="'+paidTotal+'">$0</span>',"thank you")+
       kpi("Active projects",String(active),projs.length+" total")+
       kpi("Account",'<span style="font-size:16px">'+esc(me.name)+'</span>',"");
@@ -472,8 +490,8 @@
       }
       paint();
     }
-    // invoices to pay (exclude milestone invoices — those live on the timeline)
-    const openList=open.filter(i=>i.milestone_stage==null);
+    // invoices to pay — everything due now, including reached milestones
+    const openList=dueNow;
     const lbox=$("list");
     if(!openList.length){ lbox.innerHTML='<div class="empty"><div class="big">You\'re all paid up</div>No invoices due right now.</div>'; }
     else { lbox.innerHTML=""; openList.forEach((inv,i)=>{ const el=invRow(inv); el.style.animationDelay=(i*55)+"ms"; lbox.appendChild(el); }); }
@@ -483,7 +501,7 @@
       hbox.querySelectorAll("[data-rcpt]").forEach(b=>b.addEventListener("click",()=>{ const inv=paid.find(x=>x.id===b.getAttribute("data-rcpt")); receipt(inv,me.name); }));
     } else hbox.innerHTML="";
   }
-  function pipeStepsClickable(stage, sel){ let h=""; STAGES.forEach((label,i)=>{ const cls=(i<stage?"done":(i===stage?"now":""))+(i===sel?" sel":""); const inner=i<stage?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>':(i+1); h+='<div class="pstep '+cls+'" data-pstage="'+i+'"><div class="pnum">'+inner+'</div><div class="plabel">'+label+'</div></div>'; }); return h; }
+  function pipeStepsClickable(stage, sel, alerts){ alerts=alerts||{}; let h=""; STAGES.forEach((label,i)=>{ const cls=(i<stage?"done":(i===stage?"now":""))+(i===sel?" sel":"")+(alerts[i]?" alert":""); const inner=i<stage?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>':(i+1); h+='<div class="pstep '+cls+'" data-pstage="'+i+'"><div class="pnum">'+inner+'</div><div class="plabel">'+label+(alerts[i]?'<span class="palert">action needed</span>':'')+'</div></div>'; }); return h; }
   function maintenanceHtml(p){
     const ck='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
     let h='<div class="mnt"><h4>Why this stage never really ends</h4><p class="lede">Custom software isn\'t a finished object — keeping it healthy is ongoing, real work.</p>'+
@@ -516,9 +534,14 @@
       else if(ctx.signoffs[4]) acts+='<div class="sd-signed" style="color:var(--brand-2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Plan requested — we\'ll reach out to finalize the details and price.</div>';
       else acts+='<button class="btn" data-reqmnt="1">Request a maintenance plan</button>';
     }
+    let sched="";
     const ms=ctx.milestones[i];
-    if(ms){ if(ms.status==="paid") acts+='<span class="badge paid"><span class="bd"></span>'+(i===1?'Deposit paid':'Balance paid')+'</span>'; else if(ms.status==="open") acts+='<button class="pill-pay" data-mpay="'+i+'">'+(i===1?'Pay deposit':'Pay balance')+' — '+fmt(ms.amount_cents)+'</button>'; }
+    if(ms){ const reached=i<=(p.stage||0);
+      if(ms.status==="paid") acts+='<span class="badge paid"><span class="bd"></span>'+(i===1?'Deposit paid':'Balance paid')+'</span>';
+      else if(ms.status==="open"){ if(reached) acts+='<button class="pill-pay" data-mpay="'+i+'">'+(i===1?'Pay deposit':'Pay balance')+' — '+fmt(ms.amount_cents)+'</button>'; else sched='<div class="sd-sched">'+(i===1?'Deposit':'Balance')+' of '+fmt(ms.amount_cents)+' — scheduled, due at '+esc(STAGES[i])+'.</div>'; }
+    }
     if(acts) h+='<div class="sd-actions">'+acts+'</div>';
+    if(sched) h+=sched;
     h+='</div>'; return h;
   }
   function buildClientProjectCard(p, ctx){
@@ -526,8 +549,10 @@
     let sel=p.stage||0;
     function render(){
       const st=p.stage||0;
+      const alerts={}; [1,3].forEach(i=>{ if(i<=st && !ctx.signoffs[i]) alerts[i]=true; });
+      Object.keys(ctx.milestones).forEach(k=>{ const i=+k, inv=ctx.milestones[i]; if(inv&&inv.status==="open"&&i<=st) alerts[i]=true; });
       card.innerHTML='<div class="pchead"><h3>'+esc(p.name||"Project")+'</h3>'+(p.value_cents>0?'<span class="pval">'+fmt(p.value_cents)+' project</span>':'<span class="badge stage">'+STAGES[st]+'</span>')+'</div>'+
-        '<div class="pipe pipe-click">'+pipeStepsClickable(st,sel)+'</div>'+(p.note?'<div class="pnote">'+esc(p.note)+'</div>':'')+stageDetailHtml(p,sel,ctx);
+        '<div class="pipe pipe-click">'+pipeStepsClickable(st,sel,alerts)+'</div>'+(p.note?'<div class="pnote">'+esc(p.note)+'</div>':'')+stageDetailHtml(p,sel,ctx);
       card.querySelectorAll("[data-pstage]").forEach(s=>s.addEventListener("click",()=>{ sel=+s.getAttribute("data-pstage"); render(); }));
       const sb1=card.querySelector("[data-signoff]"); if(sb1) sb1.addEventListener("click",async()=>{ const idx=+sb1.getAttribute("data-signoff"); sb1.disabled=true; sb1.textContent="Saving…"; const { error }=await sb.from("stage_signoffs").upsert({project_id:p.id,stage:idx,client_id:me.id,approved_at:new Date().toISOString()},{onConflict:"project_id,stage"}); if(!error){ ctx.signoffs[idx]=new Date().toISOString(); render(); } else { sb1.disabled=false; sb1.textContent="Try again"; } });
       const pb=card.querySelector("[data-mpay]"); if(pb) pb.addEventListener("click",()=>{ const inv=ctx.milestones[+pb.getAttribute("data-mpay")]; if(inv) openPay(inv); });
@@ -639,18 +664,20 @@
   function manageProject(cl, proj){
     const suggested="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); const st=proj.stage||0;
     $("projectPage").innerHTML='<button class="pback" id="backClient"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'+esc(cl.company_name||cl.email)+'</button>'+
-      '<div class="phead"><div><div class="eyebrow">Project</div><h1 id="ppTitle">'+esc(proj.name||"Project")+'</h1><div class="sub">'+esc(cl.company_name||cl.email)+(proj.value_cents>0?' · '+fmt(proj.value_cents):'')+'</div></div><span class="badge stage" id="ppBadge">'+STAGES[st]+'</span></div>'+
-      '<div class="card" style="margin-bottom:18px"><div class="pipe pipe-click" id="ppPipe">'+pipeStepsClickable(st,st)+'</div><div class="csub" style="text-align:center;margin:14px 0 0">Click a stage to set how far along you are. Stages up to the current one unlock for dated notes.</div></div>'+
+      '<div class="phead"><div style="flex:1"><div class="eyebrow">Project</div><h1 id="ppTitle">'+esc(proj.name||"Project")+'</h1><div class="sub" id="ppSub">'+esc(cl.company_name||cl.email)+(proj.value_cents>0?' · '+fmt(proj.value_cents):'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px"><span class="badge stage" id="ppBadge">'+STAGES[st]+'</span><button class="linkx" id="ppEdit">Edit name &amp; value</button></div></div>'+
+      '<div class="card" id="ppEditCard" style="display:none;margin-bottom:18px"><div class="ch">Edit project</div><div class="f2" style="margin-top:6px"><div><label>Project name</label><input id="peName" value="'+esc(proj.name||"")+'"/></div><div><label>Project value (USD)</label><input id="peValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/></div></div><label>Note to client (optional)</label><textarea id="peNote">'+esc(proj.note||"")+'</textarea><div style="display:flex;gap:10px;margin-top:8px"><button class="btn" id="peSave" style="width:auto">Save</button><button class="btn-ghost" id="peCancel" style="width:auto">Cancel</button></div><div class="msg" id="peMsg"></div></div>'+
+      '<div class="card" style="margin-bottom:18px"><div class="pipe pipe-click" id="ppPipe">'+pipeStepsClickable(st,st)+'</div><div class="csub" style="text-align:center;margin:14px 0 0">Click a stage to set how far along you are. Stages up to the current one unlock for dated notes. Red = action needed (client sign-off or unpaid invoice).</div><div id="ppStatus"></div></div>'+
       '<div class="card" style="margin-bottom:18px"><div class="ch">Timeline & dated notes</div><div class="csub">Each unlocked stage has its dates and a dated-note log — this is how your client sees progress. Click a stage to expand it.</div><div id="stageNotes" style="margin-top:10px"></div><button class="btn" id="snSave" style="width:auto;margin-top:10px">Save stage dates</button><div class="msg" id="snMsg"></div></div>'+
-      '<div class="pgrid"><div class="card"><div class="ch">Project details</div><label>Project name</label><input id="pName" value="'+esc(proj.name||"")+'"/><label>Project value (USD)</label><input id="pValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/><label>Note to client (optional)</label><textarea id="pNote">'+esc(proj.note||"")+'</textarea><button class="btn full" id="pSave">Save</button><div class="msg" id="pMsg"></div></div>'+
-      '<div class="card"><div class="ch">Additional invoices</div><div class="csub">One-off charges outside the milestone split — extra work, change requests, etc.</div><div class="f2" style="margin-top:8px"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="2500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Extra report build"/><label>Due date (optional)</label>'+dpField("inDue","")+'<button class="btn full" id="inSave" style="margin-top:10px">Add invoice</button><div class="msg" id="inMsg"></div><div id="pInvoices" style="margin-top:12px">Loading…</div></div></div>'+
-      '<div class="pgrid" style="margin-top:18px"><div class="card"><div class="ch">Milestone billing</div><div class="csub">Split the project value into a deposit and final payment. Change the percent or the dollar amounts — they stay in sync.</div><div id="msBox" style="margin-top:12px">Loading…</div></div>'+
-      '<div class="stack"><div class="card"><div class="ch">Monthly maintenance</div><div class="csub">Discuss a plan with the client, then set it Active when you agree on a price.</div><label>Monthly fee (USD)</label><input id="mtAmt" type="number" step="0.01" min="0" value="'+(proj.maintenance_cents?(proj.maintenance_cents/100):"")+'"/><label>Plan status</label><select id="mtStatus"><option value="none"'+(proj.maintenance_status==="active"?"":" selected")+'>Not on a plan</option><option value="active"'+(proj.maintenance_status==="active"?" selected":"")+'>Active (recurring)</option></select><button class="btn full" id="mtSave">Save plan</button><div class="msg" id="mtMsg"></div><div id="mtReq" style="margin-top:8px"></div></div>'+
-      '<div class="card"><div class="ch">Client sign-offs</div><div id="soBox" style="margin-top:8px">Loading…</div></div></div></div>';
+      '<div class="card" style="margin-bottom:18px"><div class="ch">Billing</div><div class="csub">Split the project value into a deposit and final payment — change the percent or the dollars, they stay in sync.</div><div id="msBox" style="margin-top:12px">Loading…</div><div class="billdiv"></div><div class="ch2">Additional invoice</div><div class="csub">One-off charges outside the milestone split — extra work, change requests, etc.</div><div class="f2" style="margin-top:8px"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Extra report build"/><label>Due date (optional)</label>'+dpField("inDue","")+'<button class="btn" id="inSave" style="width:auto;margin-top:10px">Add invoice</button><div class="msg" id="inMsg"></div></div>'+
+      '<div class="card" style="margin-bottom:18px"><div class="ch">Invoices</div><div class="csub">Unpaid invoices are flagged in red. Mark paid once payment clears.</div><div id="pInvoices" style="margin-top:10px">Loading…</div></div>'+
+      '<div class="card"><div class="ch">Monthly maintenance</div><div class="csub">Discuss a plan with the client, then set it Active when you agree on a price.</div><div class="f2" style="margin-top:6px"><div><label>Monthly fee (USD)</label><input id="mtAmt" type="number" step="0.01" min="0" value="'+(proj.maintenance_cents?(proj.maintenance_cents/100):"")+'"/></div><div><label>Plan status</label><select id="mtStatus"><option value="none"'+(proj.maintenance_status==="active"?"":" selected")+'>Not on a plan</option><option value="active"'+(proj.maintenance_status==="active"?" selected":"")+'>Active (recurring)</option></select></div></div><button class="btn" id="mtSave" style="width:auto;margin-top:10px">Save plan</button><div class="msg" id="mtMsg"></div><div id="mtReq" style="margin-top:8px"></div></div>';
     adminShow("project");
+    _pcl=cl; _pproj=proj; _so={}; _ms={};
     $("backClient").addEventListener("click",()=>clientPageProjects(cl));
     wireStage(cl,proj); attachAllDP($("projectPage"));
     renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj);
+    $("ppEdit").addEventListener("click",()=>{ const c=$("ppEditCard"); c.style.display = c.style.display==="none" ? "block" : "none"; });
+    $("peCancel").addEventListener("click",()=>{ $("ppEditCard").style.display="none"; });
     $("snSave").addEventListener("click",async()=>{
       const m=$("snMsg"); $("snSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
       const rows=STAGES.filter((s,i)=>i<=(proj.stage||0)).map((s,i)=>({project_id:proj.id,stage:i,client_id:cl.id,start_date:(dispToIso($("snS"+i)?$("snS"+i).value:"")||null),end_date:(dispToIso($("snE"+i)?$("snE"+i).value:"")||null),updated_at:new Date().toISOString()}));
@@ -658,13 +685,13 @@
       if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("snSave").disabled=false; return; }
       m.className="msg ok"; m.textContent="Stage dates saved."; $("snSave").disabled=false;
     });
-    $("pSave").addEventListener("click",async()=>{
-      const m=$("pMsg"); $("pSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
-      const val=parseFloat($("pValue").value); const { error }=await sb.from("projects").update({name:$("pName").value.trim()||null,value_cents:val>0?Math.round(val*100):0,note:$("pNote").value.trim()||null,updated_at:new Date().toISOString()}).eq("id",proj.id);
-      if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("pSave").disabled=false; return; }
-      proj.name=$("pName").value.trim(); proj.note=$("pNote").value.trim(); proj.value_cents=val>0?Math.round(val*100):0;
-      $("ppTitle").textContent=proj.name||"Project"; loadMilestones(cl,proj);
-      m.className="msg ok"; m.textContent="Saved."; $("pSave").disabled=false; loadAdmin();
+    $("peSave").addEventListener("click",async()=>{
+      const m=$("peMsg"); $("peSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
+      const val=parseFloat($("peValue").value); const { error }=await sb.from("projects").update({name:$("peName").value.trim()||null,value_cents:val>0?Math.round(val*100):0,note:$("peNote").value.trim()||null,updated_at:new Date().toISOString()}).eq("id",proj.id);
+      if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("peSave").disabled=false; return; }
+      proj.name=$("peName").value.trim(); proj.note=$("peNote").value.trim(); proj.value_cents=val>0?Math.round(val*100):0;
+      $("ppTitle").textContent=proj.name||"Project"; $("ppSub").textContent=(cl.company_name||cl.email)+(proj.value_cents>0?' · '+fmt(proj.value_cents):''); loadMilestones(cl,proj);
+      m.className="msg ok"; m.textContent="Saved."; $("peSave").disabled=false; $("ppEditCard").style.display="none"; loadAdmin();
     });
     $("inSave").addEventListener("click",async()=>{
       const m=$("inMsg"); const num=$("inNum").value.trim(), desc=$("inDesc").value.trim(), amt=parseFloat($("inAmt").value), due=dispToIso($("inDue").value)||null;
@@ -683,8 +710,10 @@
     });
     loadProjectInvoices(cl,proj); loadMilestones(cl,proj); loadSignoffs(cl,proj);
   }
+  let _pcl=null, _pproj=null, _so={}, _ms={};
+  function repaintPipe(){ const p=$("ppPipe"); if(!p||!_pproj)return; const st=_pproj.stage||0; const alerts={}; [1,3].forEach(i=>{ if(i<=st && !_so[i]) alerts[i]=true; }); Object.keys(_ms).forEach(k=>{ const i=+k; if(_ms[i]==="open"&&i<=st) alerts[i]=true; }); p.innerHTML=pipeStepsClickable(st,st,alerts); wireStage(_pcl,_pproj); }
   function wireStage(cl,proj){ const p=$("ppPipe"); if(!p)return; p.querySelectorAll('[data-pstage]').forEach(s=>s.addEventListener('click',()=>setStage(cl,proj,+s.getAttribute('data-pstage')))); }
-  async function setStage(cl,proj,i){ if(i===proj.stage)return; proj.stage=i; await sb.from("projects").update({stage:i,updated_at:new Date().toISOString()}).eq("id",proj.id); if($("ppBadge"))$("ppBadge").textContent=STAGES[i]; if($("ppPipe")){ $("ppPipe").innerHTML=pipeStepsClickable(i,i); wireStage(cl,proj); } renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj); loadAdmin(); }
+  async function setStage(cl,proj,i){ if(i===proj.stage)return; proj.stage=i; await sb.from("projects").update({stage:i,updated_at:new Date().toISOString()}).eq("id",proj.id); if($("ppBadge"))$("ppBadge").textContent=STAGES[i]; repaintPipe(); renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj); loadSignoffs(cl,proj); loadProjectInvoices(cl,proj); loadAdmin(); }
   function renderStageNoteInputs(cl,proj){
     const box=$("stageNotes"); if(!box)return; const st=proj.stage||0;
     box.innerHTML=STAGES.map((s,i)=>{ const cls=i<st?"done":(i===st?"now":""); const locked=i>st;
@@ -716,24 +745,28 @@
       c.querySelectorAll("[data-dellog]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("stage_logs").delete().eq("id",b.getAttribute("data-dellog")); loadStageLogs(proj); })); });
   }
   async function loadSignoffs(cl,proj){
-    const box=$("soBox"); const req=$("mtReq");
+    const box=$("ppStatus"); const req=$("mtReq");
     const { data }=await sb.from("stage_signoffs").select("stage,approved_at").eq("project_id",proj.id);
     const map={}; (data||[]).forEach(s=>map[s.stage]=s.approved_at);
+    _so=map; repaintPipe();
     if(box){
-      box.innerHTML=[1,3,4].map(i=>{ const lbl=i===4?"Maintenance request":STAGES[i]; let v;
-        if(map[i]) v='<span style="color:var(--mint)">✓ '+dShort(map[i])+' · <button class="linkx del" data-clrso="'+i+'">clear</button></span>';
-        else if(i===4) v='<span style="color:var(--muted-2)">none</span>';
-        else v='<button class="linkx" data-addso="'+i+'">mark signed</button>';
-        return '<div class="miniinv" style="padding:7px 0"><span>'+esc(lbl)+'</span><span class="ma" style="font-size:12px;font-weight:600">'+v+'</span></div>'; }).join('');
+      const st=proj.stage||0;
+      box.innerHTML='<div class="sostrip">'+[1,3,4].map(i=>{ const lbl=i===4?"Maintenance request":(STAGES[i]+" sign-off"); let v,cls="";
+        if(map[i]){ cls=" signed"; v='<span class="sok">✓ '+dShort(map[i])+'</span> · <button class="linkx del" data-clrso="'+i+'">undo</button>'; }
+        else if(i===4){ v='<span style="color:var(--muted-2)">not requested</span>'; }
+        else if(i<=st){ cls=" await"; v='<span class="sawait">awaiting client</span> · <button class="linkx" data-addso="'+i+'">mark signed</button>'; }
+        else { v='<span style="color:var(--muted-2)">locked</span>'; }
+        return '<div class="sochip'+cls+'"><b>'+esc(lbl)+'</b>'+v+'</div>'; }).join('')+'</div>';
       box.querySelectorAll("[data-clrso]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("stage_signoffs").delete().eq("project_id",proj.id).eq("stage",+b.getAttribute("data-clrso")); loadSignoffs(cl,proj); }));
       box.querySelectorAll("[data-addso]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("stage_signoffs").upsert({project_id:proj.id,stage:+b.getAttribute("data-addso"),client_id:cl.id,approved_at:new Date().toISOString()},{onConflict:"project_id,stage"}); loadSignoffs(cl,proj); }));
     }
-    if(req){ req.innerHTML = map[4] ? '<div style="font-size:12.5px;color:var(--mint)">Client requested a plan on '+dShort(map[4])+'. Clear it in “Client sign-offs.”</div>' : '<div style="font-size:12.5px;color:var(--muted-2)">No plan request yet.</div>'; }
+    if(req){ req.innerHTML = map[4] ? '<div style="font-size:12.5px;color:var(--mint)">Client requested a plan on '+dShort(map[4])+'. You can undo it from the sign-off strip under the pipeline.</div>' : '<div style="font-size:12.5px;color:var(--muted-2)">No plan request yet.</div>'; }
   }
   async function loadMilestones(cl,proj){
     const box=$("msBox"); if(!box)return;
     if(!(proj.value_cents>0)){ box.innerHTML='<div style="color:var(--muted);font-size:13px">Set a project value above (and Save) to enable milestone billing.</div>'; return; }
     const { data }=await sb.from("invoices").select("id,number,description,amount_cents,status,milestone_stage").eq("project_id",proj.id).not("milestone_stage","is",null).order("milestone_stage");
+    _ms={}; (data||[]).forEach(i=>{ _ms[i.milestone_stage]=i.status; }); repaintPipe();
     if(data&&data.length){
       const anyPaid=data.some(i=>i.status==="paid");
       box.innerHTML=data.map(i=>'<div class="miniinv"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:2px">'+(i.status==="paid"?'<span class="badge paid" style="padding:3px 8px"><span class="bd"></span>Paid</span>':(i.status==="void"?'<span class="badge void" style="padding:3px 8px">Void</span>':'<span style="font-size:12px;color:var(--muted)">awaiting client payment</span>'))+'</span></div>').join('')+
@@ -765,11 +798,12 @@
     const { data, error }=await sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at").eq("project_id",proj.id).order("created_at",{ascending:false});
     if(error){ box.textContent="Couldn't load."; return; }
     if(!data||!data.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">No invoices yet.</div>'; return; }
-    box.innerHTML=data.map(i=>{ let actions;
+    const ordered=data.slice().sort((a,b)=>(a.status==="open"?0:1)-(b.status==="open"?0:1));
+    box.innerHTML=ordered.map(i=>{ let actions; const open=i.status==="open";
       if(i.status==="paid") actions='<span class="badge paid" style="padding:3px 8px"><span class="bd"></span>Paid</span> <button class="linkx" data-rcpt="'+i.id+'">receipt</button>';
       else if(i.status==="void") actions='<span class="badge void" style="padding:3px 8px">Void</span>';
-      else actions='<button class="linkx" data-paid="'+i.id+'">mark paid</button> · <button class="linkx del" data-void="'+i.id+'">void</button>';
-      return '<div class="miniinv"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;display:flex;gap:8px;align-items:center;margin-top:2px">'+actions+'</span></div>'; }).join('');
+      else actions='<span class="sawait" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Unpaid</span> · <button class="linkx" data-paid="'+i.id+'">mark paid</button> · <button class="linkx del" data-void="'+i.id+'">void</button>';
+      return '<div class="miniinv'+(open?' due':'')+'"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+(i.milestone_stage!=null?' <span style="color:var(--muted-2);font-size:11px">· milestone</span>':'')+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;display:flex;gap:8px;align-items:center;margin-top:2px">'+actions+'</span></div>'; }).join('');
     box.querySelectorAll("[data-paid]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("invoices").update({status:"paid",paid_at:new Date().toISOString()}).eq("id",b.getAttribute("data-paid")); loadProjectInvoices(cl,proj); loadAdmin(); }));
     box.querySelectorAll("[data-void]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("invoices").update({status:"void"}).eq("id",b.getAttribute("data-void")); loadProjectInvoices(cl,proj); loadAdmin(); }));
     box.querySelectorAll("[data-rcpt]").forEach(b=>b.addEventListener("click",()=>{ const inv=data.find(x=>x.id===b.getAttribute("data-rcpt")); receipt(inv,cl.company_name||cl.email); }));
