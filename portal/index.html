@@ -110,6 +110,24 @@
   .sochip .sawait{color:var(--rose)}
   .miniinv.due{box-shadow:inset 3px 0 0 var(--rose);padding-left:11px;border-radius:4px}
   .miniinv.due .ma{color:var(--rose)}
+  .miniinv.sched{box-shadow:inset 3px 0 0 var(--muted-2);padding-left:11px;border-radius:4px;opacity:.85}
+  .duetag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+  .duetag.now{color:var(--rose)}
+  .duetag.later{color:var(--muted-2)}
+  .cardtog{width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;color:var(--text);cursor:pointer;padding:0}
+  /* tickets */
+  .tix{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--panel-2)}
+  .tixhead{width:100%;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--text);cursor:pointer;padding:13px 14px;text-align:left}
+  .tixsub{font-family:var(--fd);font-weight:600;font-size:14px;flex:1}
+  .tixbody{padding:0 14px 14px;border-top:1px solid var(--line-soft)}
+  .tmsg{display:flex;margin:12px 0}
+  .tmsg.client{justify-content:flex-start}
+  .tmsg.admin{justify-content:flex-end}
+  .tbub{max-width:78%;padding:10px 13px;border-radius:13px;font-size:13.5px;line-height:1.5}
+  .tmsg.client .tbub{background:var(--raised);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .tmsg.admin .tbub{background:linear-gradient(150deg,rgba(110,139,255,.22),rgba(110,139,255,.1));border:1px solid rgba(110,139,255,.3);border-bottom-right-radius:4px}
+  .twho{font-family:var(--fm);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted-2);margin-bottom:4px}
+  .tdate{font-size:10.5px;color:var(--muted-2);margin-top:5px}
   .sd-wrap{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:16px;animation:rise .35s ease both}
   .sd-tag{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-2);margin-bottom:8px}
   .sd-dates{font-family:var(--fm);font-size:11.5px;color:var(--mint);margin-bottom:11px;display:flex;align-items:center}
@@ -529,19 +547,16 @@
     // actions
     let acts="";
     if(i===1||i===3){ if(ctx.signoffs[i]) acts+='<div class="sd-signed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>You signed off on '+dShort(ctx.signoffs[i])+'</div>'; else acts+='<button class="btn" data-signoff="'+i+'">Approve & sign off</button>'; }
-    if(i===4){
-      if(p.maintenance_status==="active") acts+='<div class="sd-signed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Your maintenance plan is active'+(p.maintenance_cents>0?" — "+fmt(p.maintenance_cents)+"/mo":"")+'</div>';
-      else if(ctx.signoffs[4]) acts+='<div class="sd-signed" style="color:var(--brand-2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Plan requested — we\'ll reach out to finalize the details and price.</div>';
-      else acts+='<button class="btn" data-reqmnt="1">Request a maintenance plan</button>';
-    }
+    if(i===4 && p.maintenance_status==="active") acts+='<div class="sd-signed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Your maintenance plan is active'+(p.maintenance_cents>0?" — "+fmt(p.maintenance_cents)+"/mo":"")+'</div>';
     let sched="";
     const ms=ctx.milestones[i];
     if(ms){ const reached=i<=(p.stage||0);
       if(ms.status==="paid") acts+='<span class="badge paid"><span class="bd"></span>'+(i===1?'Deposit paid':'Balance paid')+'</span>';
-      else if(ms.status==="open"){ if(reached) acts+='<button class="pill-pay" data-mpay="'+i+'">'+(i===1?'Pay deposit':'Pay balance')+' — '+fmt(ms.amount_cents)+'</button>'; else sched='<div class="sd-sched">'+(i===1?'Deposit':'Balance')+' of '+fmt(ms.amount_cents)+' — scheduled, due at '+esc(STAGES[i])+'.</div>'; }
+      else if(ms.status==="open"){ if(reached) acts+='<button class="pill-pay" data-mpay="'+i+'">'+(i===1?'Pay deposit':'Pay balance')+' — '+fmt(ms.amount_cents)+'</button>'; else sched='<div class="sd-sched">'+(i===1?'Deposit':'Balance')+' of '+fmt(ms.amount_cents)+' — scheduled, not due until '+esc(STAGES[i])+'.</div>'; }
     }
     if(acts) h+='<div class="sd-actions">'+acts+'</div>';
     if(sched) h+=sched;
+    if(i===4) h+='<div id="cTix" style="margin-top:18px"></div>';
     h+='</div>'; return h;
   }
   function buildClientProjectCard(p, ctx){
@@ -556,9 +571,37 @@
       card.querySelectorAll("[data-pstage]").forEach(s=>s.addEventListener("click",()=>{ sel=+s.getAttribute("data-pstage"); render(); }));
       const sb1=card.querySelector("[data-signoff]"); if(sb1) sb1.addEventListener("click",async()=>{ const idx=+sb1.getAttribute("data-signoff"); sb1.disabled=true; sb1.textContent="Saving…"; const { error }=await sb.from("stage_signoffs").upsert({project_id:p.id,stage:idx,client_id:me.id,approved_at:new Date().toISOString()},{onConflict:"project_id,stage"}); if(!error){ ctx.signoffs[idx]=new Date().toISOString(); render(); } else { sb1.disabled=false; sb1.textContent="Try again"; } });
       const pb=card.querySelector("[data-mpay]"); if(pb) pb.addEventListener("click",()=>{ const inv=ctx.milestones[+pb.getAttribute("data-mpay")]; if(inv) openPay(inv); });
-      const rq=card.querySelector("[data-reqmnt]"); if(rq) rq.addEventListener("click",async()=>{ rq.disabled=true; rq.textContent="Sending…"; const { error }=await sb.from("stage_signoffs").upsert({project_id:p.id,stage:4,client_id:me.id,approved_at:new Date().toISOString()},{onConflict:"project_id,stage"}); if(!error){ ctx.signoffs[4]=new Date().toISOString(); render(); } else { rq.disabled=false; rq.textContent="Try again"; } });
+      if(sel===4 && card.querySelector("#cTix")) loadClientTickets(p);
     }
     render(); return card;
+  }
+  async function loadClientTickets(p){
+    const box=document.getElementById("cTix"); if(!box)return;
+    const { data:tix }=await sb.from("tickets").select("id,subject,status,created_at,updated_at").eq("project_id",p.id).order("updated_at",{ascending:false});
+    let h='<div class="sd-tag" style="margin-bottom:10px">Support tickets</div><div class="csub" style="margin:0 0 12px">Need a change, fix, or have a question? Submit a ticket and we\'ll handle it.</div>';
+    h+='<input id="ctSub" placeholder="Subject (e.g. Add a new report)" style="margin-bottom:8px"><textarea id="ctBody" placeholder="Describe what you need…"></textarea><button class="btn" id="ctSend" style="width:auto;margin-top:8px">Submit ticket</button><div class="msg" id="ctMsg"></div>';
+    if(tix&&tix.length){ h+='<div style="margin-top:18px">'+tix.map(t=>'<div class="tix"><button type="button" class="tixhead" data-ctix="'+t.id+'"><span class="tixsub">'+esc(t.subject)+'</span>'+(t.status==="open"?'<span class="duetag now">Open</span>':'<span class="duetag later">Resolved</span>')+'<span class="staccchev">▾</span></button><div class="tixbody" id="ctb_'+t.id+'" style="display:none"></div></div>').join('')+'</div>'; }
+    box.innerHTML=h;
+    document.getElementById("ctSend").addEventListener("click",async()=>{
+      const sub=document.getElementById("ctSub").value.trim(), body=document.getElementById("ctBody").value.trim(), m=document.getElementById("ctMsg");
+      if(!sub||!body){ m.className="msg err"; m.textContent="Add a subject and a description."; return; }
+      const btn=document.getElementById("ctSend"); btn.disabled=true; m.className="msg info"; m.textContent="Submitting…";
+      const { data:t, error }=await sb.from("tickets").insert({project_id:p.id,client_id:me.id,subject:sub}).select("id").single();
+      if(error||!t){ m.className="msg err"; m.textContent="Couldn't submit. Please try again."; btn.disabled=false; return; }
+      await sb.from("ticket_messages").insert({ticket_id:t.id,client_id:me.id,author:"client",body});
+      m.className="msg ok"; m.textContent="Ticket submitted — we'll be in touch."; loadClientTickets(p);
+    });
+    (box.querySelectorAll("[data-ctix]")||[]).forEach(b=>b.addEventListener("click",()=>{ const id=b.getAttribute("data-ctix"); const bd=document.getElementById("ctb_"+id); if(!bd)return; const open=bd.style.display==="none"; bd.style.display=open?"block":"none"; if(open) loadClientThread(p,tix.find(x=>x.id===id)); }));
+  }
+  async function loadClientThread(p,t){
+    const box=document.getElementById("ctb_"+t.id); if(!box)return; box.innerHTML='<div style="color:var(--muted);font-size:12px;padding:10px 0">Loading…</div>';
+    const { data:msgs }=await sb.from("ticket_messages").select("author,body,created_at").eq("ticket_id",t.id).order("created_at");
+    let h=(msgs||[]).map(m=>'<div class="tmsg '+(m.author==="admin"?"admin":"client")+'"><div class="tbub"><div class="twho">'+(m.author==="admin"?"Avi Data":"You")+'</div>'+esc(m.body)+'<div class="tdate">'+dShort(new Date(m.created_at))+'</div></div></div>').join('');
+    if(t.status==="open") h+='<textarea id="ctr_'+t.id+'" placeholder="Add a reply…" style="margin-top:10px"></textarea><button class="btn" id="ctrs_'+t.id+'" style="width:auto;margin-top:8px">Send</button>';
+    else h+='<div class="csub" style="margin-top:10px">This ticket is resolved. Submit a new one if you need anything else.</div>';
+    box.innerHTML=h;
+    const sb2=document.getElementById("ctrs_"+t.id);
+    if(sb2) sb2.addEventListener("click",async()=>{ const ta=document.getElementById("ctr_"+t.id), body=ta.value.trim(); if(!body)return; sb2.disabled=true; sb2.textContent="Sending…"; await sb.from("ticket_messages").insert({ticket_id:t.id,client_id:me.id,author:"client",body}); await sb.from("tickets").update({updated_at:new Date().toISOString()}).eq("id",t.id); loadClientThread(p,t); });
   }
   function countUp(el,cents){ const dur=700,t0=performance.now(); (function step(t){const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fmt(Math.round(cents*e));if(p<1)requestAnimationFrame(step);})(performance.now()); }
   function invRow(inv){
@@ -667,7 +710,8 @@
       '<div class="phead"><div style="flex:1"><div class="eyebrow">Project</div><h1 id="ppTitle">'+esc(proj.name||"Project")+'</h1><div class="sub" id="ppSub">'+esc(cl.company_name||cl.email)+(proj.value_cents>0?' · '+fmt(proj.value_cents):'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px"><span class="badge stage" id="ppBadge">'+STAGES[st]+'</span><button class="linkx" id="ppEdit">Edit name &amp; value</button></div></div>'+
       '<div class="card" id="ppEditCard" style="display:none;margin-bottom:18px"><div class="ch">Edit project</div><div class="f2" style="margin-top:6px"><div><label>Project name</label><input id="peName" value="'+esc(proj.name||"")+'"/></div><div><label>Project value (USD)</label><input id="peValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/></div></div><label>Note to client (optional)</label><textarea id="peNote">'+esc(proj.note||"")+'</textarea><div style="display:flex;gap:10px;margin-top:8px"><button class="btn" id="peSave" style="width:auto">Save</button><button class="btn-ghost" id="peCancel" style="width:auto">Cancel</button></div><div class="msg" id="peMsg"></div></div>'+
       '<div class="card" style="margin-bottom:18px"><div class="pipe pipe-click" id="ppPipe">'+pipeStepsClickable(st,st)+'</div><div class="csub" style="text-align:center;margin:14px 0 0">Click a stage to set how far along you are. Stages up to the current one unlock for dated notes. Red = action needed (client sign-off or unpaid invoice).</div><div id="ppStatus"></div></div>'+
-      '<div class="card" style="margin-bottom:18px"><div class="ch">Timeline & dated notes</div><div class="csub">Each unlocked stage has its dates and a dated-note log — this is how your client sees progress. Click a stage to expand it.</div><div id="stageNotes" style="margin-top:10px"></div><button class="btn" id="snSave" style="width:auto;margin-top:10px">Save stage dates</button><div class="msg" id="snMsg"></div></div>'+
+      '<div class="card" style="margin-bottom:18px" id="tlCard"><button type="button" class="cardtog" id="tlTog"><span class="ch" style="margin:0">Timeline & dated notes</span><span class="staccchev" id="tlChev">▾</span></button><div id="tlBody"><div class="csub" style="margin-top:6px">Each unlocked stage has its dates and a dated-note log — this is how your client sees progress. Click a stage to expand it.</div><div id="stageNotes" style="margin-top:10px"></div><button class="btn" id="snSave" style="width:auto;margin-top:10px">Save stage dates</button><div class="msg" id="snMsg"></div></div></div>'+
+      '<div class="card" id="ticketsCard" style="display:none;margin-bottom:18px"><div class="ch">Support tickets</div><div class="csub">Requests the client submits from their portal during Iterate & Maintain. Reply and close them here.</div><div id="tixBox" style="margin-top:12px">Loading…</div></div>'+
       '<div class="card" style="margin-bottom:18px"><div class="ch">Billing</div><div class="csub">Split the project value into a deposit and final payment — change the percent or the dollars, they stay in sync.</div><div id="msBox" style="margin-top:12px">Loading…</div><div class="billdiv"></div><div class="ch2">Additional invoice</div><div class="csub">One-off charges outside the milestone split — extra work, change requests, etc.</div><div class="f2" style="margin-top:8px"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Extra report build"/><label>Due date (optional)</label>'+dpField("inDue","")+'<button class="btn" id="inSave" style="width:auto;margin-top:10px">Add invoice</button><div class="msg" id="inMsg"></div></div>'+
       '<div class="card" style="margin-bottom:18px"><div class="ch">Invoices</div><div class="csub">Unpaid invoices are flagged in red. Mark paid once payment clears.</div><div id="pInvoices" style="margin-top:10px">Loading…</div></div>'+
       '<div class="card"><div class="ch">Monthly maintenance</div><div class="csub">Discuss a plan with the client, then set it Active when you agree on a price.</div><div class="f2" style="margin-top:6px"><div><label>Monthly fee (USD)</label><input id="mtAmt" type="number" step="0.01" min="0" value="'+(proj.maintenance_cents?(proj.maintenance_cents/100):"")+'"/></div><div><label>Plan status</label><select id="mtStatus"><option value="none"'+(proj.maintenance_status==="active"?"":" selected")+'>Not on a plan</option><option value="active"'+(proj.maintenance_status==="active"?" selected":"")+'>Active (recurring)</option></select></div></div><button class="btn" id="mtSave" style="width:auto;margin-top:10px">Save plan</button><div class="msg" id="mtMsg"></div><div id="mtReq" style="margin-top:8px"></div></div>';
@@ -678,6 +722,9 @@
     renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj);
     $("ppEdit").addEventListener("click",()=>{ const c=$("ppEditCard"); c.style.display = c.style.display==="none" ? "block" : "none"; });
     $("peCancel").addEventListener("click",()=>{ $("ppEditCard").style.display="none"; });
+    const setTl=(o)=>{ $("tlBody").style.display=o?"block":"none"; $("tlChev").style.transform=o?"rotate(0deg)":"rotate(-90deg)"; };
+    $("tlTog").addEventListener("click",()=>setTl($("tlBody").style.display==="none"));
+    applyStageMode(cl,proj);
     $("snSave").addEventListener("click",async()=>{
       const m=$("snMsg"); $("snSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
       const rows=STAGES.filter((s,i)=>i<=(proj.stage||0)).map((s,i)=>({project_id:proj.id,stage:i,client_id:cl.id,start_date:(dispToIso($("snS"+i)?$("snS"+i).value:"")||null),end_date:(dispToIso($("snE"+i)?$("snE"+i).value:"")||null),updated_at:new Date().toISOString()}));
@@ -713,7 +760,33 @@
   let _pcl=null, _pproj=null, _so={}, _ms={};
   function repaintPipe(){ const p=$("ppPipe"); if(!p||!_pproj)return; const st=_pproj.stage||0; const alerts={}; [1,3].forEach(i=>{ if(i<=st && !_so[i]) alerts[i]=true; }); Object.keys(_ms).forEach(k=>{ const i=+k; if(_ms[i]==="open"&&i<=st) alerts[i]=true; }); p.innerHTML=pipeStepsClickable(st,st,alerts); wireStage(_pcl,_pproj); }
   function wireStage(cl,proj){ const p=$("ppPipe"); if(!p)return; p.querySelectorAll('[data-pstage]').forEach(s=>s.addEventListener('click',()=>setStage(cl,proj,+s.getAttribute('data-pstage')))); }
-  async function setStage(cl,proj,i){ if(i===proj.stage)return; proj.stage=i; await sb.from("projects").update({stage:i,updated_at:new Date().toISOString()}).eq("id",proj.id); if($("ppBadge"))$("ppBadge").textContent=STAGES[i]; repaintPipe(); renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj); loadSignoffs(cl,proj); loadProjectInvoices(cl,proj); loadAdmin(); }
+  async function setStage(cl,proj,i){ if(i===proj.stage)return; proj.stage=i; await sb.from("projects").update({stage:i,updated_at:new Date().toISOString()}).eq("id",proj.id); if($("ppBadge"))$("ppBadge").textContent=STAGES[i]; repaintPipe(); renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj); loadSignoffs(cl,proj); loadProjectInvoices(cl,proj); applyStageMode(cl,proj); loadAdmin(); }
+  function applyStageMode(cl,proj){ const s=proj.stage||0; const tb=$("tlBody"), tc=$("tlChev"), tk=$("ticketsCard");
+    if(s===4){ if(tb)tb.style.display="none"; if(tc)tc.style.transform="rotate(-90deg)"; if(tk)tk.style.display="block"; loadTickets(cl,proj); }
+    else { if(tb)tb.style.display="block"; if(tc)tc.style.transform="rotate(0deg)"; if(tk)tk.style.display="none"; } }
+  async function loadTickets(cl,proj){
+    const box=$("tixBox"); if(!box)return;
+    const { data:tix }=await sb.from("tickets").select("id,subject,status,created_at,updated_at").eq("project_id",proj.id).order("updated_at",{ascending:false});
+    if(!tix||!tix.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:6px 0">No tickets yet. When the client submits one from their portal, it shows up here.</div>'; return; }
+    box.innerHTML=tix.map(t=>'<div class="tix"><button type="button" class="tixhead" data-tix="'+t.id+'"><span class="tixsub">'+esc(t.subject)+'</span>'+(t.status==="open"?'<span class="duetag now">Open</span>':'<span class="duetag later">Closed</span>')+'<span class="staccchev">▾</span></button><div class="tixbody" id="tb_'+t.id+'" style="display:none"></div></div>').join('');
+    box.querySelectorAll("[data-tix]").forEach(b=>b.addEventListener("click",()=>{ const id=b.getAttribute("data-tix"); const body=$("tb_"+id); if(!body)return; const open=body.style.display==="none"; body.style.display=open?"block":"none"; if(open) loadTicketThread(cl,proj,tix.find(x=>x.id===id)); }));
+  }
+  async function loadTicketThread(cl,proj,t){
+    const box=$("tb_"+t.id); if(!box)return; box.innerHTML='<div style="color:var(--muted);font-size:12px;padding:10px 0">Loading…</div>';
+    const { data:msgs }=await sb.from("ticket_messages").select("author,body,created_at").eq("ticket_id",t.id).order("created_at");
+    let h=(msgs||[]).map(m=>'<div class="tmsg '+(m.author==="admin"?"admin":"client")+'"><div class="tbub"><div class="twho">'+(m.author==="admin"?"You":esc(cl.company_name||"Client"))+'</div>'+esc(m.body)+'<div class="tdate">'+dShort(new Date(m.created_at))+'</div></div></div>').join('');
+    h+='<textarea id="trep_'+t.id+'" placeholder="Write a reply to the client…" style="margin-top:10px"></textarea><div style="display:flex;gap:10px;margin-top:8px;align-items:center"><button class="btn" id="tsend_'+t.id+'" style="width:auto">Send reply</button><button class="linkx" id="tclose_'+t.id+'">'+(t.status==="open"?"Mark resolved":"Reopen")+'</button><span class="msg" id="tmsg_'+t.id+'"></span></div>';
+    box.innerHTML=h;
+    $("tsend_"+t.id).addEventListener("click",async()=>{
+      const ta=$("trep_"+t.id), body=ta.value.trim(); if(!body)return; const btn=$("tsend_"+t.id); btn.disabled=true; btn.textContent="Sending…";
+      const { error }=await sb.from("ticket_messages").insert({ticket_id:t.id,client_id:cl.id,author:"admin",body});
+      await sb.from("tickets").update({updated_at:new Date().toISOString()}).eq("id",t.id);
+      btn.disabled=false; btn.textContent="Send reply"; if(!error){ loadTicketThread(cl,proj,t); }
+    });
+    $("tclose_"+t.id).addEventListener("click",async()=>{
+      const ns=t.status==="open"?"closed":"open"; await sb.from("tickets").update({status:ns,updated_at:new Date().toISOString()}).eq("id",t.id); t.status=ns; loadTickets(cl,proj);
+    });
+  }
   function renderStageNoteInputs(cl,proj){
     const box=$("stageNotes"); if(!box)return; const st=proj.stage||0;
     box.innerHTML=STAGES.map((s,i)=>{ const cls=i<st?"done":(i===st?"now":""); const locked=i>st;
@@ -751,16 +824,15 @@
     _so=map; repaintPipe();
     if(box){
       const st=proj.stage||0;
-      box.innerHTML='<div class="sostrip">'+[1,3,4].map(i=>{ const lbl=i===4?"Maintenance request":(STAGES[i]+" sign-off"); let v,cls="";
+      box.innerHTML='<div class="sostrip">'+[1,3].map(i=>{ const lbl=STAGES[i]+" sign-off"; let v,cls="";
         if(map[i]){ cls=" signed"; v='<span class="sok">✓ '+dShort(map[i])+'</span> · <button class="linkx del" data-clrso="'+i+'">undo</button>'; }
-        else if(i===4){ v='<span style="color:var(--muted-2)">not requested</span>'; }
         else if(i<=st){ cls=" await"; v='<span class="sawait">awaiting client</span> · <button class="linkx" data-addso="'+i+'">mark signed</button>'; }
         else { v='<span style="color:var(--muted-2)">locked</span>'; }
         return '<div class="sochip'+cls+'"><b>'+esc(lbl)+'</b>'+v+'</div>'; }).join('')+'</div>';
       box.querySelectorAll("[data-clrso]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("stage_signoffs").delete().eq("project_id",proj.id).eq("stage",+b.getAttribute("data-clrso")); loadSignoffs(cl,proj); }));
       box.querySelectorAll("[data-addso]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("stage_signoffs").upsert({project_id:proj.id,stage:+b.getAttribute("data-addso"),client_id:cl.id,approved_at:new Date().toISOString()},{onConflict:"project_id,stage"}); loadSignoffs(cl,proj); }));
     }
-    if(req){ req.innerHTML = map[4] ? '<div style="font-size:12.5px;color:var(--mint)">Client requested a plan on '+dShort(map[4])+'. You can undo it from the sign-off strip under the pipeline.</div>' : '<div style="font-size:12.5px;color:var(--muted-2)">No plan request yet.</div>'; }
+    if(req){ req.innerHTML=""; }
   }
   async function loadMilestones(cl,proj){
     const box=$("msBox"); if(!box)return;
@@ -768,8 +840,14 @@
     const { data }=await sb.from("invoices").select("id,number,description,amount_cents,status,milestone_stage").eq("project_id",proj.id).not("milestone_stage","is",null).order("milestone_stage");
     _ms={}; (data||[]).forEach(i=>{ _ms[i.milestone_stage]=i.status; }); repaintPipe();
     if(data&&data.length){
-      const anyPaid=data.some(i=>i.status==="paid");
-      box.innerHTML=data.map(i=>'<div class="miniinv"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:2px">'+(i.status==="paid"?'<span class="badge paid" style="padding:3px 8px"><span class="bd"></span>Paid</span>':(i.status==="void"?'<span class="badge void" style="padding:3px 8px">Void</span>':'<span style="font-size:12px;color:var(--muted)">awaiting client payment</span>'))+'</span></div>').join('')+
+      const st=proj.stage||0; const anyPaid=data.some(i=>i.status==="paid");
+      box.innerHTML=data.map(i=>{ const reached=i.milestone_stage<=st; let tag;
+        if(i.status==="paid") tag='<span class="badge paid" style="padding:3px 8px"><span class="bd"></span>Paid</span>';
+        else if(i.status==="void") tag='<span class="badge void" style="padding:3px 8px">Void</span>';
+        else if(reached) tag='<span class="duetag now">Due now</span>';
+        else tag='<span class="duetag later">Scheduled · due at '+esc(STAGES[i.milestone_stage])+'</span>';
+        const cls=(i.status==="open")?(reached?' due':' sched'):'';
+        return '<div class="miniinv'+cls+'"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:2px">'+tag+'</span></div>'; }).join('')+
         (anyPaid?'':'<button class="linkx del" id="msClear" style="margin-top:10px">Clear &amp; redo split</button><div class="msg" id="msMsg"></div>');
       const cb=$("msClear"); if(cb) cb.addEventListener("click",async()=>{ for(const i of data){ if(i.status!=="paid") await sb.from("invoices").delete().eq("id",i.id); } loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin(); });
     } else {
@@ -795,15 +873,20 @@
 
   async function loadProjectInvoices(cl,proj){
     const box=$("pInvoices"); if(!box)return;
-    const { data, error }=await sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at").eq("project_id",proj.id).order("created_at",{ascending:false});
+    const { data, error }=await sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at,milestone_stage").eq("project_id",proj.id).order("created_at",{ascending:false});
     if(error){ box.textContent="Couldn't load."; return; }
     if(!data||!data.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">No invoices yet.</div>'; return; }
-    const ordered=data.slice().sort((a,b)=>(a.status==="open"?0:1)-(b.status==="open"?0:1));
-    box.innerHTML=ordered.map(i=>{ let actions; const open=i.status==="open";
+    const st=proj.stage||0;
+    const dueNow=(i)=> i.status==="open" && (i.milestone_stage==null || i.milestone_stage<=st);
+    const rank=(i)=> dueNow(i)?0:(i.status==="open"?1:2);
+    const ordered=data.slice().sort((a,b)=>rank(a)-rank(b));
+    box.innerHTML=ordered.map(i=>{ let actions; const open=i.status==="open"; const due=dueNow(i);
       if(i.status==="paid") actions='<span class="badge paid" style="padding:3px 8px"><span class="bd"></span>Paid</span> <button class="linkx" data-rcpt="'+i.id+'">receipt</button>';
       else if(i.status==="void") actions='<span class="badge void" style="padding:3px 8px">Void</span>';
-      else actions='<span class="sawait" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Unpaid</span> · <button class="linkx" data-paid="'+i.id+'">mark paid</button> · <button class="linkx del" data-void="'+i.id+'">void</button>';
-      return '<div class="miniinv'+(open?' due':'')+'"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+(i.milestone_stage!=null?' <span style="color:var(--muted-2);font-size:11px">· milestone</span>':'')+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;display:flex;gap:8px;align-items:center;margin-top:2px">'+actions+'</span></div>'; }).join('');
+      else if(due) actions='<span class="duetag now">Due now</span> · <button class="linkx" data-paid="'+i.id+'">mark paid</button> · <button class="linkx del" data-void="'+i.id+'">void</button>';
+      else actions='<span class="duetag later">Scheduled · due at '+esc(STAGES[i.milestone_stage])+'</span> · <button class="linkx" data-paid="'+i.id+'">mark paid</button> · <button class="linkx del" data-void="'+i.id+'">void</button>';
+      const cls=open?(due?' due':' sched'):'';
+      return '<div class="miniinv'+cls+'"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+(i.milestone_stage!=null?' <span style="color:var(--muted-2);font-size:11px">· milestone</span>':'')+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;display:flex;gap:8px;align-items:center;margin-top:2px">'+actions+'</span></div>'; }).join('');
     box.querySelectorAll("[data-paid]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("invoices").update({status:"paid",paid_at:new Date().toISOString()}).eq("id",b.getAttribute("data-paid")); loadProjectInvoices(cl,proj); loadAdmin(); }));
     box.querySelectorAll("[data-void]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("invoices").update({status:"void"}).eq("id",b.getAttribute("data-void")); loadProjectInvoices(cl,proj); loadAdmin(); }));
     box.querySelectorAll("[data-rcpt]").forEach(b=>b.addEventListener("click",()=>{ const inv=data.find(x=>x.id===b.getAttribute("data-rcpt")); receipt(inv,cl.company_name||cl.email); }));
