@@ -109,7 +109,23 @@ exports.handler = async (event) => {
   }
 
   if (pi.status === "processing") {
-    // ACH bank debit submitted; clears in a few business days. Left OPEN on purpose.
+    // ACH bank debit submitted; clears in a few business days. Mark the
+    // invoice "processing" so the client sees a Pending status (not "due").
+    try {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/invoices?id=eq.${encodeURIComponent(invoice.id)}&status=eq.open`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SERVICE_ROLE,
+            Authorization: `Bearer ${SERVICE_ROLE}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({ status: "processing" }),
+        }
+      );
+    } catch (e) { /* non-fatal; webhook is the backstop */ }
     return json(200, { status: "processing" });
   }
 
