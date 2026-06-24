@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Client Portal · Avi Data Technology</title>
+<meta name="description" content="View and pay your invoices from Avi Data Technology." />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='115' fill='%230A0E1A'/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Stripe + Supabase (loaded from their CDNs; no install needed) -->
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<style>
+  :root{
+    --bg:#0A0E1A; --panel:#111726; --panel-2:#0D1322; --raised:#16203A;
+    --line:#1F2A44; --line-soft:#172033;
+    --text:#EAF0FB; --muted:#8793AE; --muted-2:#566179;
+    --brand:#6E8BFF; --brand-2:#9FB0FF; --mint:#34D8A0; --rose:#F2607D; --gold:#F2B45C;
+    --r:18px; --top:62px;
+    --fd:'Plus Jakarta Sans',system-ui,sans-serif;
+    --fb:'Inter',system-ui,sans-serif;
+    --fm:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:
+      radial-gradient(1200px 700px at 82% -12%,rgba(110,139,255,.12),transparent 55%),
+      radial-gradient(1000px 600px at -8% 4%,rgba(52,216,160,.08),transparent 55%),var(--bg);
+    color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:var(--fm)}
+  ::selection{background:rgba(110,139,255,.32)}
+
+  /* Topbar */
+  .topbar{position:sticky;top:0;z-index:40;height:var(--top);display:flex;align-items:center;gap:14px;
+    padding:0 20px;background:rgba(10,14,26,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line-soft)}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand .mark{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(150deg,var(--brand),var(--mint))}
+  .brand b{font-family:var(--fd);font-weight:700;font-size:15.5px;letter-spacing:-.02em}
+  .brand .tag{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);
+    border:1px solid var(--line);border-radius:6px;padding:3px 7px;margin-left:2px}
+  .top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .who{font-size:13px;color:var(--muted);display:none}
+  .linkbtn{font-size:13px;color:var(--muted);cursor:pointer;border:none;background:none;font-family:var(--fb)}
+  .linkbtn:hover{color:var(--text)}
+
+  /* Layout */
+  .wrap{max-width:860px;margin:0 auto;padding:30px 20px 60px}
+
+  /* Login */
+  .center{min-height:calc(100vh - var(--top));display:grid;place-items:center;padding:24px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:0 40px 120px -50px rgba(0,0,0,.9)}
+  .login{width:100%;max-width:380px;padding:30px}
+  .login .mark{width:46px;height:46px;border-radius:13px;background:linear-gradient(150deg,var(--brand),var(--mint));
+    display:grid;place-items:center;margin-bottom:16px}
+  .login h1{font-family:var(--fd);font-size:20px;letter-spacing:-.02em;margin:0 0 6px}
+  .login p{color:var(--muted);font-size:13px;margin:0 0 20px}
+  label{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:14px 0 7px}
+  input{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;color:var(--text);
+    font-size:15px;font-family:var(--fb);padding:12px 14px;outline:none;transition:.16s}
+  input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(110,139,255,.16)}
+  .btn{width:100%;margin-top:18px;border:none;border-radius:11px;padding:13px;font-size:14px;font-weight:700;
+    font-family:var(--fd);color:#fff;background:linear-gradient(110deg,var(--brand),#4a5fd6);cursor:pointer;
+    transition:.18s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:disabled{opacity:.55;cursor:default;transform:none}
+  .btn-ghost{background:var(--raised);color:var(--text);border:1px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--brand);transform:none}
+  .msg{font-size:12.5px;font-weight:600;margin-top:12px;min-height:15px}
+  .msg.err{color:var(--rose)} .msg.ok{color:var(--mint)} .msg.info{color:var(--muted)}
+
+  /* Dashboard */
+  .head{margin:6px 0 22px}
+  .head .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
+  .head h1{font-family:var(--fd);font-weight:700;font-size:clamp(22px,4vw,30px);letter-spacing:-.025em;margin:6px 0 0}
+
+  .inv{display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--panel);
+    border:1px solid var(--line-soft);border-radius:14px;margin-bottom:12px;flex-wrap:wrap}
+  .inv .meta{flex:1;min-width:200px}
+  .inv .num{font-family:var(--fm);font-size:11px;letter-spacing:.06em;color:var(--brand-2)}
+  .inv .desc{font-weight:600;margin:3px 0 2px;letter-spacing:-.01em}
+  .inv .due{font-size:12.5px;color:var(--muted)}
+  .inv .right{display:flex;align-items:center;gap:14px;margin-left:auto}
+  .inv .amt{font-family:var(--fd);font-weight:700;font-size:19px;letter-spacing:-.02em}
+  .pill{font-size:12px;font-weight:700;font-family:var(--fd);padding:9px 16px;border-radius:10px;border:none;cursor:pointer;transition:.18s}
+  .pill-pay{color:#fff;background:linear-gradient(110deg,var(--brand),#4a5fd6)}
+  .pill-pay:hover{transform:translateY(-1px)}
+  .badge{font-size:11px;font-weight:700;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;
+    padding:6px 11px;border-radius:8px;display:inline-flex;align-items:center;gap:6px}
+  .badge.paid{color:var(--mint);background:rgba(52,216,160,.1);border:1px solid rgba(52,216,160,.28)}
+  .badge.void{color:var(--muted);background:rgba(135,147,174,.08);border:1px solid var(--line)}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  .empty{text-align:center;color:var(--muted);padding:60px 20px}
+  .empty .big{font-family:var(--fd);font-weight:700;font-size:18px;color:var(--text);margin-bottom:6px}
+  .skel{height:78px;border-radius:14px;background:linear-gradient(90deg,var(--panel),var(--raised),var(--panel));
+    background-size:200% 100%;animation:sh 1.3s linear infinite;margin-bottom:12px}
+  @keyframes sh{to{background-position:-200% 0}}
+
+  /* Payment overlay */
+  .overlay{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:20px;
+    background:rgba(5,7,14,.72);backdrop-filter:blur(6px)}
+  .overlay.on{display:grid}
+  .pay{width:100%;max-width:440px;padding:26px;max-height:92vh;overflow:auto}
+  .pay .ptop{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:4px}
+  .pay h2{font-family:var(--fd);font-size:18px;letter-spacing:-.02em;margin:0}
+  .pay .psub{font-size:12.5px;color:var(--muted);margin:2px 0 18px}
+  .pay .total{font-family:var(--fd);font-weight:800;font-size:26px;letter-spacing:-.02em;white-space:nowrap}
+  .x{border:none;background:none;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;padding:0 2px}
+  .x:hover{color:var(--text)}
+  #payment-element{margin:6px 0 4px;min-height:40px}
+
+  .cfg{max-width:560px;margin:40px auto;padding:24px;color:var(--gold);font-size:13.5px;line-height:1.7}
+  .cfg code{font-family:var(--fm);color:var(--text);background:var(--panel-2);padding:2px 6px;border-radius:5px}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media (max-width:520px){.inv .right{margin-left:0;width:100%;justify-content:space-between}}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     CONFIG — replace the three values below with YOUR keys.
+       SUPABASE_URL        : Supabase -> Project Settings -> API -> Project URL
+       SUPABASE_ANON_KEY   : same page -> Project API keys -> anon / public
+       STRIPE_PUBLISHABLE  : Stripe -> Developers -> API keys -> Publishable key (pk_test_...)
+     These three are safe to be public. NEVER put secret keys here.
+     ============================================================ -->
+<script>
+  const SUPABASE_URL        = "https://fyaofskaqiilcokyaesx.supabase.co";
+  const SUPABASE_ANON_KEY   = "sb_publishable__Kvkqp6_FO16tJ-SJ0vi_w_Dq5p1s8w";
+  const STRIPE_PUBLISHABLE  = "pk_live_51TlqoPQzdT3FH1O6fTiZphcuPskVpdjeO4hIhGyPCA6yR8VL4kqmRHdhLRBKMkT6VfQiwNPBwm8L4Vrcr5Cavpu500JFfFPKKp";
+</script>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
+    <b>Avi Data</b><span class="tag">Client Portal</span>
+  </div>
+  <div class="top-right">
+    <span class="who" id="who"></span>
+    <a class="linkbtn" href="https://avidatatechnology.com">← Site</a>
+    <button class="linkbtn" id="logout" style="display:none">Log out</button>
+  </div>
+</div>
+
+<!-- Config-not-set notice -->
+<div class="cfg card" id="cfgNotice" style="display:none">
+  ⚙️ This portal isn't configured yet. Open <code>portal/index.html</code> and replace the three values
+  in the CONFIG block at the top with your Supabase URL, Supabase anon key, and Stripe publishable key.
+</div>
+
+<!-- LOGIN -->
+<div class="center" id="loginView" style="display:none">
+  <div class="card login">
+    <div class="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+    <h1>Client sign in</h1>
+    <p>Enter the email and password provided by Avi Data Technology.</p>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="email" placeholder="you@company.com" />
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+    <button class="btn" id="signin">Sign in →</button>
+    <div class="msg err" id="loginMsg"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="wrap" id="dashView" style="display:none">
+  <div class="head">
+    <div class="eyebrow">Your invoices</div>
+    <h1 id="greeting">Welcome</h1>
+  </div>
+  <div id="list"></div>
+</div>
+
+<!-- PAYMENT OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="card pay">
+    <div class="ptop">
+      <div>
+        <h2 id="payTitle">Pay invoice</h2>
+        <div class="psub" id="payNum"></div>
+      </div>
+      <div class="total" id="payTotal"></div>
+    </div>
+    <div id="payment-element"></div>
+    <button class="btn" id="payBtn">Pay</button>
+    <button class="btn btn-ghost" id="payCancel" style="margin-top:10px">Cancel</button>
+    <div class="msg" id="payMsg"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // --- Guard: config filled in? ---
+  if (SUPABASE_URL.includes("YOUR-PROJECT") || SUPABASE_ANON_KEY.includes("YOUR_") || STRIPE_PUBLISHABLE.includes("YOUR_")) {
+    document.getElementById("cfgNotice").style.display = "block";
+    return;
+  }
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const stripe = Stripe(STRIPE_PUBLISHABLE);
+
+  const $ = (id) => document.getElementById(id);
+  const fmt = (cents) => (cents/100).toLocaleString("en-US",{style:"currency",currency:"USD"});
+  const show = (el,on) => { el.style.display = on ? "" : "none"; };
+
+  let elements = null, activeInvoice = null;
+
+  // ---------- Auth state ----------
+  async function boot(){
+    const { data:{ session } } = await sb.auth.getSession();
+    if (session) enterApp(session); else showLogin();
+  }
+
+  function showLogin(){
+    show($("loginView"), true); show($("dashView"), false);
+    show($("logout"), false); $("who").style.display = "none";
+  }
+
+  async function enterApp(session){
+    show($("loginView"), false); show($("dashView"), true);
+    show($("logout"), true);
+    // Greeting from profile (company / contact), falling back to email.
+    let name = session.user.email;
+    try {
+      const { data } = await sb.from("profiles").select("company_name,contact_name").maybeSingle();
+      if (data && (data.company_name || data.contact_name)) name = data.company_name || data.contact_name;
+    } catch(e){}
+    $("greeting").textContent = "Welcome, " + name;
+    $("who").textContent = session.user.email; $("who").style.display = "inline";
+    loadInvoices();
+  }
+
+  // ---------- Invoices ----------
+  async function loadInvoices(){
+    const list = $("list");
+    list.innerHTML = '<div class="skel"></div><div class="skel"></div>';
+    const { data, error } = await sb.from("invoices")
+      .select("id,number,description,amount_cents,status,due_date,paid_at")
+      .order("created_at",{ascending:false});
+    if (error){ list.innerHTML = '<div class="empty"><div class="big">Couldn\'t load your invoices</div>Please refresh the page, or contact us if it keeps happening.</div>'; return; }
+    if (!data.length){ list.innerHTML = '<div class="empty"><div class="big">No invoices yet</div>When Avi Data sends you one, it\'ll appear here.</div>'; return; }
+    list.innerHTML = "";
+    data.forEach(inv => list.appendChild(row(inv)));
+  }
+
+  function row(inv){
+    const el = document.createElement("div");
+    el.className = "inv";
+    const due = inv.due_date ? "Due " + new Date(inv.due_date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "";
+    let right;
+    if (inv.status === "paid"){
+      const when = inv.paid_at ? " · " + new Date(inv.paid_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "";
+      right = `<span class="badge paid"><span class="dot"></span>Paid${when}</span>`;
+    } else if (inv.status === "void"){
+      right = `<span class="badge void">Void</span>`;
+    } else {
+      right = `<button class="pill pill-pay" data-pay="${inv.id}">Pay ${fmt(inv.amount_cents)}</button>`;
+    }
+    el.innerHTML = `
+      <div class="meta">
+        <div class="num">${inv.number}</div>
+        <div class="desc">${escapeHtml(inv.description)}</div>
+        <div class="due">${due}</div>
+      </div>
+      <div class="right">
+        <div class="amt">${fmt(inv.amount_cents)}</div>
+        ${right}
+      </div>`;
+    const btn = el.querySelector("[data-pay]");
+    if (btn) btn.addEventListener("click", () => openPay(inv));
+    return el;
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+  // ---------- Payment ----------
+  async function openPay(inv){
+    activeInvoice = inv;
+    $("payTitle").textContent = "Pay " + inv.number;
+    $("payNum").textContent = inv.description;
+    $("payTotal").textContent = fmt(inv.amount_cents);
+    setPayMsg("Setting up secure payment…","info");
+    $("payBtn").disabled = true; $("payBtn").textContent = "Pay " + fmt(inv.amount_cents);
+    show($("overlay"), true); $("overlay").classList.add("on");
+
+    const token = (await sb.auth.getSession()).data.session.access_token;
+    let res;
+    try {
+      res = await fetch("/.netlify/functions/create-payment-intent", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token },
+        body: JSON.stringify({ invoice_id: inv.id })
+      });
+    } catch(e){ setPayMsg("Network error. Please try again.","err"); return; }
+    const j = await res.json();
+    if (!res.ok){ setPayMsg(j.error || "Couldn't start payment.","err"); return; }
+
+    const appearance = { theme:"night", variables:{
+      colorPrimary:"#6E8BFF", colorBackground:"#0D1322", colorText:"#EAF0FB",
+      colorTextSecondary:"#8793AE", colorDanger:"#F2607D",
+      fontFamily:"Inter, system-ui, sans-serif", borderRadius:"11px"
+    }};
+    elements = stripe.elements({ clientSecret: j.client_secret, appearance });
+    const pe = elements.create("payment", { layout:"tabs" });
+    pe.mount("#payment-element");
+    setPayMsg("","info");
+    $("payBtn").disabled = false;
+  }
+
+  async function pay(){
+    if (!elements) return;
+    $("payBtn").disabled = true; setPayMsg("Processing…","info");
+    // Remember which invoice, in case a payment method redirects us away.
+    sessionStorage.setItem("avi_pay_invoice", activeInvoice.id);
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams:{ return_url: location.origin + location.pathname },
+      redirect:"if_required"
+    });
+
+    if (error){ setPayMsg(error.message || "Payment failed.","err"); $("payBtn").disabled = false; return; }
+    await finalize(activeInvoice.id, paymentIntent.id);
+  }
+
+  async function finalize(invoiceId, paymentIntentId){
+    setPayMsg("Confirming…","info");
+    const token = (await sb.auth.getSession()).data.session.access_token;
+    let j;
+    try {
+      const r = await fetch("/.netlify/functions/confirm-payment", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token },
+        body: JSON.stringify({ invoice_id: invoiceId, payment_intent_id: paymentIntentId })
+      });
+      j = await r.json();
+    } catch(e){ setPayMsg("Couldn't confirm. If money left your account, contact us.","err"); return; }
+
+    sessionStorage.removeItem("avi_pay_invoice");
+    if (j.status === "paid"){
+      setPayMsg("Paid in full — thank you!","ok");
+      setTimeout(closePay, 1400); loadInvoices();
+    } else if (j.status === "processing"){
+      setPayMsg("Bank payment submitted. It clears in a few business days.","ok");
+      setTimeout(closePay, 2200); loadInvoices();
+    } else {
+      setPayMsg("Payment status: " + j.status + ".","info");
+      $("payBtn").disabled = false;
+    }
+  }
+
+  function closePay(){
+    $("overlay").classList.remove("on"); show($("overlay"), false);
+    if (elements){ try{ document.getElementById("payment-element").innerHTML=""; }catch(e){} elements=null; }
+    setPayMsg("","info"); activeInvoice=null;
+  }
+  function setPayMsg(t,k){ const m=$("payMsg"); m.textContent=t; m.className="msg "+(k||"info"); }
+
+  // Handle a redirect back from a payment method (e.g. some bank flows).
+  async function handleReturn(){
+    const params = new URLSearchParams(location.search);
+    const piClientSecret = params.get("payment_intent_client_secret");
+    const piId = params.get("payment_intent");
+    const invoiceId = sessionStorage.getItem("avi_pay_invoice");
+    if (piId && invoiceId){
+      history.replaceState({}, "", location.pathname);
+      // ensure we're signed in before finalizing
+      const { data:{ session } } = await sb.auth.getSession();
+      if (session){ show($("overlay"), true); $("overlay").classList.add("on"); await finalize(invoiceId, piId); }
+    }
+  }
+
+  // ---------- Wire up ----------
+  $("signin").addEventListener("click", signIn);
+  $("password").addEventListener("keydown", e => { if(e.key==="Enter") signIn(); });
+  async function signIn(){
+    const email = $("email").value.trim(), password = $("password").value;
+    if(!email || !password){ $("loginMsg").textContent="Enter your email and password."; return; }
+    $("signin").disabled = true; $("loginMsg").textContent="";
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    $("signin").disabled = false;
+    if (error){ $("loginMsg").textContent = "That email or password didn't work."; return; }
+    enterApp(data.session);
+  }
+  $("logout").addEventListener("click", async () => { await sb.auth.signOut(); showLogin(); });
+  $("payBtn").addEventListener("click", pay);
+  $("payCancel").addEventListener("click", closePay);
+  $("overlay").addEventListener("click", e => { if(e.target===$("overlay")) closePay(); });
+
+  boot().then(handleReturn);
+})();
+</script>
+</body>
+</html>
