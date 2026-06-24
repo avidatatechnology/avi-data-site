@@ -105,6 +105,40 @@
   .ptab-n{font-family:var(--fd);font-weight:700;font-size:13.5px;color:var(--text)}
   .ptab-s{font-family:var(--fm);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2)}
   .ptab.on .ptab-s{color:var(--brand-2)}
+  /* custom date picker */
+  .dp{position:relative}
+  .dpi{padding-right:38px}
+  .dpbtn{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;display:grid;place-items:center}
+  .dpbtn:hover{color:var(--brand-2)}
+  .dpcal{position:fixed;z-index:300;width:268px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 60px -20px rgba(0,0,0,.7);padding:14px;display:none}
+  .dpcal.on{display:block}
+  .dphead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .dphead b{font-family:var(--fd);font-size:14px}
+  .dpnav{background:var(--raised);border:1px solid var(--line);border-radius:8px;width:30px;height:30px;display:grid;place-items:center;color:var(--text);cursor:pointer;font-size:15px}
+  .dpnav:hover{border-color:var(--brand)}
+  .dpgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .dpw{font-family:var(--fm);font-size:10px;color:var(--muted-2);text-align:center;padding:3px 0}
+  .dpd{aspect-ratio:1;border:none;background:none;color:var(--text);border-radius:8px;font-size:13px;cursor:pointer;font-family:var(--fb)}
+  .dpd:hover{background:var(--raised)}
+  .dpd.sel{background:linear-gradient(150deg,var(--brand),#4a5fd6);color:#fff}
+  .dpd.tod{outline:1px solid var(--brand)}
+  .dpclear{margin-top:10px;width:100%;text-align:center;font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--fb)}
+  .dpclear:hover{color:var(--rose)}
+  /* stage accordion */
+  .stacc-item{border-top:1px solid var(--line-soft)}
+  .stacc-item:first-child{border-top:none}
+  .stacc{width:100%;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--text);padding:13px 0;cursor:pointer;font-family:var(--fb);text-align:left}
+  .staccn{font-family:var(--fd);font-weight:600;font-size:14px}
+  .stlock{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+  .staccct{font-family:var(--fm);font-size:10px;color:var(--brand-2);background:rgba(110,139,255,.12);border-radius:6px;padding:2px 7px}
+  .staccchev{margin-left:auto;color:var(--muted-2);transition:transform .18s;font-size:12px}
+  .stacc.open .staccchev{transform:rotate(180deg)}
+  .staccbody{display:none;padding:0 0 14px}
+  .staccbody.show{display:block}
+  .lockmsg{font-size:13px;color:var(--muted-2);padding:4px 0 8px}
+  /* milestone row */
+  .msrow{display:grid;grid-template-columns:.7fr 1fr 1fr;gap:12px;align-items:end}
+  @media (max-width:560px){.msrow{grid-template-columns:1fr}}
   .sd-desc{font-size:14px;color:var(--text);line-height:1.6}
   .sd-pts{list-style:none;padding:0;margin:13px 0 0;display:flex;flex-direction:column;gap:8px}
   .sd-pts li{font-size:13px;color:var(--muted);padding-left:24px;position:relative}
@@ -335,6 +369,28 @@
   function closeModal(){ $("modal").classList.remove("on"); show($("modal"),false); $("modalBody").innerHTML=""; }
   $("modalX").addEventListener("click",closeModal);
   $("modal").addEventListener("click",e=>{ if(e.target===$("modal")) closeModal(); });
+
+  /* ---------- custom date picker ---------- */
+  let dpcal=null, dpTarget=null, dpView=null;
+  function pad2(n){ return (n<10?'0':'')+n; }
+  function dispToIso(s){ s=(s||'').trim(); if(!s)return ''; let m; if(m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)) return m[1]+'-'+pad2(+m[2])+'-'+pad2(+m[3]); if(m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)) return m[3]+'-'+pad2(+m[1])+'-'+pad2(+m[2]); return ''; }
+  function isoToDisp(iso){ if(!iso)return ''; const m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[2]+'/'+m[3]+'/'+m[1]):''; }
+  function dpField(id,iso){ return '<div class="dp"><input type="text" class="dpi" id="'+id+'" placeholder="mm/dd/yyyy" autocomplete="off" value="'+(iso?isoToDisp(iso):'')+'"><button type="button" class="dpbtn" tabindex="-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button></div>'; }
+  function ensureCal(){ if(dpcal)return; dpcal=document.createElement('div'); dpcal.className='dpcal'; document.body.appendChild(dpcal); document.addEventListener('mousedown',e=>{ if(dpcal.classList.contains('on') && !dpcal.contains(e.target) && !(e.target.closest&&e.target.closest('.dp'))) closeCal(); }); window.addEventListener('scroll',()=>{ if(dpcal.classList.contains('on')) closeCal(); }, true); }
+  function closeCal(){ if(dpcal) dpcal.classList.remove('on'); dpTarget=null; }
+  function openCal(input){ ensureCal(); dpTarget=input; const iso=dispToIso(input.value); dpView= iso? dDate(iso) : new Date(); renderCal(); const r=input.getBoundingClientRect(); dpcal.style.left=Math.max(8,Math.min(r.left, window.innerWidth-278))+'px'; dpcal.style.top=(r.bottom+6)+'px'; dpcal.classList.add('on'); }
+  function renderCal(){ const y=dpView.getFullYear(), mo=dpView.getMonth(); const start=new Date(y,mo,1).getDay(); const dim=new Date(y,mo+1,0).getDate(); const selIso=dpTarget?dispToIso(dpTarget.value):''; const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    let h='<div class="dphead"><button type="button" class="dpnav" data-dpm="-1">‹</button><b>'+months[mo]+' '+y+'</b><button type="button" class="dpnav" data-dpm="1">›</button></div><div class="dpgrid">'+['S','M','T','W','T','F','S'].map(d=>'<div class="dpw">'+d+'</div>').join('');
+    for(let i=0;i<start;i++) h+='<div></div>';
+    for(let d=1;d<=dim;d++){ const iso=y+'-'+pad2(mo+1)+'-'+pad2(d); const cls=(iso===selIso?' sel':'')+(iso===today?' tod':''); h+='<button type="button" class="dpd'+cls+'" data-dpd="'+iso+'">'+d+'</button>'; }
+    h+='</div><button type="button" class="dpclear" data-dpclear="1">Clear</button>';
+    dpcal.innerHTML=h;
+    dpcal.querySelectorAll('[data-dpm]').forEach(b=>b.addEventListener('click',()=>{ dpView=new Date(y,mo+ +b.getAttribute('data-dpm'),1); renderCal(); }));
+    dpcal.querySelectorAll('[data-dpd]').forEach(b=>b.addEventListener('click',()=>{ if(dpTarget){ dpTarget.value=isoToDisp(b.getAttribute('data-dpd')); dpTarget.dispatchEvent(new Event('change')); } closeCal(); }));
+    const cl=dpcal.querySelector('[data-dpclear]'); if(cl) cl.addEventListener('click',()=>{ if(dpTarget){ dpTarget.value=''; dpTarget.dispatchEvent(new Event('change')); } closeCal(); });
+  }
+  function attachDP(input){ if(!input||input._dp)return; input._dp=1; const btn=input.parentElement&&input.parentElement.querySelector('.dpbtn'); if(btn) btn.addEventListener('click',()=>openCal(input)); input.addEventListener('blur',()=>{ const iso=dispToIso(input.value); input.value=iso?isoToDisp(iso):''; }); }
+  function attachAllDP(root){ (root||document).querySelectorAll('.dpi').forEach(attachDP); }
 
   function pipeHtml(stage){ let h=""; STAGES.forEach((label,i)=>{ const cls=i<stage?"done":(i===stage?"now":""); const inner=i<stage?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>':(i+1); h+='<div class="pstep '+cls+'"><div class="pnum">'+inner+'</div><div class="plabel">'+label+'</div></div>'; }); return h; }
   function kpi(l,v,d,cls){ return '<div class="kpi"><div class="l">'+l+'</div><div class="v '+(cls||"")+'">'+v+'</div><div class="d">'+(d||"")+'</div></div>'; }
@@ -584,38 +640,39 @@
     const suggested="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); const st=proj.stage||0;
     $("projectPage").innerHTML='<button class="pback" id="backClient"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'+esc(cl.company_name||cl.email)+'</button>'+
       '<div class="phead"><div><div class="eyebrow">Project</div><h1 id="ppTitle">'+esc(proj.name||"Project")+'</h1><div class="sub">'+esc(cl.company_name||cl.email)+(proj.value_cents>0?' · '+fmt(proj.value_cents):'')+'</div></div><span class="badge stage" id="ppBadge">'+STAGES[st]+'</span></div>'+
-      '<div class="card" style="margin-bottom:18px"><div class="pipe" id="ppPipe">'+pipeHtml(st)+'</div></div>'+
-      '<div class="card" style="margin-bottom:18px"><div class="ch">Timeline & dated notes</div><div class="csub">Set each stage\'s dates and add dated notes under it — this is how your client sees progress.</div><div id="stageNotes" style="margin-top:10px"></div><button class="btn" id="snSave" style="width:auto;margin-top:6px">Save stage dates</button><div class="msg" id="snMsg"></div></div>'+
-      '<div class="pgrid"><div class="card"><div class="ch">Pipeline & details</div><label>Project name</label><input id="pName" value="'+esc(proj.name||"")+'"/><div class="f2"><div><label>Current stage</label><select id="pStage">'+STAGES.map((s,i)=>'<option value="'+i+'"'+(i===st?" selected":"")+'>'+s+'</option>').join('')+'</select></div><div><label>Project value (USD)</label><input id="pValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/></div></div><label>Note to client (optional)</label><textarea id="pNote">'+esc(proj.note||"")+'</textarea><button class="btn full" id="pSave">Save</button><div class="msg" id="pMsg"></div></div>'+
-      '<div class="card"><div class="ch">Invoices</div><div class="f2" style="margin-top:6px"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="2500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Phase 1 — dashboard build"/><label>Due date (optional)</label><input id="inDue" type="date"/><button class="btn full" id="inSave">Add invoice</button><div class="msg" id="inMsg"></div><div id="pInvoices" style="margin-top:12px">Loading…</div></div></div>'+
-      '<div class="pgrid" style="margin-top:18px"><div class="card"><div class="ch">Milestone billing</div><div class="csub">Split this project into a 30% deposit at Mockup and 70% at Launch.</div><div id="msBox" style="margin-top:10px">Loading…</div></div>'+
+      '<div class="card" style="margin-bottom:18px"><div class="pipe pipe-click" id="ppPipe">'+pipeStepsClickable(st,st)+'</div><div class="csub" style="text-align:center;margin:14px 0 0">Click a stage to set how far along you are. Stages up to the current one unlock for dated notes.</div></div>'+
+      '<div class="card" style="margin-bottom:18px"><div class="ch">Timeline & dated notes</div><div class="csub">Each unlocked stage has its dates and a dated-note log — this is how your client sees progress. Click a stage to expand it.</div><div id="stageNotes" style="margin-top:10px"></div><button class="btn" id="snSave" style="width:auto;margin-top:10px">Save stage dates</button><div class="msg" id="snMsg"></div></div>'+
+      '<div class="pgrid"><div class="card"><div class="ch">Project details</div><label>Project name</label><input id="pName" value="'+esc(proj.name||"")+'"/><label>Project value (USD)</label><input id="pValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/><label>Note to client (optional)</label><textarea id="pNote">'+esc(proj.note||"")+'</textarea><button class="btn full" id="pSave">Save</button><div class="msg" id="pMsg"></div></div>'+
+      '<div class="card"><div class="ch">Additional invoices</div><div class="csub">One-off charges outside the milestone split — extra work, change requests, etc.</div><div class="f2" style="margin-top:8px"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="2500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Extra report build"/><label>Due date (optional)</label>'+dpField("inDue","")+'<button class="btn full" id="inSave" style="margin-top:10px">Add invoice</button><div class="msg" id="inMsg"></div><div id="pInvoices" style="margin-top:12px">Loading…</div></div></div>'+
+      '<div class="pgrid" style="margin-top:18px"><div class="card"><div class="ch">Milestone billing</div><div class="csub">Split the project value into a deposit and final payment. Change the percent or the dollar amounts — they stay in sync.</div><div id="msBox" style="margin-top:12px">Loading…</div></div>'+
       '<div class="stack"><div class="card"><div class="ch">Monthly maintenance</div><div class="csub">Discuss a plan with the client, then set it Active when you agree on a price.</div><label>Monthly fee (USD)</label><input id="mtAmt" type="number" step="0.01" min="0" value="'+(proj.maintenance_cents?(proj.maintenance_cents/100):"")+'"/><label>Plan status</label><select id="mtStatus"><option value="none"'+(proj.maintenance_status==="active"?"":" selected")+'>Not on a plan</option><option value="active"'+(proj.maintenance_status==="active"?" selected":"")+'>Active (recurring)</option></select><button class="btn full" id="mtSave">Save plan</button><div class="msg" id="mtMsg"></div><div id="mtReq" style="margin-top:8px"></div></div>'+
       '<div class="card"><div class="ch">Client sign-offs</div><div id="soBox" style="margin-top:8px">Loading…</div></div></div></div>';
     adminShow("project");
     $("backClient").addEventListener("click",()=>clientPageProjects(cl));
+    wireStage(cl,proj); attachAllDP($("projectPage"));
     renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj);
     $("snSave").addEventListener("click",async()=>{
       const m=$("snMsg"); $("snSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
-      const rows=STAGES.map((s,i)=>({project_id:proj.id,stage:i,client_id:cl.id,start_date:(($("snS"+i)&&$("snS"+i).value)||null),end_date:(($("snE"+i)&&$("snE"+i).value)||null),updated_at:new Date().toISOString()}));
+      const rows=STAGES.filter((s,i)=>i<=(proj.stage||0)).map((s,i)=>({project_id:proj.id,stage:i,client_id:cl.id,start_date:(dispToIso($("snS"+i)?$("snS"+i).value:"")||null),end_date:(dispToIso($("snE"+i)?$("snE"+i).value:"")||null),updated_at:new Date().toISOString()}));
       const { error }=await sb.from("stage_notes").upsert(rows,{onConflict:"project_id,stage"});
       if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("snSave").disabled=false; return; }
       m.className="msg ok"; m.textContent="Stage dates saved."; $("snSave").disabled=false;
     });
     $("pSave").addEventListener("click",async()=>{
       const m=$("pMsg"); $("pSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
-      const val=parseFloat($("pValue").value); const { error }=await sb.from("projects").update({name:$("pName").value.trim()||null,stage:Number($("pStage").value),value_cents:val>0?Math.round(val*100):0,note:$("pNote").value.trim()||null,updated_at:new Date().toISOString()}).eq("id",proj.id);
+      const val=parseFloat($("pValue").value); const { error }=await sb.from("projects").update({name:$("pName").value.trim()||null,value_cents:val>0?Math.round(val*100):0,note:$("pNote").value.trim()||null,updated_at:new Date().toISOString()}).eq("id",proj.id);
       if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("pSave").disabled=false; return; }
-      proj.name=$("pName").value.trim(); proj.stage=Number($("pStage").value); proj.note=$("pNote").value.trim(); proj.value_cents=val>0?Math.round(val*100):0;
-      $("ppTitle").textContent=proj.name||"Project"; $("ppBadge").textContent=STAGES[proj.stage]; $("ppPipe").innerHTML=pipeHtml(proj.stage); renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj);
+      proj.name=$("pName").value.trim(); proj.note=$("pNote").value.trim(); proj.value_cents=val>0?Math.round(val*100):0;
+      $("ppTitle").textContent=proj.name||"Project"; loadMilestones(cl,proj);
       m.className="msg ok"; m.textContent="Saved."; $("pSave").disabled=false; loadAdmin();
     });
     $("inSave").addEventListener("click",async()=>{
-      const m=$("inMsg"); const num=$("inNum").value.trim(), desc=$("inDesc").value.trim(), amt=parseFloat($("inAmt").value), due=$("inDue").value||null;
+      const m=$("inMsg"); const num=$("inNum").value.trim(), desc=$("inDesc").value.trim(), amt=parseFloat($("inAmt").value), due=dispToIso($("inDue").value)||null;
       if(!num||!desc||!(amt>0)){ m.className="msg err"; m.textContent="Invoice #, description, and a positive amount are required."; return; }
       $("inSave").disabled=true; m.className="msg info"; m.textContent="Adding…";
       const { error }=await sb.from("invoices").insert({client_id:cl.id,project_id:proj.id,number:num,description:desc,amount_cents:Math.round(amt*100),due_date:due});
       if(error){ m.className="msg err"; m.textContent="Couldn't add. "+(error.message||""); $("inSave").disabled=false; return; }
-      m.className="msg ok"; m.textContent="Invoice added."; $("inSave").disabled=false; $("inDesc").value="";$("inAmt").value=""; cacheInvoiceCount++; $("inNum").value="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); loadProjectInvoices(cl,proj); loadAdmin();
+      m.className="msg ok"; m.textContent="Invoice added."; $("inSave").disabled=false; $("inDesc").value="";$("inAmt").value=""; $("inDue").value=""; cacheInvoiceCount++; $("inNum").value="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); loadProjectInvoices(cl,proj); loadAdmin();
     });
     $("mtSave").addEventListener("click",async()=>{
       const m=$("mtMsg"); $("mtSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
@@ -626,21 +683,30 @@
     });
     loadProjectInvoices(cl,proj); loadMilestones(cl,proj); loadSignoffs(cl,proj);
   }
+  function wireStage(cl,proj){ const p=$("ppPipe"); if(!p)return; p.querySelectorAll('[data-pstage]').forEach(s=>s.addEventListener('click',()=>setStage(cl,proj,+s.getAttribute('data-pstage')))); }
+  async function setStage(cl,proj,i){ if(i===proj.stage)return; proj.stage=i; await sb.from("projects").update({stage:i,updated_at:new Date().toISOString()}).eq("id",proj.id); if($("ppBadge"))$("ppBadge").textContent=STAGES[i]; if($("ppPipe")){ $("ppPipe").innerHTML=pipeStepsClickable(i,i); wireStage(cl,proj); } renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj); loadAdmin(); }
   function renderStageNoteInputs(cl,proj){
     const box=$("stageNotes"); if(!box)return; const st=proj.stage||0;
-    box.innerHTML=STAGES.map((s,i)=>{ const cls=i<st?"done":(i===st?"now":""); return '<div class="snrow"><label><span class="snd '+cls+'"></span>'+esc(s)+'</label><div class="f2"><div><div class="dlbl">Start</div><input type="date" id="snS'+i+'"></div><div><div class="dlbl">End</div><input type="date" id="snE'+i+'"></div></div><div class="slogs" id="slog'+i+'" style="margin-top:10px"></div><div class="f2" style="margin-top:6px"><div><input type="date" id="sld'+i+'"></div><div><input type="text" id="slb'+i+'" placeholder="Add a dated note…"></div></div><button class="btn-ghost" id="sla'+i+'" style="width:auto;margin-top:6px;padding:9px 14px;font-size:13px">Add note</button></div>'; }).join('');
-    STAGES.forEach((s,i)=>{ const d=$("sld"+i); if(d) d.value=today; const a=$("sla"+i); if(a) a.addEventListener("click",()=>addStageLog(cl,proj,i)); const t=$("slb"+i); if(t) t.addEventListener("keydown",e=>{ if(e.key==="Enter") addStageLog(cl,proj,i); }); });
+    box.innerHTML=STAGES.map((s,i)=>{ const cls=i<st?"done":(i===st?"now":""); const locked=i>st;
+      const head='<button type="button" class="stacc'+(i===st&&!locked?' open':'')+'" data-acc="'+i+'"><span class="snd '+cls+'"></span><span class="staccn">'+esc(s)+'</span>'+(locked?'<span class="stlock">locked</span>':'')+'<span class="staccchev">▾</span></button>';
+      let body;
+      if(locked) body='<div class="staccbody" id="accb'+i+'"><div class="lockmsg">Click this stage on the pipeline above to unlock it.</div></div>';
+      else body='<div class="staccbody'+(i===st?' show':'')+'" id="accb'+i+'"><div class="f2"><div><div class="dlbl">Start</div>'+dpField("snS"+i,"")+'</div><div><div class="dlbl">End</div>'+dpField("snE"+i,"")+'</div></div><div class="slogs" id="slog'+i+'" style="margin-top:12px"></div><div class="f2" style="margin-top:8px"><div>'+dpField("sld"+i,today)+'</div><div><input type="text" id="slb'+i+'" placeholder="Add a dated note…"></div></div><button class="btn-ghost" id="sla'+i+'" style="width:auto;margin-top:8px;padding:9px 14px;font-size:13px">Add note</button></div>';
+      return '<div class="stacc-item">'+head+body+'</div>'; }).join('');
+    box.querySelectorAll('[data-acc]').forEach(b=>b.addEventListener('click',()=>{ const i=b.getAttribute('data-acc'); const bd=$("accb"+i); if(!bd)return; const open=bd.classList.toggle('show'); b.classList.toggle('open',open); }));
+    attachAllDP(box);
+    STAGES.forEach((s,i)=>{ if(i>st)return; const a=$("sla"+i); if(a) a.addEventListener("click",()=>addStageLog(cl,proj,i)); const t=$("slb"+i); if(t) t.addEventListener("keydown",e=>{ if(e.key==="Enter") addStageLog(cl,proj,i); }); });
   }
   async function loadStageNotes(proj){
-    try{ const { data }=await sb.from("stage_notes").select("stage,start_date,end_date").eq("project_id",proj.id); (data||[]).forEach(r=>{ const s=$("snS"+r.stage); if(s&&r.start_date) s.value=r.start_date; const e=$("snE"+r.stage); if(e&&r.end_date) e.value=r.end_date; }); }catch(e){}
+    try{ const { data }=await sb.from("stage_notes").select("stage,start_date,end_date").eq("project_id",proj.id); (data||[]).forEach(r=>{ const s=$("snS"+r.stage); if(s&&r.start_date) s.value=isoToDisp(r.start_date); const e=$("snE"+r.stage); if(e&&r.end_date) e.value=isoToDisp(r.end_date); }); }catch(e){}
   }
   async function addStageLog(cl,proj,i){
     const body=($("slb"+i)?$("slb"+i).value.trim():""); if(!body)return;
-    const note_date=($("sld"+i)&&$("sld"+i).value)||today;
+    const note_date=dispToIso($("sld"+i)?$("sld"+i).value:"")||today;
     const a=$("sla"+i); if(a){ a.disabled=true; a.textContent="Adding…"; }
     const { error }=await sb.from("stage_logs").insert({project_id:proj.id,stage:i,client_id:cl.id,note_date,body});
     if(a){ a.disabled=false; a.textContent="Add note"; }
-    if(!error){ if($("slb"+i)) $("slb"+i).value=""; if($("sld"+i)) $("sld"+i).value=today; loadStageLogs(proj); }
+    if(!error){ if($("slb"+i)) $("slb"+i).value=""; if($("sld"+i)) $("sld"+i).value=isoToDisp(today); loadStageLogs(proj); }
   }
   async function loadStageLogs(proj){
     let data=[]; try{ const r=await sb.from("stage_logs").select("id,stage,body,note_date").eq("project_id",proj.id).order("note_date",{ascending:false}).order("created_at",{ascending:false}); data=r.data||[]; }catch(e){}
@@ -674,8 +740,12 @@
         (anyPaid?'':'<button class="linkx del" id="msClear" style="margin-top:10px">Clear &amp; redo split</button><div class="msg" id="msMsg"></div>');
       const cb=$("msClear"); if(cb) cb.addEventListener("click",async()=>{ for(const i of data){ if(i.status!=="paid") await sb.from("invoices").delete().eq("id",i.id); } loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin(); });
     } else {
-      const dep=Math.round(proj.value_cents*0.30), fin=proj.value_cents-dep;
-      box.innerHTML='<div class="csub" style="margin:0 0 8px">Set any split — defaults to 30% / 70%. They don\'t have to add up to the full value.</div><div class="f2"><div><label>Deposit at Mockup (USD)</label><input id="msDep" type="number" step="0.01" min="0" value="'+(dep/100)+'"/></div><div><label>Final at Launch (USD)</label><input id="msFin" type="number" step="0.01" min="0" value="'+(fin/100)+'"/></div></div><button class="btn" id="msGen" style="width:auto;margin-top:10px">Create these invoices</button><div class="msg" id="msMsg"></div>';
+      const val=proj.value_cents; const dep=Math.round(val*0.30);
+      box.innerHTML='<div class="msrow"><div><div class="dlbl">Deposit %</div><input id="msPct" type="number" min="0" max="100" step="1" value="30"></div><div><div class="dlbl">Deposit at Mockup</div><input id="msDep" type="number" step="0.01" min="0" value="'+(dep/100)+'"></div><div><div class="dlbl">Final at Launch</div><input id="msFin" type="number" step="0.01" min="0" value="'+((val-dep)/100)+'"></div></div><div class="csub" style="margin:10px 0 0">Project value '+fmt(val)+'. Amounts don\'t have to add up to the full value.</div><button class="btn" id="msGen" style="width:auto;margin-top:12px">Create these invoices</button><div class="msg" id="msMsg"></div>';
+      const setFromPct=()=>{ const p=Math.max(0,Math.min(100,parseFloat($("msPct").value)||0)); const d=Math.round(val*p/100); $("msDep").value=(d/100); $("msFin").value=((val-d)/100); };
+      const setFromDep=()=>{ const d=Math.round((parseFloat($("msDep").value)||0)*100); $("msPct").value=val?Math.round(d/val*100):0; $("msFin").value=((Math.max(0,val-d))/100); };
+      const setFromFin=()=>{ const f=Math.round((parseFloat($("msFin").value)||0)*100); const d=Math.max(0,val-f); $("msDep").value=(d/100); $("msPct").value=val?Math.round(d/val*100):0; };
+      $("msPct").addEventListener("input",setFromPct); $("msDep").addEventListener("input",setFromDep); $("msFin").addEventListener("input",setFromFin);
       $("msGen").addEventListener("click",async()=>{
         const m=$("msMsg"); const d=parseFloat($("msDep").value), f=parseFloat($("msFin").value);
         if(!(d>0)&&!(f>0)){ m.className="msg err"; m.textContent="Enter at least one amount."; return; }
