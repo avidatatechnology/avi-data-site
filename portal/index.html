@@ -172,6 +172,14 @@
   .cfg{max-width:560px;margin:40px auto;padding:24px;color:var(--gold);font-size:13.5px;line-height:1.7}
   .cfg code{font-family:var(--fm);color:var(--text);background:var(--panel-2);padding:2px 6px;border-radius:5px}
 
+  /* ---------- Login = full-screen centered; app frame only after sign-in ---------- */
+  body:not(.authed) .sidebar, body:not(.authed) .mobilebar{display:none!important}
+  body:not(.authed) .shell{margin-left:0;padding:24px}
+  #loginView{min-height:calc(100vh - 48px);display:grid;place-items:center}
+  #loginView .login{width:100%;max-width:430px;padding:34px;text-align:left;animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+  #loginView .login::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--brand),var(--mint))}
+  #loginView .login .eyebrow{display:block}
+
   /* ---------- Custom cursor ---------- */
   body.cz, body.cz a, body.cz button, body.cz input{cursor:none}
   body.cz input{cursor:text}
@@ -238,36 +246,19 @@
   <!-- config not set -->
   <div class="cfg card" id="cfgNotice" style="display:none">⚙️ This portal isn't configured yet. Add your Supabase URL, anon key, and Stripe publishable key in the CONFIG block at the top of <code>portal/index.html</code>.</div>
 
-  <!-- LOGIN (dashboard-styled) -->
+  <!-- LOGIN (centered) -->
   <div id="loginView" style="display:none">
-    <div class="head"><div class="eyebrow">Secure client access</div><h1>Client Portal</h1></div>
-    <div class="board">
-      <div class="card c5 login">
-        <span class="lmark"><svg viewBox="0 0 512 512" width="46" height="46" xmlns="http://www.w3.org/2000/svg" style="display:block"><defs><linearGradient id="lg2" gradientUnits="userSpaceOnUse" x1="65.4" y1="123.6" x2="446.6" y2="388.4"><stop offset="0" stop-color="#6E8BFF"/><stop offset="1" stop-color="#34D8A0"/></linearGradient></defs><rect width="512" height="512" rx="115" fill="#0A0E1A"/><g transform="translate(65.4,123.6) scale(1.22)" fill="url(#lg2)"><g transform="translate(19748.998 1200.591)"><g transform="translate(2067 6153.53)"><path d="M12.2,221.485A19.5,19.5,0,0,1,1.424,196.1L73.349,18.08a19.553,19.553,0,0,1,36.236,0L181.509,196.1a19.5,19.5,0,0,1-36.16,14.61L91.467,77.346,37.585,210.709A19.484,19.484,0,0,1,12.2,221.485Z" transform="translate(-21815.998 -7360)"/></g><g transform="translate(-19676.998 -1200.59)"><path d="M91.467,217.03a19.5,19.5,0,0,1-18.118-12.2L1.425,26.81A19.5,19.5,0,1,1,37.585,12.2L91.467,145.563,145.349,12.2a19.5,19.5,0,0,1,36.16,14.61L109.585,204.829A19.506,19.506,0,0,1,91.5,217.03Z" transform="translate(-0.001 0)"/></g><rect width="39" height="39" rx="19.5" transform="translate(-19677.031 -1022.561)"/><rect width="39" height="149.029" rx="19.5" transform="translate(-19475.492 -1132.59)"/><rect width="39" height="39" rx="19.5" transform="translate(-19475.492 -1200.59)"/></g></g></svg></span>
-        <h1>Sign in</h1>
-        <p>Enter the email and password provided by Avi Data Technology.</p>
-        <label for="email">Email</label>
-        <input id="email" type="email" autocomplete="email" placeholder="you@company.com" />
-        <label for="password">Password</label>
-        <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
-        <button class="btn" id="signin">Sign in →</button>
-        <div class="msg err" id="loginMsg"></div>
-      </div>
-      <div class="shot c7">
-        <div class="shot-bar"><span class="d"><i></i><i></i><i></i></span><span class="ttl">avidata · live dashboard</span><span class="live"><i></i>live</span></div>
-        <div class="shot-body">
-          <div class="grid3">
-            <div class="kpi"><div class="l">Collected</div><div class="v">$248K</div><div class="d up">▲ 9.1%</div></div>
-            <div class="kpi"><div class="l">Open invoices</div><div class="v">12</div><div class="d up">▲ 3</div></div>
-            <div class="kpi"><div class="l">On-time rate</div><div class="v">96<small>%</small></div><div class="d up">▲ 2%</div></div>
-          </div>
-          <div class="grid2">
-            <div class="mini"><div class="mh"><h4>Activity</h4><span class="t">W1–W12</span></div><svg class="chart" id="heroCandles" viewBox="0 0 300 110" height="96"></svg></div>
-            <div class="mini"><div class="mh"><h4>Sources</h4><span class="t">234</span></div><svg class="chart" id="heroGauge" viewBox="0 0 220 130" height="96" style="margin:0 auto;display:block"></svg></div>
-          </div>
-          <div class="mini"><div class="mh"><h4>Collections trend</h4><span class="t">sourced → paid</span></div><svg class="chart" id="heroArea" viewBox="0 0 560 130" height="110" preserveAspectRatio="none"></svg></div>
-        </div>
-      </div>
+    <div class="card login">
+      <span class="lmark"><svg viewBox="0 0 512 512" width="48" height="48" xmlns="http://www.w3.org/2000/svg" style="display:block"><defs><linearGradient id="lg2" gradientUnits="userSpaceOnUse" x1="65.4" y1="123.6" x2="446.6" y2="388.4"><stop offset="0" stop-color="#6E8BFF"/><stop offset="1" stop-color="#34D8A0"/></linearGradient></defs><rect width="512" height="512" rx="115" fill="#0A0E1A"/><g transform="translate(65.4,123.6) scale(1.22)" fill="url(#lg2)"><g transform="translate(19748.998 1200.591)"><g transform="translate(2067 6153.53)"><path d="M12.2,221.485A19.5,19.5,0,0,1,1.424,196.1L73.349,18.08a19.553,19.553,0,0,1,36.236,0L181.509,196.1a19.5,19.5,0,0,1-36.16,14.61L91.467,77.346,37.585,210.709A19.484,19.484,0,0,1,12.2,221.485Z" transform="translate(-21815.998 -7360)"/></g><g transform="translate(-19676.998 -1200.59)"><path d="M91.467,217.03a19.5,19.5,0,0,1-18.118-12.2L1.425,26.81A19.5,19.5,0,1,1,37.585,12.2L91.467,145.563,145.349,12.2a19.5,19.5,0,0,1,36.16,14.61L109.585,204.829A19.506,19.506,0,0,1,91.5,217.03Z" transform="translate(-0.001 0)"/></g><rect width="39" height="39" rx="19.5" transform="translate(-19677.031 -1022.561)"/><rect width="39" height="149.029" rx="19.5" transform="translate(-19475.492 -1132.59)"/><rect width="39" height="39" rx="19.5" transform="translate(-19475.492 -1200.59)"/></g></g></svg></span>
+      <div class="eyebrow" style="margin-top:16px">Secure client access</div>
+      <h1>Client Portal</h1>
+      <p>Enter the email and password provided by Avi Data Technology.</p>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@company.com" />
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+      <button class="btn" id="signin">Sign in →</button>
+      <div class="msg err" id="loginMsg"></div>
     </div>
   </div>
 
@@ -339,38 +330,11 @@
     document.addEventListener('mouseup',()=>document.body.classList.remove('curdown'));
   })();
 
-  /* ---------- live charts (login backdrop) ---------- */
-  function appearNow(s){ if(!s)return; s.classList.add('gchart');
-    s.querySelectorAll('.ln').forEach(l=>{const L=l.getTotalLength();l.style.strokeDasharray=L;l.style.strokeDashoffset=L;l.classList.add('gl');});
-    requestAnimationFrame(()=>{ s.classList.add('in'); s.querySelectorAll('.gl').forEach(l=>l.style.strokeDashoffset='0'); });
-  }
-  function smooth(p){ if(p.length<2)return''; let d='M'+p[0][0].toFixed(1)+','+p[0][1].toFixed(1); for(let i=0;i<p.length-1;i++){const a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c; d+=' C'+(b[0]+(c[0]-a[0])/6).toFixed(1)+','+(b[1]+(c[1]-a[1])/6).toFixed(1)+' '+(c[0]-(e[0]-b[0])/6).toFixed(1)+','+(c[1]-(e[1]-b[1])/6).toFixed(1)+' '+c[0].toFixed(1)+','+c[1].toFixed(1);} return d; }
-  function candles(id){const s=$(id);if(!s)return;const W=300,H=110,PB=10,PT=8,MIN=2,MAX=12;
-    const D=[[6,8,5,7],[7,9,6,6],[6,7,4,5],[5,8,5,8],[8,10,7,7],[7,9,5,9],[9,11,8,8],[8,9,6,7],[7,10,6,10],[10,12,9,9],[9,10,7,11],[11,12,9,12]];
-    const n=D.length,cw=(W-12)/n,bw=cw*0.5;function y(v){return PT+(H-PT-PB)*(1-(v-MIN)/(MAX-MIN));}
-    let h='';for(let i=0;i<n;i++){const x=6+cw*i+cw/2,o=D[i][0],hi=D[i][1],lo=D[i][2],c=D[i][3],up=c>=o,col=up?'#34D8A0':'#F2607D';
-      h+='<line x1="'+x.toFixed(1)+'" y1="'+y(hi).toFixed(1)+'" x2="'+x.toFixed(1)+'" y2="'+y(lo).toFixed(1)+'" stroke="'+col+'" stroke-width="1.4" opacity="0.7"/>';
-      const yt=y(Math.max(o,c)),yb=y(Math.min(o,c));h+='<rect class="gb'+(i%3===0?' tk':'')+'" style="transform-box:fill-box;transform-origin:50% 100%;transition-delay:'+(i*35)+'ms" x="'+(x-bw/2).toFixed(1)+'" y="'+yt.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(2,yb-yt).toFixed(1)+'" rx="1.5" fill="'+col+'"/>';}
-    s.innerHTML=h;appearNow(s);}
-  function gauge(id){const s=$(id);if(!s)return;const cx=110,cy=112,r=82;
-    const seg=[['AI Sourced',38,'#6E8BFF'],['Inbound',30,'#34D8A0'],['Referrals',20,'#F2B45C'],['Events',12,'#F2607D']];
-    function pt(a){return [cx+r*Math.cos(a*Math.PI/180),cy+r*Math.sin(a*Math.PI/180)];}
-    let h='',a=180;seg.forEach(g=>{const a1=a+180*g[1]/100,p0=pt(a),p1=pt(a1),d='M'+p0[0].toFixed(1)+','+p0[1].toFixed(1)+' A'+r+' '+r+' 0 0 1 '+p1[0].toFixed(1)+','+p1[1].toFixed(1);
-      h+='<path class="ln" d="'+d+'" fill="none" stroke="'+g[2]+'" stroke-width="13" stroke-linecap="round"/>';a=a1+1.5;});
-    h+='<text x="110" y="104" text-anchor="middle" fill="#EAF0FB" font-family="Plus Jakarta Sans" font-weight="700" font-size="26">234</text>';
-    h+='<text x="110" y="120" text-anchor="middle" fill="#566179" font-family="JetBrains Mono" font-size="9" letter-spacing="2">LEADS</text>';
-    s.innerHTML=h;appearNow(s);}
-  function stream(id){const s=$(id);if(!s)return;const W=560,H=130,PB=4;
-    const L=[[40,42,44,48,52,58,66,76,88,100,112,120],[24,26,27,30,34,40,48,58,70,82,92,100],[10,11,12,14,17,22,28,36,46,56,66,74]];
-    const cols=['#6E8BFF','#5570d8','#3f50c4'],n=L[0].length;function pts(arr){return arr.map((v,i)=>[(W)*(i/(n-1)),H-PB-(H-PB-6)*(v/130)]);}
-    let h='';for(let k=0;k<L.length;k++){const P=pts(L[k]),d=smooth(P)+' L'+W+','+(H-PB)+' L0,'+(H-PB)+' Z';h+='<path d="'+d+'" fill="'+cols[k]+'" opacity="'+(0.32+k*0.18)+'"/>';}
-    h+='<path class="ln" d="'+smooth(pts(L[0]))+'" fill="none" stroke="#9FB0FF" stroke-width="2"/>';s.innerHTML=h;appearNow(s);}
-  function drawCharts(){ if(chartsDone) return; chartsDone=true; candles('heroCandles'); gauge('heroGauge'); stream('heroArea'); }
-
   /* ---------- auth ---------- */
   async function boot(){ const { data:{ session } } = await sb.auth.getSession(); if (session) enterApp(session); else showLogin(); }
-  function showLogin(){ show($("loginView"),true); show($("dashView"),false); show($("logout"),false); $("who").textContent=""; drawCharts(); }
+  function showLogin(){ document.body.classList.remove("authed"); show($("loginView"),true); show($("dashView"),false); show($("logout"),false); $("who").textContent=""; }
   async function enterApp(session){
+    document.body.classList.add("authed");
     show($("loginView"),false); show($("dashView"),true); show($("logout"),true);
     let name = session.user.email;
     try { const { data } = await sb.from("profiles").select("company_name,contact_name").maybeSingle();
