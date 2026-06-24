@@ -96,6 +96,15 @@
   .pstep.sel .plabel{color:var(--text)}
   .sd-wrap{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:16px;animation:rise .35s ease both}
   .sd-tag{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-2);margin-bottom:8px}
+  .sd-dates{font-family:var(--fm);font-size:11.5px;color:var(--mint);margin-bottom:11px;display:flex;align-items:center}
+  .dlbl{font-family:var(--fm);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-bottom:5px}
+  .pswitch{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .ptab{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:10px 15px;cursor:pointer;text-align:left;transition:.16s;display:flex;flex-direction:column;gap:3px;min-width:130px}
+  .ptab:hover{border-color:var(--brand);transform:translateY(-1px)}
+  .ptab.on{border-color:var(--brand);background:rgba(110,139,255,.12)}
+  .ptab-n{font-family:var(--fd);font-weight:700;font-size:13.5px;color:var(--text)}
+  .ptab-s{font-family:var(--fm);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2)}
+  .ptab.on .ptab-s{color:var(--brand-2)}
   .sd-desc{font-size:14px;color:var(--text);line-height:1.6}
   .sd-pts{list-style:none;padding:0;margin:13px 0 0;display:flex;flex-direction:column;gap:8px}
   .sd-pts li{font-size:13px;color:var(--muted);padding-left:24px;position:relative}
@@ -372,14 +381,14 @@
 
   /* ---------- CLIENT ---------- */
   async function loadClient(){
-    let projs=[], updates=[], invs=[], snotes=[], signoffs=[];
+    let projs=[], logs=[], invs=[], snotes=[], signoffs=[];
     try{ const [p,u,i,sn,so]=await Promise.all([
-      sb.from("projects").select("id,name,stage,note,value_cents,maintenance_cents").eq("client_id",me.id).order("created_at"),
-      sb.from("project_updates").select("project_id,body,created_at").order("created_at",{ascending:false}),
+      sb.from("projects").select("id,name,stage,note,value_cents,maintenance_cents,maintenance_status").eq("client_id",me.id).order("created_at"),
+      sb.from("stage_logs").select("project_id,stage,body,note_date").order("note_date",{ascending:false}).order("created_at",{ascending:false}),
       sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at,milestone_stage").order("created_at",{ascending:false}),
-      sb.from("stage_notes").select("project_id,stage,body").order("stage"),
+      sb.from("stage_notes").select("project_id,stage,start_date,end_date").order("stage"),
       sb.from("stage_signoffs").select("project_id,stage,approved_at")
-    ]); projs=p.data||[]; updates=u.data||[]; invs=i.data||[]; snotes=sn.data||[]; signoffs=so.data||[]; }catch(e){}
+    ]); projs=p.data||[]; logs=u.data||[]; invs=i.data||[]; snotes=sn.data||[]; signoffs=so.data||[]; }catch(e){}
     // KPIs
     const open=invs.filter(i=>i.status==="open"); const outstanding=open.reduce((s,i)=>s+i.amount_cents,0);
     const paid=invs.filter(i=>i.status==="paid"); const paidTotal=paid.reduce((s,i)=>s+i.amount_cents,0);
@@ -391,13 +400,22 @@
       kpi("Account",'<span style="font-size:16px">'+esc(me.name)+'</span>',"");
     $("cKpis").querySelectorAll("[data-cents]").forEach(el=>countUp(el,+el.getAttribute("data-cents")));
     // projects — interactive timeline
-    const updBy={}; updates.forEach(u=>{ (updBy[u.project_id]=updBy[u.project_id]||[]).push(u); });
-    const notesBy={}; snotes.forEach(s=>{ if(s.body){ (notesBy[s.project_id]=notesBy[s.project_id]||{})[s.stage]=s.body; } });
+    const logsBy={}; logs.forEach(u=>{ const m=(logsBy[u.project_id]=logsBy[u.project_id]||{}); (m[u.stage]=m[u.stage]||[]).push(u); });
+    const datesBy={}; snotes.forEach(s=>{ if(s.start_date||s.end_date){ (datesBy[s.project_id]=datesBy[s.project_id]||{})[s.stage]={start:s.start_date,end:s.end_date}; } });
     const soBy={}; signoffs.forEach(s=>{ (soBy[s.project_id]=soBy[s.project_id]||{})[s.stage]=s.approved_at; });
     const msBy={}; invs.forEach(i=>{ if(i.milestone_stage!=null){ (msBy[i.project_id]=msBy[i.project_id]||{})[i.milestone_stage]=i; } });
     const pbox=$("projects"); pbox.innerHTML="";
+    function ctxFor(p){ return { logs:logsBy[p.id]||{}, dates:datesBy[p.id]||{}, signoffs:soBy[p.id]||{}, milestones:msBy[p.id]||{} }; }
     if(!projs.length){ pbox.innerHTML='<div class="card" style="margin-bottom:14px;color:var(--muted)">Your project will appear here once we kick things off.</div>'; }
-    else projs.forEach(p=>{ const ctx={ notes:notesBy[p.id]||{}, signoffs:soBy[p.id]||{}, milestones:msBy[p.id]||{}, updates:updBy[p.id]||[] }; pbox.appendChild(buildClientProjectCard(p,ctx)); });
+    else {
+      let sel=projs.findIndex(p=>(p.stage||0)<4); if(sel<0) sel=0;
+      pbox.innerHTML=(projs.length>1?'<div class="pswitch" id="pswitch"></div>':'')+'<div id="projDetail"></div>';
+      function paint(){
+        if(projs.length>1){ const sw=$("pswitch"); sw.innerHTML=projs.map((p,idx)=>'<button class="ptab'+(idx===sel?' on':'')+'" data-ptab="'+idx+'"><span class="ptab-n">'+esc(p.name||"Project")+'</span><span class="ptab-s">'+STAGES[p.stage||0]+'</span></button>').join(''); sw.querySelectorAll("[data-ptab]").forEach(b=>b.addEventListener("click",()=>{ sel=+b.getAttribute("data-ptab"); paint(); })); }
+        const d=$("projDetail"); d.innerHTML=""; d.appendChild(buildClientProjectCard(projs[sel],ctxFor(projs[sel])));
+      }
+      paint();
+    }
     // invoices to pay (exclude milestone invoices — those live on the timeline)
     const openList=open.filter(i=>i.milestone_stage==null);
     const lbox=$("list");
@@ -420,15 +438,30 @@
     else { h+='<div class="pinc" style="margin-top:12px">Ask us about an ongoing care plan tailored to this project.</div>'; }
     h+='</div>'; return h;
   }
+  function dDate(s){ return new Date(s+"T00:00:00"); }
+  function dateRange(d){
+    if(!d)return "";
+    if(d.start&&d.end){ const days=Math.round((dDate(d.end)-dDate(d.start))/86400000); const dur=days<=0?"":(days<14?days+" day"+(days===1?"":"s"):Math.round(days/7)+" weeks"); return dShort(dDate(d.start))+" → "+dShort(dDate(d.end))+(dur?" · "+dur:""); }
+    if(d.start) return "Started "+dShort(dDate(d.start));
+    return "Completed "+dShort(dDate(d.end));
+  }
   function stageDetailHtml(p, i, ctx){
-    let h='<div class="sd-wrap"><div class="sd-tag">Step '+(i+1)+' · '+esc(STAGES[i])+'</div><div class="sd-desc">'+esc(STAGE_DESC[i])+'</div><ul class="sd-pts">'+STAGE_PTS[i].map(pt=>'<li>'+esc(pt)+'</li>').join('')+'</ul>';
-    if(ctx.notes[i]) h+='<div class="sd-note"><div class="sd-nl">Note from Avi Data</div>'+esc(ctx.notes[i])+'</div>';
+    let h='<div class="sd-wrap"><div class="sd-tag">Step '+(i+1)+' · '+esc(STAGES[i])+'</div>';
+    const dr=dateRange(ctx.dates[i]); if(dr) h+='<div class="sd-dates"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-1px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'+dr+'</div>';
+    h+='<div class="sd-desc">'+esc(STAGE_DESC[i])+'</div><ul class="sd-pts">'+STAGE_PTS[i].map(pt=>'<li>'+esc(pt)+'</li>').join('')+'</ul>';
+    const lg=(ctx.logs&&ctx.logs[i])||[];
+    if(lg.length) h+='<div class="feed"><div class="fttl">Updates</div>'+lg.map(r=>'<div class="upd"><div class="dot"></div><div><div class="ub">'+esc(r.body)+'</div><div class="ud">'+dShort(dDate(r.note_date))+'</div></div></div>').join('')+'</div>';
     if(i===4) h+=maintenanceHtml(p);
-    // actions: sign-off (1,3,4) and milestone pay (1,3)
+    // actions
     let acts="";
-    if(i===1||i===3||i===4){ if(ctx.signoffs[i]) acts+='<div class="sd-signed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>You signed off on '+dShort(ctx.signoffs[i])+'</div>'; else acts+='<button class="btn" data-signoff="'+i+'">'+(i===4?'Agree to maintenance plan':'Approve & sign off')+'</button>'; }
+    if(i===1||i===3){ if(ctx.signoffs[i]) acts+='<div class="sd-signed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>You signed off on '+dShort(ctx.signoffs[i])+'</div>'; else acts+='<button class="btn" data-signoff="'+i+'">Approve & sign off</button>'; }
+    if(i===4){
+      if(p.maintenance_status==="active") acts+='<div class="sd-signed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Your maintenance plan is active'+(p.maintenance_cents>0?" — "+fmt(p.maintenance_cents)+"/mo":"")+'</div>';
+      else if(ctx.signoffs[4]) acts+='<div class="sd-signed" style="color:var(--brand-2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Plan requested — we\'ll reach out to finalize the details and price.</div>';
+      else acts+='<button class="btn" data-reqmnt="1">Request a maintenance plan</button>';
+    }
     const ms=ctx.milestones[i];
-    if(ms){ if(ms.status==="paid") acts+='<span class="badge paid"><span class="bd"></span>'+(i===1?'Deposit paid':'Balance paid')+'</span>'; else if(ms.status==="open") acts+='<button class="pill-pay" data-mpay="'+i+'">'+(i===1?'Pay 30% deposit':'Pay balance')+' — '+fmt(ms.amount_cents)+'</button>'; }
+    if(ms){ if(ms.status==="paid") acts+='<span class="badge paid"><span class="bd"></span>'+(i===1?'Deposit paid':'Balance paid')+'</span>'; else if(ms.status==="open") acts+='<button class="pill-pay" data-mpay="'+i+'">'+(i===1?'Pay deposit':'Pay balance')+' — '+fmt(ms.amount_cents)+'</button>'; }
     if(acts) h+='<div class="sd-actions">'+acts+'</div>';
     h+='</div>'; return h;
   }
@@ -442,6 +475,7 @@
       card.querySelectorAll("[data-pstage]").forEach(s=>s.addEventListener("click",()=>{ sel=+s.getAttribute("data-pstage"); render(); }));
       const sb1=card.querySelector("[data-signoff]"); if(sb1) sb1.addEventListener("click",async()=>{ const idx=+sb1.getAttribute("data-signoff"); sb1.disabled=true; sb1.textContent="Saving…"; const { error }=await sb.from("stage_signoffs").upsert({project_id:p.id,stage:idx,client_id:me.id,approved_at:new Date().toISOString()},{onConflict:"project_id,stage"}); if(!error){ ctx.signoffs[idx]=new Date().toISOString(); render(); } else { sb1.disabled=false; sb1.textContent="Try again"; } });
       const pb=card.querySelector("[data-mpay]"); if(pb) pb.addEventListener("click",()=>{ const inv=ctx.milestones[+pb.getAttribute("data-mpay")]; if(inv) openPay(inv); });
+      const rq=card.querySelector("[data-reqmnt]"); if(rq) rq.addEventListener("click",async()=>{ rq.disabled=true; rq.textContent="Sending…"; const { error }=await sb.from("stage_signoffs").upsert({project_id:p.id,stage:4,client_id:me.id,approved_at:new Date().toISOString()},{onConflict:"project_id,stage"}); if(!error){ ctx.signoffs[4]=new Date().toISOString(); render(); } else { rq.disabled=false; rq.textContent="Try again"; } });
     }
     render(); return card;
   }
@@ -537,10 +571,13 @@
   }
   async function loadClientProjectsAdmin(cl){
     const box=$("mcProjects"); if(!box)return;
-    const { data, error }=await sb.from("projects").select("id,name,stage,note,value_cents").eq("client_id",cl.id).order("created_at");
+    const { data, error }=await sb.from("projects").select("id,name,stage,note,value_cents,maintenance_cents,maintenance_status").eq("client_id",cl.id).order("created_at");
     if(error){ box.textContent="Couldn't load projects."; return; }
     if(!data||!data.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:6px 0">No projects yet. Add one below.</div>'; return; }
-    box.innerHTML=data.map(p=>'<div class="miniinv"><span style="font-family:var(--fd);font-weight:600">'+esc(p.name||"Project")+'</span><span class="badge stage" style="padding:3px 8px;margin-left:8px">'+STAGES[p.stage||0]+'</span><button class="pill pill-ghost" style="width:auto;margin-left:auto;padding:6px 12px;font-size:12px" data-proj="'+p.id+'">Open</button></div>').join('');
+    let soMap={}; try{ const { data:so }=await sb.from("stage_signoffs").select("project_id,stage").eq("client_id",cl.id); (so||[]).forEach(s=>{ (soMap[s.project_id]=soMap[s.project_id]||[]).push(s.stage); }); }catch(e){}
+    box.innerHTML=data.map(p=>{ const sos=soMap[p.id]||[]; const approvals=sos.filter(s=>s===1||s===3).length; const reqd=sos.includes(4);
+      let tags=''; if(approvals) tags+='<span class="badge stage" style="padding:3px 8px;color:var(--mint);background:rgba(52,216,160,.1);border-color:rgba(52,216,160,.28)">✓ '+approvals+' sign-off'+(approvals===1?'':'s')+'</span>'; if(reqd) tags+='<span class="badge stage" style="padding:3px 8px;margin-left:6px">plan requested</span>';
+      return '<div class="miniinv"><span style="font-family:var(--fd);font-weight:600">'+esc(p.name||"Project")+'</span><span class="badge stage" style="padding:3px 8px;margin-left:8px">'+STAGES[p.stage||0]+'</span><button class="pill pill-ghost" style="width:auto;margin-left:auto;padding:6px 12px;font-size:12px" data-proj="'+p.id+'">Open</button>'+(tags?'<span style="width:100%;margin-top:4px">'+tags+'</span>':'')+'</div>'; }).join('');
     box.querySelectorAll("[data-proj]").forEach(b=>b.addEventListener("click",()=>{ const proj=data.find(x=>x.id===b.getAttribute("data-proj")); manageProject(cl,proj); }));
   }
   function manageProject(cl, proj){
@@ -548,37 +585,29 @@
     $("projectPage").innerHTML='<button class="pback" id="backClient"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'+esc(cl.company_name||cl.email)+'</button>'+
       '<div class="phead"><div><div class="eyebrow">Project</div><h1 id="ppTitle">'+esc(proj.name||"Project")+'</h1><div class="sub">'+esc(cl.company_name||cl.email)+(proj.value_cents>0?' · '+fmt(proj.value_cents):'')+'</div></div><span class="badge stage" id="ppBadge">'+STAGES[st]+'</span></div>'+
       '<div class="card" style="margin-bottom:18px"><div class="pipe" id="ppPipe">'+pipeHtml(st)+'</div></div>'+
-      '<div class="card" style="margin-bottom:18px"><div class="ch">Timeline notes</div><div class="csub">Write a note at any stage — your client sees it on that point of their progress bar.</div><div id="stageNotes" style="margin-top:10px"></div><button class="btn" id="snSave" style="width:auto;margin-top:6px">Save timeline notes</button><div class="msg" id="snMsg"></div></div>'+
+      '<div class="card" style="margin-bottom:18px"><div class="ch">Timeline & dated notes</div><div class="csub">Set each stage\'s dates and add dated notes under it — this is how your client sees progress.</div><div id="stageNotes" style="margin-top:10px"></div><button class="btn" id="snSave" style="width:auto;margin-top:6px">Save stage dates</button><div class="msg" id="snMsg"></div></div>'+
       '<div class="pgrid"><div class="card"><div class="ch">Pipeline & details</div><label>Project name</label><input id="pName" value="'+esc(proj.name||"")+'"/><div class="f2"><div><label>Current stage</label><select id="pStage">'+STAGES.map((s,i)=>'<option value="'+i+'"'+(i===st?" selected":"")+'>'+s+'</option>').join('')+'</select></div><div><label>Project value (USD)</label><input id="pValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/></div></div><label>Note to client (optional)</label><textarea id="pNote">'+esc(proj.note||"")+'</textarea><button class="btn full" id="pSave">Save</button><div class="msg" id="pMsg"></div></div>'+
-      '<div class="stack"><div class="card"><div class="ch">Updates</div><div class="csub">Clients see these on their project.</div><textarea id="upBody" placeholder="e.g. Mockup delivered — your feedback next"></textarea><button class="btn full" id="upSave">Post update</button><div class="msg" id="upMsg"></div><div id="upList" style="margin-top:10px"></div></div>'+
-      '<div class="card"><div class="ch">Invoices</div><div class="f2" style="margin-top:6px"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="2500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Phase 1 — dashboard build"/><label>Due date (optional)</label><input id="inDue" type="date"/><button class="btn full" id="inSave">Add invoice</button><div class="msg" id="inMsg"></div><div id="pInvoices" style="margin-top:12px">Loading…</div></div></div></div>'+
+      '<div class="card"><div class="ch">Invoices</div><div class="f2" style="margin-top:6px"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="2500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Phase 1 — dashboard build"/><label>Due date (optional)</label><input id="inDue" type="date"/><button class="btn full" id="inSave">Add invoice</button><div class="msg" id="inMsg"></div><div id="pInvoices" style="margin-top:12px">Loading…</div></div></div>'+
       '<div class="pgrid" style="margin-top:18px"><div class="card"><div class="ch">Milestone billing</div><div class="csub">Split this project into a 30% deposit at Mockup and 70% at Launch.</div><div id="msBox" style="margin-top:10px">Loading…</div></div>'+
-      '<div class="stack"><div class="card"><div class="ch">Monthly maintenance</div><div class="csub">Sets the ongoing fee the client sees on Iterate & Maintain.</div><label>Monthly fee (USD)</label><input id="mtAmt" type="number" step="0.01" min="0" value="'+(proj.maintenance_cents?(proj.maintenance_cents/100):"")+'"/><button class="btn full" id="mtSave">Save monthly fee</button><div class="msg" id="mtMsg"></div></div>'+
+      '<div class="stack"><div class="card"><div class="ch">Monthly maintenance</div><div class="csub">Discuss a plan with the client, then set it Active when you agree on a price.</div><label>Monthly fee (USD)</label><input id="mtAmt" type="number" step="0.01" min="0" value="'+(proj.maintenance_cents?(proj.maintenance_cents/100):"")+'"/><label>Plan status</label><select id="mtStatus"><option value="none"'+(proj.maintenance_status==="active"?"":" selected")+'>Not on a plan</option><option value="active"'+(proj.maintenance_status==="active"?" selected":"")+'>Active (recurring)</option></select><button class="btn full" id="mtSave">Save plan</button><div class="msg" id="mtMsg"></div><div id="mtReq" style="margin-top:8px"></div></div>'+
       '<div class="card"><div class="ch">Client sign-offs</div><div id="soBox" style="margin-top:8px">Loading…</div></div></div></div>';
     adminShow("project");
     $("backClient").addEventListener("click",()=>clientPageProjects(cl));
-    renderStageNoteInputs(proj); loadStageNotes(proj);
+    renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj);
     $("snSave").addEventListener("click",async()=>{
       const m=$("snMsg"); $("snSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
-      const rows=STAGES.map((s,i)=>({project_id:proj.id,stage:i,client_id:cl.id,body:(($("sn"+i)?$("sn"+i).value.trim():"")||null),updated_at:new Date().toISOString()}));
+      const rows=STAGES.map((s,i)=>({project_id:proj.id,stage:i,client_id:cl.id,start_date:(($("snS"+i)&&$("snS"+i).value)||null),end_date:(($("snE"+i)&&$("snE"+i).value)||null),updated_at:new Date().toISOString()}));
       const { error }=await sb.from("stage_notes").upsert(rows,{onConflict:"project_id,stage"});
       if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("snSave").disabled=false; return; }
-      m.className="msg ok"; m.textContent="Timeline notes saved."; $("snSave").disabled=false;
+      m.className="msg ok"; m.textContent="Stage dates saved."; $("snSave").disabled=false;
     });
     $("pSave").addEventListener("click",async()=>{
       const m=$("pMsg"); $("pSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
       const val=parseFloat($("pValue").value); const { error }=await sb.from("projects").update({name:$("pName").value.trim()||null,stage:Number($("pStage").value),value_cents:val>0?Math.round(val*100):0,note:$("pNote").value.trim()||null,updated_at:new Date().toISOString()}).eq("id",proj.id);
       if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("pSave").disabled=false; return; }
       proj.name=$("pName").value.trim(); proj.stage=Number($("pStage").value); proj.note=$("pNote").value.trim(); proj.value_cents=val>0?Math.round(val*100):0;
-      $("ppTitle").textContent=proj.name||"Project"; $("ppBadge").textContent=STAGES[proj.stage]; $("ppPipe").innerHTML=pipeHtml(proj.stage);
+      $("ppTitle").textContent=proj.name||"Project"; $("ppBadge").textContent=STAGES[proj.stage]; $("ppPipe").innerHTML=pipeHtml(proj.stage); renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj);
       m.className="msg ok"; m.textContent="Saved."; $("pSave").disabled=false; loadAdmin();
-    });
-    $("upSave").addEventListener("click",async()=>{
-      const m=$("upMsg"); const body=$("upBody").value.trim(); if(!body){ m.className="msg err"; m.textContent="Write an update first."; return; }
-      $("upSave").disabled=true; m.className="msg info"; m.textContent="Posting…";
-      const { error }=await sb.from("project_updates").insert({project_id:proj.id,client_id:cl.id,body});
-      if(error){ m.className="msg err"; m.textContent="Couldn't post. "+(error.message||""); $("upSave").disabled=false; return; }
-      $("upBody").value=""; m.className="msg ok"; m.textContent="Posted."; $("upSave").disabled=false; loadUpdates(proj);
     });
     $("inSave").addEventListener("click",async()=>{
       const m=$("inMsg"); const num=$("inNum").value.trim(), desc=$("inDesc").value.trim(), amt=parseFloat($("inAmt").value), due=$("inDue").value||null;
@@ -590,53 +619,77 @@
     });
     $("mtSave").addEventListener("click",async()=>{
       const m=$("mtMsg"); $("mtSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
-      const v=parseFloat($("mtAmt").value); const { error }=await sb.from("projects").update({maintenance_cents:v>0?Math.round(v*100):0}).eq("id",proj.id);
+      const v=parseFloat($("mtAmt").value); const status=$("mtStatus").value;
+      const { error }=await sb.from("projects").update({maintenance_cents:v>0?Math.round(v*100):0,maintenance_status:status}).eq("id",proj.id);
       if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("mtSave").disabled=false; return; }
-      proj.maintenance_cents=v>0?Math.round(v*100):0; m.className="msg ok"; m.textContent="Saved. Client sees this on Iterate & Maintain."; $("mtSave").disabled=false;
+      proj.maintenance_cents=v>0?Math.round(v*100):0; proj.maintenance_status=status; m.className="msg ok"; m.textContent=status==="active"?"Plan active — client now sees it as active.":"Saved."; $("mtSave").disabled=false;
     });
-    loadUpdates(proj); loadProjectInvoices(cl,proj); loadMilestones(cl,proj); loadSignoffs(proj);
+    loadProjectInvoices(cl,proj); loadMilestones(cl,proj); loadSignoffs(cl,proj);
+  }
+  function renderStageNoteInputs(cl,proj){
+    const box=$("stageNotes"); if(!box)return; const st=proj.stage||0;
+    box.innerHTML=STAGES.map((s,i)=>{ const cls=i<st?"done":(i===st?"now":""); return '<div class="snrow"><label><span class="snd '+cls+'"></span>'+esc(s)+'</label><div class="f2"><div><div class="dlbl">Start</div><input type="date" id="snS'+i+'"></div><div><div class="dlbl">End</div><input type="date" id="snE'+i+'"></div></div><div class="slogs" id="slog'+i+'" style="margin-top:10px"></div><div class="f2" style="margin-top:6px"><div><input type="date" id="sld'+i+'"></div><div><input type="text" id="slb'+i+'" placeholder="Add a dated note…"></div></div><button class="btn-ghost" id="sla'+i+'" style="width:auto;margin-top:6px;padding:9px 14px;font-size:13px">Add note</button></div>'; }).join('');
+    STAGES.forEach((s,i)=>{ const d=$("sld"+i); if(d) d.value=today; const a=$("sla"+i); if(a) a.addEventListener("click",()=>addStageLog(cl,proj,i)); const t=$("slb"+i); if(t) t.addEventListener("keydown",e=>{ if(e.key==="Enter") addStageLog(cl,proj,i); }); });
+  }
+  async function loadStageNotes(proj){
+    try{ const { data }=await sb.from("stage_notes").select("stage,start_date,end_date").eq("project_id",proj.id); (data||[]).forEach(r=>{ const s=$("snS"+r.stage); if(s&&r.start_date) s.value=r.start_date; const e=$("snE"+r.stage); if(e&&r.end_date) e.value=r.end_date; }); }catch(e){}
+  }
+  async function addStageLog(cl,proj,i){
+    const body=($("slb"+i)?$("slb"+i).value.trim():""); if(!body)return;
+    const note_date=($("sld"+i)&&$("sld"+i).value)||today;
+    const a=$("sla"+i); if(a){ a.disabled=true; a.textContent="Adding…"; }
+    const { error }=await sb.from("stage_logs").insert({project_id:proj.id,stage:i,client_id:cl.id,note_date,body});
+    if(a){ a.disabled=false; a.textContent="Add note"; }
+    if(!error){ if($("slb"+i)) $("slb"+i).value=""; if($("sld"+i)) $("sld"+i).value=today; loadStageLogs(proj); }
+  }
+  async function loadStageLogs(proj){
+    let data=[]; try{ const r=await sb.from("stage_logs").select("id,stage,body,note_date").eq("project_id",proj.id).order("note_date",{ascending:false}).order("created_at",{ascending:false}); data=r.data||[]; }catch(e){}
+    STAGES.forEach((s,i)=>{ const c=$("slog"+i); if(c) c.innerHTML=""; });
+    const by={}; data.forEach(r=>{ (by[r.stage]=by[r.stage]||[]).push(r); });
+    Object.keys(by).forEach(stg=>{ const c=$("slog"+stg); if(!c)return; c.innerHTML=by[stg].map(r=>'<div class="upd"><div class="dot"></div><div style="flex:1"><div class="ub">'+esc(r.body)+'</div><div class="ud">'+dShort(dDate(r.note_date))+' · <button class="linkx del" data-dellog="'+r.id+'">delete</button></div></div></div>').join('');
+      c.querySelectorAll("[data-dellog]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("stage_logs").delete().eq("id",b.getAttribute("data-dellog")); loadStageLogs(proj); })); });
+  }
+  async function loadSignoffs(cl,proj){
+    const box=$("soBox"); const req=$("mtReq");
+    const { data }=await sb.from("stage_signoffs").select("stage,approved_at").eq("project_id",proj.id);
+    const map={}; (data||[]).forEach(s=>map[s.stage]=s.approved_at);
+    if(box){
+      box.innerHTML=[1,3,4].map(i=>{ const lbl=i===4?"Maintenance request":STAGES[i]; let v;
+        if(map[i]) v='<span style="color:var(--mint)">✓ '+dShort(map[i])+' · <button class="linkx del" data-clrso="'+i+'">clear</button></span>';
+        else if(i===4) v='<span style="color:var(--muted-2)">none</span>';
+        else v='<button class="linkx" data-addso="'+i+'">mark signed</button>';
+        return '<div class="miniinv" style="padding:7px 0"><span>'+esc(lbl)+'</span><span class="ma" style="font-size:12px;font-weight:600">'+v+'</span></div>'; }).join('');
+      box.querySelectorAll("[data-clrso]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("stage_signoffs").delete().eq("project_id",proj.id).eq("stage",+b.getAttribute("data-clrso")); loadSignoffs(cl,proj); }));
+      box.querySelectorAll("[data-addso]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("stage_signoffs").upsert({project_id:proj.id,stage:+b.getAttribute("data-addso"),client_id:cl.id,approved_at:new Date().toISOString()},{onConflict:"project_id,stage"}); loadSignoffs(cl,proj); }));
+    }
+    if(req){ req.innerHTML = map[4] ? '<div style="font-size:12.5px;color:var(--mint)">Client requested a plan on '+dShort(map[4])+'. Clear it in “Client sign-offs.”</div>' : '<div style="font-size:12.5px;color:var(--muted-2)">No plan request yet.</div>'; }
   }
   async function loadMilestones(cl,proj){
     const box=$("msBox"); if(!box)return;
-    if(!(proj.value_cents>0)){ box.innerHTML='<div style="color:var(--muted);font-size:13px">Set a project value above (and Save) to enable 30/70 milestone billing.</div>'; return; }
-    const dep=Math.round(proj.value_cents*0.30), fin=proj.value_cents-dep;
+    if(!(proj.value_cents>0)){ box.innerHTML='<div style="color:var(--muted);font-size:13px">Set a project value above (and Save) to enable milestone billing.</div>'; return; }
     const { data }=await sb.from("invoices").select("id,number,description,amount_cents,status,milestone_stage").eq("project_id",proj.id).not("milestone_stage","is",null).order("milestone_stage");
     if(data&&data.length){
-      box.innerHTML=data.map(i=>'<div class="miniinv"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:2px">'+(i.status==="paid"?'<span class="badge paid" style="padding:3px 8px"><span class="bd"></span>Paid</span>':(i.status==="void"?'<span class="badge void" style="padding:3px 8px">Void</span>':'<span style="font-size:12px;color:var(--muted)">awaiting client payment</span>'))+'</span></div>').join('');
+      const anyPaid=data.some(i=>i.status==="paid");
+      box.innerHTML=data.map(i=>'<div class="miniinv"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:2px">'+(i.status==="paid"?'<span class="badge paid" style="padding:3px 8px"><span class="bd"></span>Paid</span>':(i.status==="void"?'<span class="badge void" style="padding:3px 8px">Void</span>':'<span style="font-size:12px;color:var(--muted)">awaiting client payment</span>'))+'</span></div>').join('')+
+        (anyPaid?'':'<button class="linkx del" id="msClear" style="margin-top:10px">Clear &amp; redo split</button><div class="msg" id="msMsg"></div>');
+      const cb=$("msClear"); if(cb) cb.addEventListener("click",async()=>{ for(const i of data){ if(i.status!=="paid") await sb.from("invoices").delete().eq("id",i.id); } loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin(); });
     } else {
-      box.innerHTML='<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Deposit (30%): <b style="color:var(--text)">'+fmt(dep)+'</b> &nbsp;·&nbsp; Final (70%): <b style="color:var(--text)">'+fmt(fin)+'</b></div><button class="btn" id="msGen" style="width:auto">Create deposit + final invoices</button><div class="msg" id="msMsg"></div>';
+      const dep=Math.round(proj.value_cents*0.30), fin=proj.value_cents-dep;
+      box.innerHTML='<div class="csub" style="margin:0 0 8px">Set any split — defaults to 30% / 70%. They don\'t have to add up to the full value.</div><div class="f2"><div><label>Deposit at Mockup (USD)</label><input id="msDep" type="number" step="0.01" min="0" value="'+(dep/100)+'"/></div><div><label>Final at Launch (USD)</label><input id="msFin" type="number" step="0.01" min="0" value="'+(fin/100)+'"/></div></div><button class="btn" id="msGen" style="width:auto;margin-top:10px">Create these invoices</button><div class="msg" id="msMsg"></div>';
       $("msGen").addEventListener("click",async()=>{
-        const m=$("msMsg"); $("msGen").disabled=true; m.className="msg info"; m.textContent="Creating…";
-        const n1="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"), n2="AVI-"+String(cacheInvoiceCount+2).padStart(4,"0");
-        const e=(await sb.from("invoices").insert([
-          {client_id:cl.id,project_id:proj.id,number:n1,description:"Deposit (30%) — "+(proj.name||"project"),amount_cents:dep,milestone_stage:1},
-          {client_id:cl.id,project_id:proj.id,number:n2,description:"Final payment (70%) — "+(proj.name||"project"),amount_cents:fin,milestone_stage:3}
-        ])).error;
+        const m=$("msMsg"); const d=parseFloat($("msDep").value), f=parseFloat($("msFin").value);
+        if(!(d>0)&&!(f>0)){ m.className="msg err"; m.textContent="Enter at least one amount."; return; }
+        $("msGen").disabled=true; m.className="msg info"; m.textContent="Creating…";
+        const rows=[]; let n=cacheInvoiceCount;
+        if(d>0){ n++; rows.push({client_id:cl.id,project_id:proj.id,number:"AVI-"+String(n).padStart(4,"0"),description:"Deposit — "+(proj.name||"project"),amount_cents:Math.round(d*100),milestone_stage:1}); }
+        if(f>0){ n++; rows.push({client_id:cl.id,project_id:proj.id,number:"AVI-"+String(n).padStart(4,"0"),description:"Final payment — "+(proj.name||"project"),amount_cents:Math.round(f*100),milestone_stage:3}); }
+        const e=(await sb.from("invoices").insert(rows)).error;
         if(e){ m.className="msg err"; m.textContent="Couldn't create. "+(e.message||""); $("msGen").disabled=false; return; }
-        cacheInvoiceCount+=2; loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin();
+        cacheInvoiceCount=n; loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin();
       });
     }
   }
-  async function loadSignoffs(proj){
-    const box=$("soBox"); if(!box)return;
-    const { data }=await sb.from("stage_signoffs").select("stage,approved_at").eq("project_id",proj.id);
-    const map={}; (data||[]).forEach(s=>map[s.stage]=s.approved_at);
-    box.innerHTML=[1,3,4].map(i=>'<div class="miniinv" style="padding:7px 0"><span>'+esc(STAGES[i])+'</span><span class="ma" style="font-size:12px;font-weight:600">'+(map[i]?'<span style="color:var(--mint)">✓ '+dShort(map[i])+'</span>':'<span style="color:var(--muted-2)">awaiting</span>')+'</span></div>').join('');
-  }
-  async function loadUpdates(proj){
-    const box=$("upList"); if(!box)return;
-    const { data }=await sb.from("project_updates").select("id,body,created_at").eq("project_id",proj.id).order("created_at",{ascending:false});
-    if(!data||!data.length){ box.innerHTML=""; return; }
-    box.innerHTML=data.map(u=>'<div class="upd"><div class="dot"></div><div style="flex:1"><div class="ub">'+esc(u.body)+'</div><div class="ud">'+dShort(u.created_at)+' · <button class="linkx del" data-delup="'+u.id+'">delete</button></div></div></div>').join('');
-    box.querySelectorAll("[data-delup]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("project_updates").delete().eq("id",b.getAttribute("data-delup")); loadUpdates(proj); }));
-  }
-  function renderStageNoteInputs(proj){
-    const box=$("stageNotes"); if(!box)return; const st=proj.stage||0;
-    box.innerHTML=STAGES.map((s,i)=>{ const cls=i<st?"done":(i===st?"now":""); return '<div class="snrow"><label><span class="snd '+cls+'"></span>'+esc(s)+'</label><textarea id="sn'+i+'" placeholder="Note for '+esc(s)+'…"></textarea></div>'; }).join('');
-  }
-  async function loadStageNotes(proj){
-    try{ const { data }=await sb.from("stage_notes").select("stage,body").eq("project_id",proj.id); (data||[]).forEach(r=>{ const t=$("sn"+r.stage); if(t) t.value=r.body||""; }); }catch(e){}
-  }
+
   async function loadProjectInvoices(cl,proj){
     const box=$("pInvoices"); if(!box)return;
     const { data, error }=await sb.from("invoices").select("id,number,description,amount_cents,status,due_date,paid_at").eq("project_id",proj.id).order("created_at",{ascending:false});
