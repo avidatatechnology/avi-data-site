@@ -62,6 +62,26 @@ exports.handler = async (event) => {
   const obj = evt.data && evt.data.object;
   const invoiceId = obj && obj.metadata && obj.metadata.invoice_id;
 
+  // ACH submitted and clearing -> mark the invoice "processing" (Pending).
+  // This is the robust backstop: it fires even if the client closes the tab.
+  if (evt.type === "payment_intent.processing" && invoiceId) {
+    try {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/invoices?id=eq.${encodeURIComponent(invoiceId)}&status=eq.open`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SERVICE_ROLE,
+            Authorization: `Bearer ${SERVICE_ROLE}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({ status: "processing" }),
+        }
+      );
+    } catch (e) { /* ignore */ }
+  }
+
   // payment succeeded -> mark the invoice paid (from open or processing).
   // The status filter makes retries / duplicates harmless.
   if (evt.type === "payment_intent.succeeded" && invoiceId) {
