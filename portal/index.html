@@ -128,6 +128,11 @@
   .tmsg.admin .tbub{background:linear-gradient(150deg,rgba(110,139,255,.22),rgba(110,139,255,.1));border:1px solid rgba(110,139,255,.3);border-bottom-right-radius:4px}
   .twho{font-family:var(--fm);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted-2);margin-bottom:4px}
   .tdate{font-size:10.5px;color:var(--muted-2);margin-top:5px}
+  .kpi-click{cursor:pointer;transition:border-color .16s,transform .16s}
+  .kpi-click:hover{border-color:var(--brand);transform:translateY(-2px)}
+  .kpilink{color:var(--brand-2);font-weight:600}
+  .bdgrp{margin-top:16px}
+  .bdgh{font-family:var(--fd);font-weight:600;font-size:13px;color:var(--brand-2);margin-bottom:8px}
   .sd-wrap{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:16px;animation:rise .35s ease both}
   .sd-tag{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-2);margin-bottom:8px}
   .sd-dates{font-family:var(--fm);font-size:11.5px;color:var(--mint);margin-bottom:11px;display:flex;align-items:center}
@@ -342,7 +347,7 @@
     <div class="summary" id="cKpis" style="display:none"></div>
     <div class="secttitle">Projects</div>
     <div id="projects"></div>
-    <div class="secttitle">Billing</div>
+    <div class="secttitle" id="billTitle">Billing</div>
     <div id="list"></div>
     <div id="history"></div>
   </div>
@@ -486,11 +491,12 @@
     const paid=invs.filter(i=>i.status==="paid"); const paidTotal=paid.reduce((s,i)=>s+i.amount_cents,0);
     const active=projs.filter(p=>(p.stage||0)<4).length;
     $("cKpis").style.display="grid";
-    $("cKpis").innerHTML=kpi("Balance due",'<span data-cents="'+outstanding+'">$0</span>',dueNow.length+" due now",'grad')+
+    $("cKpis").innerHTML=kpi("Balance due",'<span data-cents="'+outstanding+'">$0</span>',dueNow.length?(dueNow.length+" due now · <span class=\"kpilink\">tap for details</span>"):"0 due now",'grad')+
       kpi("Paid to date",'<span data-cents="'+paidTotal+'">$0</span>',"thank you")+
       kpi("Active projects",String(active),projs.length+" total")+
       kpi("Account",'<span style="font-size:16px">'+esc(me.name)+'</span>',"");
     $("cKpis").querySelectorAll("[data-cents]").forEach(el=>countUp(el,+el.getAttribute("data-cents")));
+    if(dueNow.length){ const balNode=$("cKpis").firstElementChild; if(balNode){ balNode.classList.add("kpi-click"); balNode.addEventListener("click",()=>showBalanceBreakdown(dueNow,projs)); } }
     // projects — interactive timeline
     const logsBy={}; logs.forEach(u=>{ const m=(logsBy[u.project_id]=logsBy[u.project_id]||{}); (m[u.stage]=m[u.stage]||[]).push(u); });
     const datesBy={}; snotes.forEach(s=>{ if(s.start_date||s.end_date){ (datesBy[s.project_id]=datesBy[s.project_id]||{})[s.stage]={start:s.start_date,end:s.end_date}; } });
@@ -498,26 +504,39 @@
     const msBy={}; invs.forEach(i=>{ if(i.milestone_stage!=null){ (msBy[i.project_id]=msBy[i.project_id]||{})[i.milestone_stage]=i; } });
     const pbox=$("projects"); pbox.innerHTML="";
     function ctxFor(p){ return { logs:logsBy[p.id]||{}, dates:datesBy[p.id]||{}, signoffs:soBy[p.id]||{}, milestones:msBy[p.id]||{} }; }
-    if(!projs.length){ pbox.innerHTML='<div class="card" style="margin-bottom:14px;color:var(--muted)">Your project will appear here once we kick things off.</div>'; }
+    function renderBilling(pid){
+      const p=pid?projs.find(x=>x.id===pid):null;
+      if($("billTitle")) $("billTitle").textContent = p?("Billing · "+(p.name||"Project")):"Billing";
+      const due=pid?dueNow.filter(i=>i.project_id===pid):dueNow;
+      const lbox=$("list");
+      if(!due.length){ lbox.innerHTML='<div class="empty"><div class="big">You\'re all paid up</div>No invoices due'+(p?" for this project":"")+' right now.</div>'; }
+      else { lbox.innerHTML=""; due.forEach((inv,i)=>{ const el=invRow(inv); el.style.animationDelay=(i*55)+"ms"; lbox.appendChild(el); }); }
+      const ph=pid?paid.filter(i=>i.project_id===pid):paid;
+      const hbox=$("history");
+      if(ph.length){ hbox.innerHTML='<div class="secttitle">Payment history</div>'+ph.map(i=>'<div class="inv"><div class="meta"><div class="num">'+esc(i.number)+'</div><div class="desc">'+esc(i.description)+'</div><div class="due">Paid '+(i.paid_at?dShort(i.paid_at):"")+'</div></div><div class="right"><div class="amt">'+fmt(i.amount_cents)+'</div><span class="badge paid"><span class="bd"></span>Paid</span><button class="rcpt" data-rcpt="'+i.id+'">Receipt</button></div></div>').join('');
+        hbox.querySelectorAll("[data-rcpt]").forEach(b=>b.addEventListener("click",()=>{ const inv=ph.find(x=>x.id===b.getAttribute("data-rcpt")); receipt(inv,me.name); }));
+      } else hbox.innerHTML="";
+    }
+    if(!projs.length){ pbox.innerHTML='<div class="card" style="margin-bottom:14px;color:var(--muted)">Your project will appear here once we kick things off.</div>'; renderBilling(null); }
     else {
       let sel=projs.findIndex(p=>(p.stage||0)<4); if(sel<0) sel=0;
       pbox.innerHTML=(projs.length>1?'<div class="pswitch" id="pswitch"></div>':'')+'<div id="projDetail"></div>';
       function paint(){
         if(projs.length>1){ const sw=$("pswitch"); sw.innerHTML=projs.map((p,idx)=>'<button class="ptab'+(idx===sel?' on':'')+'" data-ptab="'+idx+'"><span class="ptab-n">'+esc(p.name||"Project")+'</span><span class="ptab-s">'+STAGES[p.stage||0]+'</span></button>').join(''); sw.querySelectorAll("[data-ptab]").forEach(b=>b.addEventListener("click",()=>{ sel=+b.getAttribute("data-ptab"); paint(); })); }
         const d=$("projDetail"); d.innerHTML=""; d.appendChild(buildClientProjectCard(projs[sel],ctxFor(projs[sel])));
+        renderBilling(projs[sel].id);
       }
       paint();
     }
-    // invoices to pay — everything due now, including reached milestones
-    const openList=dueNow;
-    const lbox=$("list");
-    if(!openList.length){ lbox.innerHTML='<div class="empty"><div class="big">You\'re all paid up</div>No invoices due right now.</div>'; }
-    else { lbox.innerHTML=""; openList.forEach((inv,i)=>{ const el=invRow(inv); el.style.animationDelay=(i*55)+"ms"; lbox.appendChild(el); }); }
-    // payment history
-    const hbox=$("history");
-    if(paid.length){ hbox.innerHTML='<div class="secttitle">Payment history</div>'+paid.map(i=>'<div class="inv"><div class="meta"><div class="num">'+esc(i.number)+'</div><div class="desc">'+esc(i.description)+'</div><div class="due">Paid '+(i.paid_at?dShort(i.paid_at):"")+'</div></div><div class="right"><div class="amt">'+fmt(i.amount_cents)+'</div><span class="badge paid"><span class="bd"></span>Paid</span><button class="rcpt" data-rcpt="'+i.id+'">Receipt</button></div></div>').join(''); 
-      hbox.querySelectorAll("[data-rcpt]").forEach(b=>b.addEventListener("click",()=>{ const inv=paid.find(x=>x.id===b.getAttribute("data-rcpt")); receipt(inv,me.name); }));
-    } else hbox.innerHTML="";
+  }
+  function showBalanceBreakdown(list, projs){
+    const byP={}; list.forEach(i=>{ (byP[i.project_id]=byP[i.project_id]||[]).push(i); });
+    const nameOf=(id)=>{ const p=projs.find(x=>x.id===id); return p?(p.name||"Project"):"Project"; };
+    const total=list.reduce((s,i)=>s+i.amount_cents,0); const n=Object.keys(byP).length;
+    let h='<div class="ch">Balance due</div><div class="csub">'+fmt(total)+' across '+n+' project'+(n>1?'s':'')+'. Here\'s exactly what\'s due and for which project.</div>';
+    Object.keys(byP).forEach(pid=>{ h+='<div class="bdgrp"><div class="bdgh">'+esc(nameOf(pid))+'</div>'+byP[pid].map(i=>'<div class="miniinv due"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:6px"><button class="pill-pay" data-bpay="'+i.id+'">Pay '+fmt(i.amount_cents)+'</button></span></div>').join('')+'</div>'; });
+    openModal(h);
+    document.querySelectorAll("[data-bpay]").forEach(b=>b.addEventListener("click",()=>{ const inv=list.find(x=>x.id===b.getAttribute("data-bpay")); if(inv){ closeModal(); openPay(inv); } }));
   }
   function pipeStepsClickable(stage, sel, alerts){ alerts=alerts||{}; let h=""; STAGES.forEach((label,i)=>{ const cls=(i<stage?"done":(i===stage?"now":""))+(i===sel?" sel":"")+(alerts[i]?" alert":""); const inner=i<stage?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>':(i+1); h+='<div class="pstep '+cls+'" data-pstage="'+i+'"><div class="pnum">'+inner+'</div><div class="plabel">'+label+(alerts[i]?'<span class="palert">action needed</span>':'')+'</div></div>'; }); return h; }
   function maintenanceHtml(p){
@@ -621,22 +640,24 @@
     try{ const [c,p,iv]=await Promise.all([
       sb.from("profiles").select("id,company_name,email").eq("role","client"),
       sb.from("projects").select("id,client_id,stage,value_cents"),
-      sb.from("invoices").select("client_id,amount_cents,status,due_date")
+      sb.from("invoices").select("client_id,project_id,amount_cents,status,due_date,milestone_stage")
     ]); clients=c.data||[]; projects=p.data||[]; invoices=iv.data||[]; cacheInvoiceCount=invoices.length; if(c.error) throw c.error;
     }catch(e){ $("aKpis").style.display="none"; list.innerHTML='<div class="empty"><div class="big">Couldn\'t load clients</div>Run the database steps and set your profile role to admin.</div>'; return; }
-    const outstanding=invoices.filter(i=>i.status==="open").reduce((s,i)=>s+i.amount_cents,0);
+    const projStageById={}; projects.forEach(p=>{ projStageById[p.id]=(p.stage||0); });
+    const isDue=(i)=> i.status==="open" && (i.milestone_stage==null || i.milestone_stage <= (projStageById[i.project_id]!=null?projStageById[i.project_id]:99));
+    const outstanding=invoices.filter(isDue).reduce((s,i)=>s+i.amount_cents,0);
     const collected=invoices.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount_cents,0);
     const active=projects.filter(p=>(p.stage||0)<4).length;
-    const overdue=invoices.filter(i=>i.status==="open"&&i.due_date&&i.due_date<today).length;
+    const overdue=invoices.filter(i=>isDue(i)&&i.due_date&&i.due_date<today).length;
     $("aKpis").style.display="grid";
-    $("aKpis").innerHTML=kpi("Outstanding",'<span data-cents="'+outstanding+'">$0</span>',"awaiting payment",'grad')+
+    $("aKpis").innerHTML=kpi("Outstanding",'<span data-cents="'+outstanding+'">$0</span>',"due now",'grad')+
       kpi("Collected",'<span data-cents="'+collected+'">$0</span>',"all time")+
       kpi("Active projects",String(active),projects.length+" total")+
       kpi("Overdue",String(overdue),overdue?"need a nudge":"all current",overdue?"warn":"");
     $("aKpis").querySelectorAll("[data-cents]").forEach(el=>countUp(el,+el.getAttribute("data-cents")));
     if(!clients.length){ list.innerHTML='<div class="empty"><div class="big">No clients yet</div>Click “New client” to create the first login.</div>'; return; }
     const projCount={},balBy={},odBy={}; projects.forEach(p=>{projCount[p.client_id]=(projCount[p.client_id]||0)+1;});
-    invoices.forEach(i=>{ if(i.status==="open"){ balBy[i.client_id]=(balBy[i.client_id]||0)+i.amount_cents; if(i.due_date&&i.due_date<today) odBy[i.client_id]=true; } });
+    invoices.forEach(i=>{ if(isDue(i)){ balBy[i.client_id]=(balBy[i.client_id]||0)+i.amount_cents; if(i.due_date&&i.due_date<today) odBy[i.client_id]=true; } });
     list.innerHTML="";
     clients.forEach(cl=>{ const np=projCount[cl.id]||0, bal=balBy[cl.id]||0, od=odBy[cl.id];
       const el=document.createElement("div"); el.className="crow"; el.style.cursor="pointer";
@@ -683,7 +704,19 @@
     try{ const { data }=await sb.from("profiles").select("company_name,contact_name,phone,email").eq("id",cl.id).maybeSingle(); prof=data||{}; }catch(e){}
     try{ const { data }=await sb.from("internal_notes").select("note").eq("ref_type","client").eq("ref_id",cl.id).maybeSingle(); if(data) intNote=data.note||""; }catch(e){}
     openModal('<h2>Manage client</h2><div class="psub" style="font-size:12.5px;color:var(--muted);margin:4px 0 12px">'+esc(prof.email||cl.email||"")+' · email is their login and can\'t be changed here</div>'+
-      '<label>Company name</label><input id="clCompany" value="'+esc(prof.company_name||"")+'"/><label>Contact name</label><input id="clContact" value="'+esc(prof.contact_name||"")+'"/><label>Phone</label><input id="clPhone" value="'+esc(prof.phone||"")+'"/><label>Private note (only you see this)</label><textarea id="clNote" placeholder="Internal note…">'+esc(intNote)+'</textarea><button class="btn full" id="clSave">Save</button><div class="msg" id="clMsg"></div>');
+      '<label>Company name</label><input id="clCompany" value="'+esc(prof.company_name||"")+'"/><label>Contact name</label><input id="clContact" value="'+esc(prof.contact_name||"")+'"/><label>Phone</label><input id="clPhone" value="'+esc(prof.phone||"")+'"/><label>Private note (only you see this)</label><textarea id="clNote" placeholder="Internal note…">'+esc(intNote)+'</textarea><button class="btn full" id="clSave">Save</button><div class="msg" id="clMsg"></div>'+
+      '<div class="billdiv"></div><div class="ch2">Reset password</div><div class="csub">Set a new login password and share it with the client. Minimum 8 characters.</div><div style="display:flex;gap:10px;margin-top:8px"><input id="clPw" type="text" placeholder="New password" autocomplete="off" style="flex:1"/><button class="btn-ghost" id="clPwGen" style="width:auto;white-space:nowrap">Generate</button></div><button class="btn" id="clPwSet" style="width:auto;margin-top:10px">Set password</button><div class="msg" id="clPwMsg"></div>');
+    $("clPwGen").addEventListener("click",()=>{ $("clPw").value=(Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6).toUpperCase()+(Math.floor(Math.random()*90)+10)); });
+    $("clPwSet").addEventListener("click",async()=>{
+      const m=$("clPwMsg"); const pw=$("clPw").value;
+      if(!pw||pw.length<8){ m.className="msg err"; m.textContent="Password must be at least 8 characters."; return; }
+      $("clPwSet").disabled=true; m.className="msg info"; m.textContent="Updating…";
+      const token=(await sb.auth.getSession()).data.session.access_token;
+      try{ const r=await fetch("/.netlify/functions/admin-set-password",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({client_id:cl.id,password:pw})}); const j=await r.json();
+        if(!r.ok){ m.className="msg err"; m.textContent=j.error||"Couldn't update the password."; $("clPwSet").disabled=false; return; }
+        m.className="msg ok"; m.textContent="Password set. Give the client: "+pw; $("clPwSet").disabled=false;
+      }catch(e){ m.className="msg err"; m.textContent="Network error."; $("clPwSet").disabled=false; }
+    });
     $("clSave").addEventListener("click",async()=>{
       const m=$("clMsg"); $("clSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
       const e1=(await sb.from("profiles").update({company_name:$("clCompany").value.trim()||null,contact_name:$("clContact").value.trim()||null,phone:$("clPhone").value.trim()||null}).eq("id",cl.id)).error;
@@ -901,8 +934,9 @@
     let res; try{ res=await fetch("/.netlify/functions/create-payment-intent",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({invoice_id:inv.id})}); }catch(e){ setPayMsg("Network error. Please try again.","err"); return; }
     const j=await res.json(); if(!res.ok){ setPayMsg(j.error||"Couldn't start payment.","err"); return; }
     const appearance={theme:"night",variables:{colorPrimary:"#6E8BFF",colorBackground:"#0D1322",colorText:"#EAF0FB",colorTextSecondary:"#8793AE",colorDanger:"#F2607D",fontFamily:"Inter, system-ui, sans-serif",borderRadius:"11px"}};
-    elements=stripe.elements({clientSecret:j.client_secret,appearance}); elements.create("payment",{layout:"tabs"}).mount("#payment-element");
-    setPayMsg("","info"); $("payBtn").disabled=false;
+    elements=stripe.elements({clientSecret:j.client_secret,appearance});
+    elements.create("payment",{layout:"tabs",paymentMethodOrder:["us_bank_account"],wallets:{applePay:"never",googlePay:"never"}}).mount("#payment-element");
+    setPayMsg("Pay securely by bank transfer (ACH). Funds take a few business days to clear.","info"); $("payBtn").disabled=false;
   }
   async function pay(){
     if(!elements)return; $("payBtn").disabled=true; setPayMsg("Processing…","info"); sessionStorage.setItem("avi_pay_invoice",activeInvoice.id);
