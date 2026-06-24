@@ -1,8 +1,8 @@
 // Avi Data Technology — create-payment-intent
 // ------------------------------------------------------------------
-// Creates a Stripe PaymentIntent for ONE invoice that the logged-in
-// client actually owns. Offers card + ACH automatically.
-// No npm dependencies: uses the built-in fetch() in Node 18+.
+// Creates a Stripe PaymentIntent for ONE invoice the logged-in client
+// owns. ACH (US bank debit) ONLY — no card, no Klarna, no wallets.
+// No npm dependencies: uses built-in fetch() (Node 18+).
 // Secret keys come from Netlify environment variables — never the repo.
 // ------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ exports.handler = async (event) => {
   }
   if (!invoiceId) return json(400, { error: "Missing invoice." });
 
-  // 3. Load it (service role bypasses row-level security) and verify ownership.
+  // 3. Load it (service role bypasses RLS) and verify ownership.
   let invoice;
   try {
     const ires = await fetch(
@@ -66,13 +66,16 @@ exports.handler = async (event) => {
   if (invoice.client_id !== userId) return json(403, { error: "This invoice isn't on your account." });
   if (invoice.status !== "open") return json(409, { error: "This invoice is already settled." });
 
-  // 4. Create the Stripe PaymentIntent (card + ACH surfaced automatically).
+  // 4. Create the PaymentIntent — ACH ONLY.
+  //    Explicit payment_method_types (NOT automatic_payment_methods) guarantees
+  //    the Payment Element shows bank debit only — never card / Klarna / wallets.
   let pi;
   try {
     const body = new URLSearchParams();
     body.set("amount", String(invoice.amount_cents));
     body.set("currency", invoice.currency || "usd");
-    body.set("automatic_payment_methods[enabled]", "true");
+    body.set("payment_method_types[]", "us_bank_account");
+    body.set("payment_method_options[us_bank_account][verification_method]", "automatic");
     body.set("description", `${invoice.number} — ${invoice.description}`);
     body.set("metadata[invoice_id]", invoice.id);
 
@@ -90,7 +93,7 @@ exports.handler = async (event) => {
     return json(502, { error: "Could not reach the payment processor." });
   }
 
-  // 5. Record which PaymentIntent belongs to this invoice (non-fatal if it fails).
+  // 5. Record which PaymentIntent belongs to this invoice (non-fatal).
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/invoices?id=eq.${encodeURIComponent(invoice.id)}`, {
       method: "PATCH",
@@ -103,7 +106,7 @@ exports.handler = async (event) => {
     });
   } catch (e) { /* ignore */ }
 
-  // 6. Hand the browser what it needs to render the payment form.
+  // 6. Hand the browser what it needs to render the ACH form.
   return json(200, {
     client_secret: pi.client_secret,
     amount_cents: invoice.amount_cents,
