@@ -508,7 +508,7 @@
     // pending banner — make clearing ACH payments obvious
     const proc=invs.filter(i=>i.status==="processing"); const procTotal=proc.reduce((s,i)=>s+i.amount_cents,0);
     const pendBox=$("cPending");
-    if(pendBox){ if(proc.length){ pendBox.innerHTML='<div class="pendbanner"><div class="pbi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><div class="pbt">'+(proc.length===1?'A payment is clearing':proc.length+' payments are clearing')+'</div><div class="pbs">Your bank transfer was received and is settling — this takes a few business days. It\'ll be marked paid automatically once it clears.</div></div><div class="pba">'+fmt(procTotal)+'</div></div>'; } else pendBox.innerHTML=""; }
+    if(pendBox){ if(proc.length){ pendBox.innerHTML='<div class="pendbanner kpi-click"><div class="pbi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><div class="pbt">'+(proc.length===1?'A payment is clearing':proc.length+' payments are clearing')+' · <span class="kpilink">tap for details</span></div><div class="pbs">Your bank transfer was received and is settling — this takes a few business days. It\'ll be marked paid automatically once it clears.</div></div><div class="pba">'+fmt(procTotal)+'</div></div>'; pendBox.firstElementChild.addEventListener("click",()=>showPendingBreakdown(proc,projs)); } else pendBox.innerHTML=""; }
     // projects — interactive timeline
     const logsBy={}; logs.forEach(u=>{ const m=(logsBy[u.project_id]=logsBy[u.project_id]||{}); (m[u.stage]=m[u.stage]||[]).push(u); });
     const datesBy={}; snotes.forEach(s=>{ if(s.start_date||s.end_date){ (datesBy[s.project_id]=datesBy[s.project_id]||{})[s.stage]={start:s.start_date,end:s.end_date}; } });
@@ -550,6 +550,14 @@
     Object.keys(byP).forEach(pid=>{ h+='<div class="bdgrp"><div class="bdgh">'+esc(nameOf(pid))+'</div>'+byP[pid].map(i=>'<div class="miniinv due"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:6px"><button class="pill-pay" data-bpay="'+i.id+'">Pay '+fmt(i.amount_cents)+'</button></span></div>').join('')+'</div>'; });
     openModal(h);
     document.querySelectorAll("[data-bpay]").forEach(b=>b.addEventListener("click",()=>{ const inv=list.find(x=>x.id===b.getAttribute("data-bpay")); if(inv){ closeModal(); openPay(inv); } }));
+  }
+  function showPendingBreakdown(list, projs){
+    const byP={}; list.forEach(i=>{ (byP[i.project_id]=byP[i.project_id]||[]).push(i); });
+    const nameOf=(id)=>{ const p=projs.find(x=>x.id===id); return p?(p.name||"Project"):"Project"; };
+    const total=list.reduce((s,i)=>s+i.amount_cents,0); const n=Object.keys(byP).length;
+    let h='<div class="ch">Payments clearing</div><div class="csub">'+fmt(total)+' settling across '+n+' project'+(n>1?'s':'')+'. Bank transfers (ACH) take a few business days — each is marked paid automatically once it clears.</div>';
+    Object.keys(byP).forEach(pid=>{ h+='<div class="bdgrp"><div class="bdgh">'+esc(nameOf(pid))+'</div>'+byP[pid].map(i=>'<div class="miniinv pend"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:6px"><span class="badge pend"><span class="bd"></span>Clearing — a few business days</span></span></div>').join('')+'</div>'; });
+    openModal(h);
   }
   function pipeStepsClickable(stage, sel, alerts){ alerts=alerts||{}; let h=""; STAGES.forEach((label,i)=>{ const cls=(i<stage?"done":(i===stage?"now":""))+(i===sel?" sel":"")+(alerts[i]?" alert":""); const inner=i<stage?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>':(i+1); h+='<div class="pstep '+cls+'" data-pstage="'+i+'"><div class="pnum">'+inner+'</div><div class="plabel">'+label+(alerts[i]?'<span class="palert">action needed</span>':'')+'</div></div>'; }); return h; }
   function maintenanceHtml(p){
