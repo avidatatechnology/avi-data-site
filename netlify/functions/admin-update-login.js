@@ -38,23 +38,14 @@ exports.handler = async (event) => {
   let body;
   try { body = JSON.parse(event.body || "{}"); } catch (e) { return json(400, { error: "Bad request." }); }
   const clientId = (body.client_id || "").trim();
-  const mode = body.mode; // "email" | "username"
   let value = (body.value || "").trim();
   if (!clientId) return json(400, { error: "Missing client." });
   if (clientId === userId) return json(400, { error: "Change your own login from your account settings." });
 
-  let newEmail, newUsername = null, display;
-  if (mode === "email") {
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return json(400, { error: "That doesn't look like a valid email." });
-    if (new RegExp("@" + LOGIN_DOMAIN.replace(/\./g, "\\.") + "$", "i").test(value)) return json(400, { error: "Use the Username option for that." });
-    newEmail = value.toLowerCase(); display = newEmail;
-  } else if (mode === "username") {
-    value = value.toLowerCase();
-    if (!/^[a-z0-9._-]{3,30}$/.test(value)) return json(400, { error: "Username must be 3–30 chars: letters, numbers, . _ -" });
-    newUsername = value; newEmail = value + "@" + LOGIN_DOMAIN; display = "username: " + value;
-  } else {
-    return json(400, { error: "Pick email or username." });
-  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return json(400, { error: "That doesn't look like a valid email." });
+  const newEmail = value.toLowerCase();
+  const newUsername = null;
+  const display = newEmail;
 
   // 1) Update the auth user's email (this is what they actually log in with).
   try {
