@@ -14,6 +14,12 @@
 <style>
   :root{--bg:#0A0E1A;--panel:#111726;--panel-2:#0D1322;--raised:#16203A;--line:#1F2A44;--line-soft:#172033;--text:#EAF0FB;--muted:#8793AE;--muted-2:#566179;--brand:#6E8BFF;--brand-2:#9FB0FF;--mint:#34D8A0;--gold:#F2B45C;--rose:#F2607D;--r:18px;--sb:250px;--maxw:1320px;--fd:'Plus Jakarta Sans',system-ui,sans-serif;--fb:'Inter',system-ui,sans-serif;--fm:'JetBrains Mono',ui-monospace,monospace;}
   *{box-sizing:border-box} html{scroll-behavior:smooth}
+  *{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  ::-webkit-scrollbar{width:11px;height:11px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;border:2px solid var(--bg);background-clip:content-box}
+  ::-webkit-scrollbar-thumb:hover{background:var(--muted-2)}
+  ::-webkit-scrollbar-corner{background:transparent}
   body{margin:0;background:radial-gradient(1200px 700px at 82% -12%,rgba(110,139,255,.12),transparent 55%),radial-gradient(1000px 600px at -8% 4%,rgba(52,216,160,.08),transparent 55%),var(--bg);color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
   a{color:inherit;text-decoration:none} ::selection{background:rgba(110,139,255,.32)}
   .bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
@@ -800,9 +806,11 @@
     try{ const { data }=await sb.from("profiles").select("company_name,contact_name,phone,email,username").eq("id",cl.id).maybeSingle(); prof=data||{}; }catch(e){}
     try{ const { data }=await sb.from("internal_notes").select("note").eq("ref_type","client").eq("ref_id",cl.id).maybeSingle(); if(data) intNote=data.note||""; }catch(e){}
     const loginId=prof.username?("username: "+prof.username):(prof.email||cl.email||"");
-    openModal('<h2>Manage client</h2><div class="psub" style="font-size:12.5px;color:var(--muted);margin:4px 0 12px">'+esc(loginId)+' · this is their login and can\'t be changed here</div>'+
+    const curMode=prof.username?"username":"email"; const curVal=prof.username||prof.email||cl.email||"";
+    openModal('<h2>Manage client</h2><div class="psub" id="clLoginNow" style="font-size:12.5px;color:var(--muted);margin:4px 0 12px">Signs in with '+esc(loginId)+'</div>'+
       '<label>Company name</label><input id="clCompany" value="'+esc(prof.company_name||"")+'"/><label>Contact name</label><input id="clContact" value="'+esc(prof.contact_name||"")+'"/><label>Phone</label><input id="clPhone" value="'+esc(prof.phone||"")+'"/><label>Private note (only you see this)</label><textarea id="clNote" placeholder="Internal note…">'+esc(intNote)+'</textarea><button class="btn full" id="clSave">Save</button><div class="msg" id="clMsg"></div>'+
       '<div class="billdiv"></div><div class="ch2">Recent activity</div><div id="clActivity" class="csub" style="margin-top:8px">Loading…</div>'+
+      '<div class="billdiv"></div><div class="ch2">Change login</div><div class="csub">Update how this client signs in. The change takes effect immediately — let them know.</div><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><select id="clLoginMode" class="seg"><option value="email">Email</option><option value="username">Username</option></select><input id="clLoginVal" placeholder="new email or username" style="flex:1;min-width:160px"/><button class="btn" id="clLoginSave" style="width:auto">Update login</button></div><div class="msg" id="clLoginMsg"></div>'+
       '<div class="billdiv"></div><div class="ch2">Reset password</div><div class="csub">Set a new login password and share it with the client. Minimum 8 characters.</div><div style="display:flex;gap:10px;margin-top:8px"><input id="clPw" type="text" placeholder="New password" autocomplete="off" style="flex:1"/><button class="btn-ghost" id="clPwGen" style="width:auto;white-space:nowrap">Generate</button></div><button class="btn" id="clPwSet" style="width:auto;margin-top:10px">Set password</button><div class="msg" id="clPwMsg"></div>'+
       '<div class="billdiv"></div><div class="ch2" style="color:var(--rose)">Danger zone</div><div class="csub">Permanently delete this client and everything tied to them — projects, invoices, tickets, and their login. This cannot be undone.</div><button class="btn-ghost" id="clDelete" style="width:auto;margin-top:10px;border-color:rgba(242,96,125,.4);color:var(--rose)">Delete client</button><div class="msg" id="clDelMsg"></div>');
     $("clDelete").addEventListener("click",async()=>{
@@ -816,6 +824,18 @@
       }catch(e){ m.className="msg err"; m.textContent="Network error."; $("clDelete").disabled=false; }
     });
     $("clPwGen").addEventListener("click",()=>{ $("clPw").value=(Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6).toUpperCase()+(Math.floor(Math.random()*90)+10)); });
+    $("clLoginMode").value=curMode; $("clLoginVal").value=curVal;
+    $("clLoginSave").addEventListener("click",async()=>{
+      const mode=$("clLoginMode").value, value=$("clLoginVal").value.trim(); const m=$("clLoginMsg");
+      if(!value){ m.className="msg err"; m.textContent="Enter the new "+mode+"."; return; }
+      $("clLoginSave").disabled=true; m.className="msg info"; m.textContent="Updating…";
+      try{ const token=(await sb.auth.getSession()).data.session.access_token;
+        const r=await fetch("/.netlify/functions/admin-update-login",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({client_id:cl.id,mode,value})}); const j=await r.json();
+        if(!r.ok){ m.className="msg err"; m.textContent=j.error||"Couldn't update."; $("clLoginSave").disabled=false; return; }
+        m.className="msg ok"; m.textContent="Login updated."+(j.warn?(" "+j.warn):""); $("clLoginSave").disabled=false;
+        const now=$("clLoginNow"); if(now) now.textContent="Signs in with "+(j.display||value); loadAdmin();
+      }catch(e){ m.className="msg err"; m.textContent="Network error."; $("clLoginSave").disabled=false; }
+    });
     (async()=>{ const box=$("clActivity"); if(!box)return; const ev=[];
       try{ const { data:iv }=await sb.from("invoices").select("number,amount_cents,status,created_at,paid_at").eq("client_id",cl.id);
         (iv||[]).forEach(i=>{ if(i.created_at) ev.push({t:i.created_at,x:"Invoice "+i.number+" issued — "+fmt(i.amount_cents)}); if(i.paid_at) ev.push({t:i.paid_at,x:"Invoice "+i.number+" paid"}); if(i.status==="processing") ev.push({t:i.created_at,x:"Invoice "+i.number+" payment clearing"}); if(i.status==="failed") ev.push({t:i.created_at,x:"Invoice "+i.number+" payment failed"}); }); }catch(e){}
