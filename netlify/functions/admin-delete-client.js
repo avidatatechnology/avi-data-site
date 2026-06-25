@@ -51,7 +51,20 @@ exports.handler = async (event) => {
     if (row && row.role === "admin") return json(403, { error: "Can't delete an admin account here." });
   } catch (e) { return json(500, { error: "Could not verify the client." }); }
 
-  // Delete the auth user — cascades to all their rows.
+  // Delete any EXTRA user logins on this account first (their profiles
+  // cascade, but their auth users wouldn't — remove them here).
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?client_id=eq.${encodeURIComponent(clientId)}&id=neq.${encodeURIComponent(clientId)}&select=id`,
+      { headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` } }
+    );
+    const members = await r.json();
+    for (const m of (members || [])) {
+      try { await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(m.id)}`, { method: "DELETE", headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` } }); } catch (e) {}
+    }
+  } catch (e) { /* non-fatal */ }
+
+  // Delete the owner auth user — cascades to all their rows.
   try {
     const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(clientId)}`, {
       method: "DELETE",
