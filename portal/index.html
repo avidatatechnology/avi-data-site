@@ -497,13 +497,15 @@
     $("cKpis").style.display="grid";
     $("cKpis").innerHTML=kpi("Balance due",'<span data-cents="'+outstanding+'">$0</span>',dueNow.length?(dueNow.length+" due now · <span class=\"kpilink\">tap for details</span>"):"0 due now",'grad')+
       (proc.length?kpi("Clearing",'<span data-cents="'+procTotal+'">$0</span>',proc.length+" pending · <span class=\"kpilink\">tap for details</span>",'gold'):"")+
-      kpi("Paid to date",'<span data-cents="'+paidTotal+'">$0</span>',"thank you")+
+      kpi("Paid to date",'<span data-cents="'+paidTotal+'">$0</span>',paid.length?("paid in full · <span class=\"kpilink\">tap for details</span>"):"thank you")+
       kpi("Active projects",String(active),projs.length+" total")+
       kpi("Account",'<span style="font-size:16px">'+esc(me.name)+'</span>',"");
     $("cKpis").querySelectorAll("[data-cents]").forEach(el=>countUp(el,+el.getAttribute("data-cents")));
     const kNodes=$("cKpis").children;
     if(dueNow.length && kNodes[0]){ kNodes[0].classList.add("kpi-click"); kNodes[0].addEventListener("click",()=>showBalanceBreakdown(dueNow,projs)); }
     if(proc.length && kNodes[1]){ kNodes[1].classList.add("kpi-click"); kNodes[1].addEventListener("click",()=>showPendingBreakdown(proc,projs)); }
+    const paidIdx=proc.length?2:1;
+    if(paid.length && kNodes[paidIdx]){ kNodes[paidIdx].classList.add("kpi-click"); kNodes[paidIdx].addEventListener("click",()=>showPaidBreakdown(paid,projs)); }
     // projects — interactive timeline
     const logsBy={}; logs.forEach(u=>{ const m=(logsBy[u.project_id]=logsBy[u.project_id]||{}); (m[u.stage]=m[u.stage]||[]).push(u); });
     const datesBy={}; snotes.forEach(s=>{ if(s.start_date||s.end_date){ (datesBy[s.project_id]=datesBy[s.project_id]||{})[s.stage]={start:s.start_date,end:s.end_date}; } });
@@ -553,6 +555,15 @@
     let h='<div class="ch">Payments clearing</div><div class="csub">'+fmt(total)+' settling across '+n+' project'+(n>1?'s':'')+'. Bank transfers (ACH) take a few business days — each is marked paid automatically once it clears.</div>';
     Object.keys(byP).forEach(pid=>{ h+='<div class="bdgrp"><div class="bdgh">'+esc(nameOf(pid))+'</div>'+byP[pid].map(i=>'<div class="miniinv pend"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:6px"><span class="badge pend"><span class="bd"></span>Clearing — a few business days</span></span></div>').join('')+'</div>'; });
     openModal(h);
+  }
+  function showPaidBreakdown(list, projs){
+    const byP={}; list.forEach(i=>{ (byP[i.project_id]=byP[i.project_id]||[]).push(i); });
+    const nameOf=(id)=>{ const p=projs.find(x=>x.id===id); return p?(p.name||"Project"):"Project"; };
+    const total=list.reduce((s,i)=>s+i.amount_cents,0); const n=Object.keys(byP).length;
+    let h='<div class="ch">Paid to date</div><div class="csub">'+fmt(total)+' paid across '+n+' project'+(n>1?'s':'')+'. Tap Receipt for a printable copy.</div>';
+    Object.keys(byP).forEach(pid=>{ h+='<div class="bdgrp"><div class="bdgh">'+esc(nameOf(pid))+'</div>'+byP[pid].map(i=>'<div class="miniinv"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+(i.paid_at?' <span style="color:var(--muted-2);font-size:11px">· paid '+dShort(i.paid_at)+'</span>':'')+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;display:flex;gap:10px;align-items:center;margin-top:6px"><span class="badge paid"><span class="bd"></span>Paid</span><button class="linkx" data-prcpt="'+i.id+'">Receipt</button></span></div>').join('')+'</div>'; });
+    openModal(h);
+    document.querySelectorAll("[data-prcpt]").forEach(b=>b.addEventListener("click",()=>{ const inv=list.find(x=>x.id===b.getAttribute("data-prcpt")); if(inv) receipt(inv,me.name); }));
   }
   function pipeStepsClickable(stage, sel, alerts){ alerts=alerts||{}; let h=""; STAGES.forEach((label,i)=>{ const cls=(i<stage?"done":(i===stage?"now":""))+(i===sel?" sel":"")+(alerts[i]?" alert":""); const inner=i<stage?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>':(i+1); h+='<div class="pstep '+cls+'" data-pstage="'+i+'"><div class="pnum">'+inner+'</div><div class="plabel">'+label+(alerts[i]?'<span class="palert">action needed</span>':'')+'</div></div>'; }); return h; }
   function maintenanceHtml(p){
