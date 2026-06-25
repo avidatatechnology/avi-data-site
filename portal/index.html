@@ -122,6 +122,7 @@
   .miniinv.adlink{cursor:pointer;transition:background .14s}
   .miniinv.adlink:hover{background:var(--raised)}
   .seg{background:var(--panel);border:1px solid var(--line-soft);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;cursor:pointer}
+  .ucard{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:10px}
   .duetag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
   .duetag.now{color:var(--rose)}
   .duetag.later{color:var(--muted-2)}
@@ -834,13 +835,12 @@
     try{ const { data }=await sb.from("internal_notes").select("note").eq("ref_type","client").eq("ref_id",cl.id).maybeSingle(); if(data) intNote=data.note||""; }catch(e){}
     const loginId=prof.email||cl.email||"";
     const curVal=prof.email||cl.email||"";
-    openModal('<h2>Manage client</h2><div class="psub" id="clLoginNow" style="font-size:12.5px;color:var(--muted);margin:4px 0 12px">Account email (primary login): '+esc(loginId)+'</div>'+
+    openModal('<h2>Manage client</h2><div class="psub" style="font-size:12.5px;color:var(--muted);margin:4px 0 12px">Manage this client\'s users, company details, and billing.</div>'+
       '<label>Company name</label><input id="clCompany" value="'+esc(prof.company_name||"")+'"/><label>Contact name</label><input id="clContact" value="'+esc(prof.contact_name||"")+'"/><label>Phone</label><input id="clPhone" value="'+esc(prof.phone||"")+'"/><label>Private note (only you see this)</label><textarea id="clNote" placeholder="Internal note…">'+esc(intNote)+'</textarea><button class="btn full" id="clSave">Save</button><div class="msg" id="clMsg"></div>'+
       '<div class="billdiv"></div><div class="ch2">Recent activity</div><div id="clActivity" class="csub" style="margin-top:8px">Loading…</div>'+
-      '<div class="billdiv"></div><div class="ch2">Users on this account</div><div class="csub">Everyone here signs in with their own email and password and sees the same projects, invoices, and documents.</div><div id="clUsers" style="margin-top:10px">Loading…</div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="clNewUserEmail" type="email" placeholder="new user email" style="flex:1;min-width:150px"/><input id="clNewUserPw" type="text" placeholder="temp password" style="width:150px"/><button class="btn" id="clAddUser" style="width:auto">Add user</button></div><div class="msg" id="clUserMsg"></div>'+
-      '<div class="billdiv"></div><div class="ch2">Change primary login email</div><div class="csub">Updates the account email (the primary login). Takes effect immediately.</div><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><input id="clLoginVal" type="email" placeholder="new email" style="flex:1;min-width:160px"/><button class="btn" id="clLoginSave" style="width:auto">Update email</button></div><div class="msg" id="clLoginMsg"></div>'+
-      '<div class="billdiv"></div><div class="ch2">Reset password</div><div class="csub">Set a new login password and share it with the client. Minimum 8 characters.</div><div style="display:flex;gap:10px;margin-top:8px"><input id="clPw" type="text" placeholder="New password" autocomplete="off" style="flex:1"/><button class="btn-ghost" id="clPwGen" style="width:auto;white-space:nowrap">Generate</button></div><button class="btn" id="clPwSet" style="width:auto;margin-top:10px">Set password</button><div class="msg" id="clPwMsg"></div>'+
-      '<div class="billdiv"></div><div class="ch2" style="color:var(--rose)">Danger zone</div><div class="csub">Permanently delete this client and everything tied to them — projects, invoices, tickets, and their login. This cannot be undone.</div><button class="btn-ghost" id="clDelete" style="width:auto;margin-top:10px;border-color:rgba(242,96,125,.4);color:var(--rose)">Delete client</button><div class="msg" id="clDelMsg"></div>');
+      '<div class="billdiv"></div><div class="ch2">Users &amp; logins</div><div class="csub">Everyone here signs in with their own email and password and sees the same projects, invoices, and documents. Edit the email or reset the password right on each user.</div><div id="clUsers" style="margin-top:12px">Loading…</div>'+
+      '<div class="ucard" style="margin-top:12px"><div style="font-family:var(--fd);font-weight:700;font-size:13px;margin-bottom:8px">Add a user</div><div style="display:flex;gap:6px;flex-wrap:wrap"><input id="clNewUserEmail" type="email" placeholder="email" style="flex:1;min-width:140px"/><input id="clNewUserPw" type="text" placeholder="temp password" style="flex:1;min-width:120px"/><button class="btn-ghost" id="clNewUserGen" style="width:auto">Generate</button><button class="btn" id="clAddUser" style="width:auto">Add user</button></div><div class="msg" id="clUserMsg"></div></div>'+
+      '<div class="billdiv"></div><div class="ch2" style="color:var(--rose)">Danger zone</div><div class="csub">Permanently delete this client and everything tied to them — projects, invoices, tickets, and all logins. This cannot be undone.</div><button class="btn-ghost" id="clDelete" style="width:auto;margin-top:10px;border-color:rgba(242,96,125,.4);color:var(--rose)">Delete client</button><div class="msg" id="clDelMsg"></div>');
     $("clDelete").addEventListener("click",async()=>{
       const name=prof.company_name||cl.company_name||cl.email||"this client";
       if(!confirm("Delete "+name+" and ALL their projects, invoices, and tickets? This can't be undone.")) return;
@@ -851,16 +851,29 @@
         closeModal(); loadAdmin();
       }catch(e){ m.className="msg err"; m.textContent="Network error."; $("clDelete").disabled=false; }
     });
-    $("clPwGen").addEventListener("click",()=>{ $("clPw").value=(Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6).toUpperCase()+(Math.floor(Math.random()*90)+10)); });
-    $("clLoginVal").value=curVal;
+    function genPw(){ return Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6).toUpperCase()+(Math.floor(Math.random()*90)+10); }
     async function loadAccountUsers(){ const box=$("clUsers"); if(!box)return;
-      const { data,error }=await sb.from("profiles").select("id,email,contact_name").eq("client_id",cl.id).order("id");
+      const { data,error }=await sb.from("profiles").select("id,email,contact_name").eq("client_id",cl.id);
       if(error){ box.innerHTML='<div class="csub">Couldn\'t load users — run database step 15.</div>'; return; }
-      const rows=data||[];
-      box.innerHTML=rows.map(u=>{ const primary=u.id===cl.id; return '<div class="miniinv"><span style="flex:1">'+esc(u.email||"—")+(u.contact_name?' <span style="color:var(--muted-2);font-size:11px">· '+esc(u.contact_name)+'</span>':'')+'</span>'+(primary?'<span class="badge stage" style="padding:3px 8px">Primary</span>':'<button class="linkx del" data-rmuser="'+u.id+'">remove</button>')+'</div>'; }).join('');
-      box.querySelectorAll("[data-rmuser]").forEach(b=>b.addEventListener("click",async()=>{ if(!confirm("Remove this user's login? They'll lose access; the account and its data stay."))return; const token=(await sb.auth.getSession()).data.session.access_token; const r=await fetch("/.netlify/functions/admin-remove-member",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({user_id:b.getAttribute("data-rmuser")})}); const j=await r.json(); const m=$("clUserMsg"); if(!r.ok){ m.className="msg err"; m.textContent=j.error||"Couldn't remove."; return; } loadAccountUsers(); }));
+      const rows=(data||[]).slice().sort((a,b)=> (a.id===cl.id?-1:(b.id===cl.id?1:0)));
+      box.innerHTML=rows.map(u=>{ const primary=u.id===cl.id;
+        return '<div class="ucard" data-uid="'+u.id+'">'
+          +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="flex:1;font-family:var(--fd);font-weight:600;word-break:break-all">'+esc(u.email||"—")+'</span>'+(primary?'<span class="badge stage" style="padding:3px 8px">Primary</span>':'<button class="linkx del" data-act="remove">remove</button>')+'</div>'
+          +'<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><input class="ue" type="email" value="'+esc(u.email||"")+'" style="flex:1;min-width:140px"/><button class="btn-ghost" data-act="email" style="width:auto;white-space:nowrap">Save email</button></div>'
+          +'<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><input class="up" type="text" placeholder="new password" style="flex:1;min-width:140px"/><button class="btn-ghost" data-act="gen" style="width:auto">Generate</button><button class="btn-ghost" data-act="setpw" style="width:auto">Set password</button></div>'
+          +'<div class="msg" data-msg></div></div>';
+      }).join('');
+      box.querySelectorAll(".ucard").forEach(card=>{
+        const uid=card.getAttribute("data-uid"); const msg=card.querySelector("[data-msg]"); const emailIn=card.querySelector(".ue"); const pwIn=card.querySelector(".up");
+        const tok=async()=>(await sb.auth.getSession()).data.session.access_token;
+        const gen=card.querySelector('[data-act="gen"]'); if(gen) gen.addEventListener("click",()=>{ pwIn.value=genPw(); });
+        const eb=card.querySelector('[data-act="email"]'); if(eb) eb.addEventListener("click",async()=>{ const value=emailIn.value.trim().toLowerCase(); if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)){ msg.className="msg err"; msg.textContent="Enter a valid email."; return; } eb.disabled=true; msg.className="msg info"; msg.textContent="Updating…"; try{ const r=await fetch("/.netlify/functions/admin-update-login",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(await tok())},body:JSON.stringify({client_id:uid,value})}); const j=await r.json(); eb.disabled=false; if(!r.ok){ msg.className="msg err"; msg.textContent=j.error||"Couldn't update."; return; } msg.className="msg ok"; msg.textContent="Email updated."; loadAccountUsers(); loadAdmin(); }catch(e){ eb.disabled=false; msg.className="msg err"; msg.textContent="Network error."; } });
+        const pb=card.querySelector('[data-act="setpw"]'); if(pb) pb.addEventListener("click",async()=>{ const pw=pwIn.value; if(!pw||pw.length<8){ msg.className="msg err"; msg.textContent="Password needs 8+ characters."; return; } pb.disabled=true; msg.className="msg info"; msg.textContent="Updating…"; try{ const r=await fetch("/.netlify/functions/admin-set-password",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(await tok())},body:JSON.stringify({client_id:uid,password:pw})}); const j=await r.json(); pb.disabled=false; if(!r.ok){ msg.className="msg err"; msg.textContent=j.error||"Couldn't set password."; return; } msg.className="msg ok"; msg.textContent="Password set — give this user: "+pw; }catch(e){ pb.disabled=false; msg.className="msg err"; msg.textContent="Network error."; } });
+        const rm=card.querySelector('[data-act="remove"]'); if(rm) rm.addEventListener("click",async()=>{ if(!confirm("Remove this user's login? They lose access; the account and its data stay."))return; try{ const r=await fetch("/.netlify/functions/admin-remove-member",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(await tok())},body:JSON.stringify({user_id:uid})}); const j=await r.json(); if(!r.ok){ msg.className="msg err"; msg.textContent=j.error||"Couldn't remove."; return; } loadAccountUsers(); }catch(e){ msg.className="msg err"; msg.textContent="Network error."; } });
+      });
     }
     loadAccountUsers();
+    $("clNewUserGen").addEventListener("click",()=>{ $("clNewUserPw").value=genPw(); });
     $("clAddUser").addEventListener("click",async()=>{
       const email=$("clNewUserEmail").value.trim().toLowerCase(), pw=$("clNewUserPw").value, m=$("clUserMsg");
       if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ m.className="msg err"; m.textContent="Enter a valid email."; return; }
@@ -872,17 +885,6 @@
         m.className="msg ok"; m.textContent="Added — give them email: "+email+" · password: "+pw; $("clNewUserEmail").value="";$("clNewUserPw").value=""; loadAccountUsers();
       }catch(e){ $("clAddUser").disabled=false; m.className="msg err"; m.textContent="Network error."; }
     });
-    $("clLoginSave").addEventListener("click",async()=>{
-      const value=$("clLoginVal").value.trim(); const m=$("clLoginMsg");
-      if(!value){ m.className="msg err"; m.textContent="Enter the new email."; return; }
-      $("clLoginSave").disabled=true; m.className="msg info"; m.textContent="Updating…";
-      try{ const token=(await sb.auth.getSession()).data.session.access_token;
-        const r=await fetch("/.netlify/functions/admin-update-login",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({client_id:cl.id,value})}); const j=await r.json();
-        if(!r.ok){ m.className="msg err"; m.textContent=j.error||"Couldn't update."; $("clLoginSave").disabled=false; return; }
-        m.className="msg ok"; m.textContent="Email updated."+(j.warn?(" "+j.warn):""); $("clLoginSave").disabled=false;
-        const now=$("clLoginNow"); if(now) now.textContent="Account email (primary login): "+(j.display||value); loadAccountUsers(); loadAdmin();
-      }catch(e){ m.className="msg err"; m.textContent="Network error."; $("clLoginSave").disabled=false; }
-    });
     (async()=>{ const box=$("clActivity"); if(!box)return; const ev=[];
       try{ const { data:iv }=await sb.from("invoices").select("number,amount_cents,status,created_at,paid_at").eq("client_id",cl.id);
         (iv||[]).forEach(i=>{ if(i.created_at) ev.push({t:i.created_at,x:"Invoice "+i.number+" issued — "+fmt(i.amount_cents)}); if(i.paid_at) ev.push({t:i.paid_at,x:"Invoice "+i.number+" paid"}); if(i.status==="processing") ev.push({t:i.created_at,x:"Invoice "+i.number+" payment clearing"}); if(i.status==="failed") ev.push({t:i.created_at,x:"Invoice "+i.number+" payment failed"}); }); }catch(e){}
@@ -892,16 +894,6 @@
       if(!ev.length){ box.innerHTML="No activity yet."; return; }
       box.innerHTML=ev.slice(0,10).map(e=>'<div class="upd" style="margin:8px 0"><div class="dot"></div><div><div class="ub" style="font-size:13px">'+esc(e.x)+'</div><div class="ud">'+dShort(new Date(e.t))+'</div></div></div>').join('');
     })();
-    $("clPwSet").addEventListener("click",async()=>{
-      const m=$("clPwMsg"); const pw=$("clPw").value;
-      if(!pw||pw.length<8){ m.className="msg err"; m.textContent="Password must be at least 8 characters."; return; }
-      $("clPwSet").disabled=true; m.className="msg info"; m.textContent="Updating…";
-      const token=(await sb.auth.getSession()).data.session.access_token;
-      try{ const r=await fetch("/.netlify/functions/admin-set-password",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({client_id:cl.id,password:pw})}); const j=await r.json();
-        if(!r.ok){ m.className="msg err"; m.textContent=j.error||"Couldn't update the password."; $("clPwSet").disabled=false; return; }
-        m.className="msg ok"; m.textContent="Password set. Give the client: "+pw; $("clPwSet").disabled=false;
-      }catch(e){ m.className="msg err"; m.textContent="Network error."; $("clPwSet").disabled=false; }
-    });
     $("clSave").addEventListener("click",async()=>{
       const m=$("clMsg"); $("clSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
       const e1=(await sb.from("profiles").update({company_name:$("clCompany").value.trim()||null,contact_name:$("clContact").value.trim()||null,phone:$("clPhone").value.trim()||null}).eq("id",cl.id)).error;
