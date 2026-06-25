@@ -113,6 +113,9 @@
   .miniinv.due .ma{color:var(--rose)}
   .miniinv.sched{box-shadow:inset 3px 0 0 var(--muted-2);padding-left:11px;border-radius:4px;opacity:.85}
   .miniinv.pend{box-shadow:inset 3px 0 0 var(--gold);padding-left:11px;border-radius:4px}
+  .miniinv.adlink{cursor:pointer;transition:background .14s}
+  .miniinv.adlink:hover{background:var(--raised)}
+  .seg{background:var(--panel);border:1px solid var(--line-soft);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;cursor:pointer}
   .duetag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
   .duetag.now{color:var(--rose)}
   .duetag.later{color:var(--muted-2)}
@@ -359,7 +362,11 @@
   <div id="adminView" style="display:none">
     <div class="head" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
       <div><div class="eyebrow">Owner console</div><h1>Dashboard</h1></div>
-      <button class="btn" id="newClientBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New client</button>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select id="aPeriod" class="seg"><option value="all">All time</option><option value="month">This month</option><option value="quarter">This quarter</option><option value="year">This year</option></select>
+        <button class="btn-ghost" id="allInvBtn" style="width:auto">All invoices</button>
+        <button class="btn" id="newClientBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New client</button>
+      </div>
     </div>
     <div class="summary" id="aKpis" style="display:none"></div>
     <div class="secttitle">Clients</div>
@@ -489,7 +496,7 @@
     ]); projs=p.data||[]; logs=u.data||[]; invs=i.data||[]; snotes=sn.data||[]; signoffs=so.data||[]; }catch(e){}
     // KPIs — only count what's actually due now (milestones not yet reached are upcoming)
     const projStageById={}; projs.forEach(p=>{ projStageById[p.id]=(p.stage||0); });
-    const isDue=(i)=> i.status==="open" && (i.milestone_stage==null || i.milestone_stage <= (projStageById[i.project_id]!=null?projStageById[i.project_id]:99));
+    const isDue=(i)=> (i.status==="open"||i.status==="failed") && (i.milestone_stage==null || i.milestone_stage <= (projStageById[i.project_id]!=null?projStageById[i.project_id]:99));
     const dueNow=invs.filter(isDue); const outstanding=dueNow.reduce((s,i)=>s+i.amount_cents,0);
     const paid=invs.filter(i=>i.status==="paid"); const paidTotal=paid.reduce((s,i)=>s+i.amount_cents,0);
     const active=projs.filter(p=>(p.stage||0)<4).length;
@@ -534,10 +541,18 @@
       function paint(){
         if(projs.length>1){ const sw=$("pswitch"); sw.innerHTML=projs.map((p,idx)=>'<button class="ptab'+(idx===sel?' on':'')+'" data-ptab="'+idx+'"><span class="ptab-n">'+esc(p.name||"Project")+'</span><span class="ptab-s">'+STAGES[p.stage||0]+'</span></button>').join(''); sw.querySelectorAll("[data-ptab]").forEach(b=>b.addEventListener("click",()=>{ sel=+b.getAttribute("data-ptab"); paint(); })); }
         const d=$("projDetail"); d.innerHTML=""; d.appendChild(buildClientProjectCard(projs[sel],ctxFor(projs[sel])));
+        const dc=document.createElement("div"); dc.id="clDocs"; d.appendChild(dc); loadClientDocs(projs[sel].id);
         renderBilling(projs[sel].id);
       }
       paint();
     }
+  }
+  async function loadClientDocs(pid){ const box=$("clDocs"); if(!box)return; box.innerHTML="";
+    let data;
+    try{ const r=await sb.from("documents").select("id,name,storage_path,size_bytes,created_at").eq("project_id",pid).order("created_at",{ascending:false}); if(r.error||!r.data||!r.data.length) return; data=r.data; }catch(e){ return; }
+    box.innerHTML='<div class="card" style="margin-bottom:14px"><div class="ch">Documents</div><div class="csub">Files we\'ve shared for this project.</div><div id="clDocList" style="margin-top:10px"></div></div>';
+    $("clDocList").innerHTML=data.map(d=>'<div class="inv"><div class="meta"><div class="num">'+esc(d.name)+'</div><div class="due">'+fmtSize(d.size_bytes)+' · '+dShort(new Date(d.created_at))+'</div></div><div class="right"><button class="pill-pay" data-cdl="'+d.id+'">Download</button></div></div>').join('');
+    $("clDocList").querySelectorAll("[data-cdl]").forEach(b=>b.addEventListener("click",async()=>{ const doc=data.find(x=>x.id===b.getAttribute("data-cdl")); const sg=await sb.storage.from("documents").createSignedUrl(doc.storage_path,120); if(sg.data&&sg.data.signedUrl) window.open(sg.data.signedUrl,"_blank"); }));
   }
   function showBalanceBreakdown(list, projs){
     const byP={}; list.forEach(i=>{ (byP[i.project_id]=byP[i.project_id]||[]).push(i); });
@@ -659,36 +674,82 @@
       return el;
     }
     const overdue=inv.status==="open"&&inv.due_date&&inv.due_date<today;
-    el.className="inv"+(overdue?" overdue":"");
-    const dueTxt=inv.due_date?(overdue?"Overdue — was due "+dShort(inv.due_date):"Due "+dShort(inv.due_date)):"";
-    el.innerHTML='<div class="meta"><div class="num">'+esc(inv.number)+'</div><div class="desc">'+esc(inv.description)+'</div><div class="due'+(overdue?" od":"")+'">'+dueTxt+'</div></div><div class="right"><div class="amt">'+fmt(inv.amount_cents)+'</div>'+(overdue?'<span class="badge od">Overdue</span>':'')+'<button class="pill-pay" data-pay="'+inv.id+'">Pay '+fmt(inv.amount_cents)+'</button></div>';
+    const failed=inv.status==="failed";
+    el.className="inv"+(overdue||failed?" overdue":"");
+    const dueTxt=failed?"Payment didn't go through — please retry":(inv.due_date?(overdue?"Overdue — was due "+dShort(inv.due_date):"Due "+dShort(inv.due_date)):"");
+    el.innerHTML='<div class="meta"><div class="num">'+esc(inv.number)+'</div><div class="desc">'+esc(inv.description)+'</div><div class="due'+(overdue||failed?" od":"")+'">'+dueTxt+'</div></div><div class="right"><div class="amt">'+fmt(inv.amount_cents)+'</div>'+(failed?'<span class="badge od">Failed</span>':(overdue?'<span class="badge od">Overdue</span>':''))+'<button class="pill-pay" data-pay="'+inv.id+'">'+(failed?'Retry ':'Pay ')+fmt(inv.amount_cents)+'</button></div>';
     el.querySelector("[data-pay]").addEventListener("click",()=>openPay(inv));
     return el;
   }
 
   /* ---------- ADMIN ---------- */
+  async function notifyClient(kind, clientId, extra){ try{ const token=(await sb.auth.getSession()).data.session.access_token; await fetch("/.netlify/functions/notify",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(Object.assign({kind,client_id:clientId},extra||{}))}); }catch(e){} }
+  let adminPeriod="all";
+  function periodStart(p){ const d=new Date(); if(p==="month") return new Date(d.getFullYear(),d.getMonth(),1); if(p==="quarter"){ const q=Math.floor(d.getMonth()/3)*3; return new Date(d.getFullYear(),q,1); } if(p==="year") return new Date(d.getFullYear(),0,1); return null; }
+  const periodLabel={all:"all time",month:"this month",quarter:"this quarter",year:"this year"};
   let cacheInvoiceCount=0;
+  function showAllInvoices(all, cName, pName, openProj){
+    const lbl={open:"Due",processing:"Clearing",paid:"Paid",failed:"Failed",void:"Void"};
+    const tag=(i)=>{ const m={open:'duetag now',processing:'badge pend',paid:'badge paid',failed:'badge od',void:'badge void'}; const dot=(i.status==='processing'||i.status==='paid')?'<span class="bd"></span>':''; return '<span class="'+(m[i.status]||'badge')+'">'+dot+(lbl[i.status]||i.status)+'</span>'; };
+    function render(){ const q=($("aiSearch")?$("aiSearch").value:"").toLowerCase().trim(); const st=$("aiStatus")?$("aiStatus").value:"all";
+      let rows=all.filter(i=>(st==="all"||i.status===st)&&(!q||((i.number||"").toLowerCase().indexOf(q)>=0||(i.description||"").toLowerCase().indexOf(q)>=0||cName(i.client_id).toLowerCase().indexOf(q)>=0)));
+      rows.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+      const total=rows.reduce((s,i)=>s+i.amount_cents,0); const box=$("aiList"); if(!box)return;
+      box.innerHTML='<div class="csub" style="margin:2px 0 10px">'+rows.length+' invoice'+(rows.length===1?'':'s')+' · '+fmt(total)+'</div>'+(rows.length?rows.map(i=>'<div class="miniinv adlink" data-go="'+i.client_id+'|'+(i.project_id||'')+'"><span class="mn">'+esc(i.number||"—")+'</span><span>'+esc(cName(i.client_id))+' <span style="color:var(--muted-2);font-size:11px">· '+esc(pName(i.project_id))+'</span></span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:4px">'+tag(i)+'</span></div>').join(''):'<div class="csub">No invoices match.</div>');
+      box.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{ const a=b.getAttribute("data-go").split("|"); openProj(a[0],a[1]); }));
+    }
+    openModal('<div class="ch">All invoices</div><div style="display:flex;gap:10px;margin:12px 0 4px;flex-wrap:wrap"><input id="aiSearch" placeholder="Search number, client, description…" style="flex:1;min-width:180px"/><select id="aiStatus" class="seg"><option value="all">All statuses</option><option value="open">Due</option><option value="processing">Clearing</option><option value="paid">Paid</option><option value="failed">Failed</option><option value="void">Void</option></select></div><div id="aiList"></div>');
+    $("aiSearch").addEventListener("input",render); $("aiStatus").addEventListener("change",render); render();
+  }
   async function loadAdmin(){
     const list=$("clientList"); list.innerHTML='<div class="skel"></div><div class="skel"></div>';
     let clients=[],projects=[],invoices=[];
     try{ const [c,p,iv]=await Promise.all([
-      sb.from("profiles").select("id,company_name,email").eq("role","client"),
-      sb.from("projects").select("id,client_id,stage,value_cents"),
-      sb.from("invoices").select("client_id,project_id,amount_cents,status,due_date,milestone_stage")
+      sb.from("profiles").select("id,company_name,email,username").eq("role","client"),
+      sb.from("projects").select("id,client_id,name,stage,value_cents,note,maintenance_cents,maintenance_status"),
+      sb.from("invoices").select("id,client_id,project_id,number,description,amount_cents,status,due_date,milestone_stage,paid_at,created_at")
     ]); clients=c.data||[]; projects=p.data||[]; invoices=iv.data||[]; cacheInvoiceCount=invoices.length; if(c.error) throw c.error;
     }catch(e){ $("aKpis").style.display="none"; list.innerHTML='<div class="empty"><div class="big">Couldn\'t load clients</div>Run the database steps and set your profile role to admin.</div>'; return; }
     const projStageById={}; projects.forEach(p=>{ projStageById[p.id]=(p.stage||0); });
-    const isDue=(i)=> i.status==="open" && (i.milestone_stage==null || i.milestone_stage <= (projStageById[i.project_id]!=null?projStageById[i.project_id]:99));
-    const outstanding=invoices.filter(isDue).reduce((s,i)=>s+i.amount_cents,0);
-    const collected=invoices.filter(i=>i.status==="paid").reduce((s,i)=>s+i.amount_cents,0);
-    const active=projects.filter(p=>(p.stage||0)<4).length;
-    const overdue=invoices.filter(i=>isDue(i)&&i.due_date&&i.due_date<today).length;
+    const isDue=(i)=> (i.status==="open"||i.status==="failed") && (i.milestone_stage==null || i.milestone_stage <= (projStageById[i.project_id]!=null?projStageById[i.project_id]:99));
+    const dueList=invoices.filter(isDue), paidList=invoices.filter(i=>i.status==="paid"), procList=invoices.filter(i=>i.status==="processing");
+    const odList=invoices.filter(i=>isDue(i)&&i.due_date&&i.due_date<today), activeList=projects.filter(p=>(p.stage||0)<4);
+    const outstanding=dueList.reduce((s,i)=>s+i.amount_cents,0);
+    const active=activeList.length; const overdue=odList.length; const procTotal=procList.reduce((s,i)=>s+i.amount_cents,0);
+    const pStart=periodStart(adminPeriod); const collectedList=pStart?paidList.filter(i=>i.paid_at&&new Date(i.paid_at)>=pStart):paidList;
+    const collected=collectedList.reduce((s,i)=>s+i.amount_cents,0);
     $("aKpis").style.display="grid";
-    $("aKpis").innerHTML=kpi("Outstanding",'<span data-cents="'+outstanding+'">$0</span>',"due now",'grad')+
-      kpi("Collected",'<span data-cents="'+collected+'">$0</span>',"all time")+
-      kpi("Active projects",String(active),projects.length+" total")+
-      kpi("Overdue",String(overdue),overdue?"need a nudge":"all current",overdue?"warn":"");
+    $("aKpis").innerHTML=kpi("Outstanding",'<span data-cents="'+outstanding+'">$0</span>',dueList.length?'due now · <span class="kpilink">tap for details</span>':"due now",'grad')+
+      (procList.length?kpi("Clearing",'<span data-cents="'+procTotal+'">$0</span>',procList.length+' pending · <span class="kpilink">tap</span>','gold'):"")+
+      kpi("Collected",'<span data-cents="'+collected+'">$0</span>',(paidList.length?periodLabel[adminPeriod]+' · <span class="kpilink">tap</span>':periodLabel[adminPeriod]))+
+      kpi("Active projects",String(active),(activeList.length?'<span class="kpilink">tap</span> · ':'')+projects.length+" total")+
+      kpi("Overdue",String(overdue),overdue?'need a nudge · <span class="kpilink">tap</span>':"all current",overdue?"warn":"");
     $("aKpis").querySelectorAll("[data-cents]").forEach(el=>countUp(el,+el.getAttribute("data-cents")));
+    const cName=id=>{const c=clients.find(x=>x.id===id);return c?(c.company_name||c.email||"Client"):"Client";};
+    const pName=id=>{const p=projects.find(x=>x.id===id);return p?(p.name||"Project"):"Project";};
+    const openProj=(cid,pid)=>{ const cl=clients.find(c=>c.id===cid), pr=projects.find(p=>p.id===pid); if(cl&&pr){ closeModal(); manageProject(cl,pr); } };
+    function invBreak(title,sub,listv,tag){ const byC={}; listv.forEach(i=>{(byC[i.client_id]=byC[i.client_id]||[]).push(i);});
+      let h='<div class="ch">'+title+'</div><div class="csub">'+sub+'</div>';
+      Object.keys(byC).forEach(cid=>{ h+='<div class="bdgrp"><div class="bdgh">'+esc(cName(cid))+'</div>'+byC[cid].map(i=>'<div class="miniinv adlink" data-go="'+i.client_id+'|'+(i.project_id||'')+'"><span class="mn">'+esc(i.number||"—")+'</span><span>'+esc(i.description||"")+' <span style="color:var(--muted-2);font-size:11px">· '+esc(pName(i.project_id))+'</span></span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:4px">'+tag(i)+'</span></div>').join('')+'</div>'; });
+      if(!listv.length) h+='<div class="csub" style="margin-top:14px">Nothing here right now.</div>';
+      openModal(h);
+      document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{ const a=b.getAttribute("data-go").split("|"); openProj(a[0],a[1]); }));
+    }
+    function projBreak(){ const byC={}; activeList.forEach(p=>{(byC[p.client_id]=byC[p.client_id]||[]).push(p);});
+      let h='<div class="ch">Active projects</div><div class="csub">'+activeList.length+' in progress. Tap one to open it.</div>';
+      Object.keys(byC).forEach(cid=>{ h+='<div class="bdgrp"><div class="bdgh">'+esc(cName(cid))+'</div>'+byC[cid].map(p=>'<div class="miniinv adlink" data-go="'+p.client_id+'|'+p.id+'"><span>'+esc(p.name||"Project")+'</span><span class="ma">'+(p.value_cents?fmt(p.value_cents):"")+'</span><span style="width:100%;margin-top:4px"><span class="duetag later">'+esc(STAGES[p.stage||0])+'</span></span></div>').join('')+'</div>'; });
+      if(!activeList.length) h+='<div class="csub" style="margin-top:14px">No active projects.</div>';
+      openModal(h);
+      document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{ const a=b.getAttribute("data-go").split("|"); openProj(a[0],a[1]); }));
+    }
+    const handlers=[ ()=>invBreak("Outstanding",fmt(outstanding)+" due now across your clients.",dueList,()=>'<span class="duetag now">Due now</span>') ];
+    if(procList.length) handlers.push(()=>invBreak("Clearing",fmt(procTotal)+" clearing across your clients.",procList,()=>'<span class="badge pend"><span class="bd"></span>Clearing</span>'));
+    handlers.push(()=>invBreak("Collected ("+periodLabel[adminPeriod]+")",fmt(collected)+" collected.",collectedList,()=>'<span class="badge paid"><span class="bd"></span>Paid</span>'));
+    handlers.push(projBreak);
+    handlers.push(()=>invBreak("Overdue",overdue+" overdue invoice"+(overdue===1?"":"s")+".",odList,()=>'<span class="badge od">Overdue</span>'));
+    [].slice.call($("aKpis").children).forEach((node,idx)=>{ if(handlers[idx]){ node.classList.add("kpi-click"); node.addEventListener("click",handlers[idx]); } });
+    const pv=$("aPeriod"); if(pv){ pv.value=adminPeriod; pv.onchange=()=>{ adminPeriod=pv.value; loadAdmin(); }; }
+    const aib=$("allInvBtn"); if(aib) aib.onclick=()=>showAllInvoices(invoices,cName,pName,openProj);
     if(!clients.length){ list.innerHTML='<div class="empty"><div class="big">No clients yet</div>Click “New client” to create the first login.</div>'; return; }
     const projCount={},balBy={},odBy={}; projects.forEach(p=>{projCount[p.client_id]=(projCount[p.client_id]||0)+1;});
     invoices.forEach(i=>{ if(isDue(i)){ balBy[i.client_id]=(balBy[i.client_id]||0)+i.amount_cents; if(i.due_date&&i.due_date<today) odBy[i.client_id]=true; } });
@@ -742,8 +803,29 @@
     const loginId=prof.username?("username: "+prof.username):(prof.email||cl.email||"");
     openModal('<h2>Manage client</h2><div class="psub" style="font-size:12.5px;color:var(--muted);margin:4px 0 12px">'+esc(loginId)+' · this is their login and can\'t be changed here</div>'+
       '<label>Company name</label><input id="clCompany" value="'+esc(prof.company_name||"")+'"/><label>Contact name</label><input id="clContact" value="'+esc(prof.contact_name||"")+'"/><label>Phone</label><input id="clPhone" value="'+esc(prof.phone||"")+'"/><label>Private note (only you see this)</label><textarea id="clNote" placeholder="Internal note…">'+esc(intNote)+'</textarea><button class="btn full" id="clSave">Save</button><div class="msg" id="clMsg"></div>'+
-      '<div class="billdiv"></div><div class="ch2">Reset password</div><div class="csub">Set a new login password and share it with the client. Minimum 8 characters.</div><div style="display:flex;gap:10px;margin-top:8px"><input id="clPw" type="text" placeholder="New password" autocomplete="off" style="flex:1"/><button class="btn-ghost" id="clPwGen" style="width:auto;white-space:nowrap">Generate</button></div><button class="btn" id="clPwSet" style="width:auto;margin-top:10px">Set password</button><div class="msg" id="clPwMsg"></div>');
+      '<div class="billdiv"></div><div class="ch2">Recent activity</div><div id="clActivity" class="csub" style="margin-top:8px">Loading…</div>'+
+      '<div class="billdiv"></div><div class="ch2">Reset password</div><div class="csub">Set a new login password and share it with the client. Minimum 8 characters.</div><div style="display:flex;gap:10px;margin-top:8px"><input id="clPw" type="text" placeholder="New password" autocomplete="off" style="flex:1"/><button class="btn-ghost" id="clPwGen" style="width:auto;white-space:nowrap">Generate</button></div><button class="btn" id="clPwSet" style="width:auto;margin-top:10px">Set password</button><div class="msg" id="clPwMsg"></div>'+
+      '<div class="billdiv"></div><div class="ch2" style="color:var(--rose)">Danger zone</div><div class="csub">Permanently delete this client and everything tied to them — projects, invoices, tickets, and their login. This cannot be undone.</div><button class="btn-ghost" id="clDelete" style="width:auto;margin-top:10px;border-color:rgba(242,96,125,.4);color:var(--rose)">Delete client</button><div class="msg" id="clDelMsg"></div>');
+    $("clDelete").addEventListener("click",async()=>{
+      const name=prof.company_name||cl.company_name||cl.email||"this client";
+      if(!confirm("Delete "+name+" and ALL their projects, invoices, and tickets? This can't be undone.")) return;
+      const m=$("clDelMsg"); $("clDelete").disabled=true; m.className="msg info"; m.textContent="Deleting…";
+      const token=(await sb.auth.getSession()).data.session.access_token;
+      try{ const r=await fetch("/.netlify/functions/admin-delete-client",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({client_id:cl.id})}); const j=await r.json();
+        if(!r.ok){ m.className="msg err"; m.textContent=j.error||"Couldn't delete."; $("clDelete").disabled=false; return; }
+        closeModal(); loadAdmin();
+      }catch(e){ m.className="msg err"; m.textContent="Network error."; $("clDelete").disabled=false; }
+    });
     $("clPwGen").addEventListener("click",()=>{ $("clPw").value=(Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6).toUpperCase()+(Math.floor(Math.random()*90)+10)); });
+    (async()=>{ const box=$("clActivity"); if(!box)return; const ev=[];
+      try{ const { data:iv }=await sb.from("invoices").select("number,amount_cents,status,created_at,paid_at").eq("client_id",cl.id);
+        (iv||[]).forEach(i=>{ if(i.created_at) ev.push({t:i.created_at,x:"Invoice "+i.number+" issued — "+fmt(i.amount_cents)}); if(i.paid_at) ev.push({t:i.paid_at,x:"Invoice "+i.number+" paid"}); if(i.status==="processing") ev.push({t:i.created_at,x:"Invoice "+i.number+" payment clearing"}); if(i.status==="failed") ev.push({t:i.created_at,x:"Invoice "+i.number+" payment failed"}); }); }catch(e){}
+      try{ const { data:tk }=await sb.from("tickets").select("subject,status,created_at,updated_at").eq("client_id",cl.id);
+        (tk||[]).forEach(t=>{ if(t.created_at) ev.push({t:t.created_at,x:"Ticket opened: "+t.subject}); }); }catch(e){}
+      ev.sort((a,b)=>new Date(b.t)-new Date(a.t));
+      if(!ev.length){ box.innerHTML="No activity yet."; return; }
+      box.innerHTML=ev.slice(0,10).map(e=>'<div class="upd" style="margin:8px 0"><div class="dot"></div><div><div class="ub" style="font-size:13px">'+esc(e.x)+'</div><div class="ud">'+dShort(new Date(e.t))+'</div></div></div>').join('');
+    })();
     $("clPwSet").addEventListener("click",async()=>{
       const m=$("clPwMsg"); const pw=$("clPw").value;
       if(!pw||pw.length<8){ m.className="msg err"; m.textContent="Password must be at least 8 characters."; return; }
@@ -784,6 +866,7 @@
       '<div class="card" id="ticketsCard" style="display:none;margin-bottom:18px"><div class="ch">Support tickets</div><div class="csub">Requests the client submits from their portal during Iterate & Maintain. Reply and close them here.</div><div id="tixBox" style="margin-top:12px">Loading…</div></div>'+
       '<div class="card" style="margin-bottom:18px"><div class="ch">Billing</div><div class="csub">Split the project value into a deposit and final payment — change the percent or the dollars, they stay in sync.</div><div id="msBox" style="margin-top:12px">Loading…</div><div class="billdiv"></div><div class="ch2">Additional invoice</div><div class="csub">One-off charges outside the milestone split — extra work, change requests, etc.</div><div class="f2" style="margin-top:8px"><div><label>Invoice #</label><input id="inNum" value="'+suggested+'"/></div><div><label>Amount (USD)</label><input id="inAmt" type="number" step="0.01" min="0" placeholder="500.00"/></div></div><label>Description</label><input id="inDesc" placeholder="Extra report build"/><label>Due date (optional)</label>'+dpField("inDue","")+'<button class="btn" id="inSave" style="width:auto;margin-top:10px">Add invoice</button><div class="msg" id="inMsg"></div></div>'+
       '<div class="card" style="margin-bottom:18px"><div class="ch">Invoices</div><div class="csub">Unpaid invoices are flagged in red. Mark paid once payment clears.</div><div id="pInvoices" style="margin-top:10px">Loading…</div></div>'+
+      '<div class="card" style="margin-bottom:18px"><div class="ch">Documents</div><div class="csub">Share files with this client — contracts, deliverables, reports. They download them from their portal.</div><div style="display:flex;gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap"><input type="file" id="docFile" style="flex:1;min-width:180px"/><button class="btn" id="docUp" style="width:auto">Upload</button></div><div class="msg" id="docMsg"></div><div id="docList" style="margin-top:12px">Loading…</div></div>'+
       '<div class="card"><div class="ch">Monthly maintenance</div><div class="csub">Discuss a plan with the client, then set it Active when you agree on a price.</div><div class="f2" style="margin-top:6px"><div><label>Monthly fee (USD)</label><input id="mtAmt" type="number" step="0.01" min="0" value="'+(proj.maintenance_cents?(proj.maintenance_cents/100):"")+'"/></div><div><label>Plan status</label><select id="mtStatus"><option value="none"'+(proj.maintenance_status==="active"?"":" selected")+'>Not on a plan</option><option value="active"'+(proj.maintenance_status==="active"?" selected":"")+'>Active (recurring)</option></select></div></div><button class="btn" id="mtSave" style="width:auto;margin-top:10px">Save plan</button><div class="msg" id="mtMsg"></div><div id="mtReq" style="margin-top:8px"></div></div>';
     adminShow("project");
     _pcl=cl; _pproj=proj; _so={}; _ms={};
@@ -816,7 +899,7 @@
       $("inSave").disabled=true; m.className="msg info"; m.textContent="Adding…";
       const { error }=await sb.from("invoices").insert({client_id:cl.id,project_id:proj.id,number:num,description:desc,amount_cents:Math.round(amt*100),due_date:due});
       if(error){ m.className="msg err"; m.textContent="Couldn't add. "+(error.message||""); $("inSave").disabled=false; return; }
-      m.className="msg ok"; m.textContent="Invoice added."; $("inSave").disabled=false; $("inDesc").value="";$("inAmt").value=""; $("inDue").value=""; cacheInvoiceCount++; $("inNum").value="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); loadProjectInvoices(cl,proj); loadAdmin();
+      m.className="msg ok"; m.textContent="Invoice added."; $("inSave").disabled=false; $("inDesc").value="";$("inAmt").value=""; $("inDue").value=""; cacheInvoiceCount++; $("inNum").value="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); notifyClient("invoice_issued",cl.id,{amount:fmt(Math.round(amt*100))}); loadProjectInvoices(cl,proj); loadAdmin();
     });
     $("mtSave").addEventListener("click",async()=>{
       const m=$("mtMsg"); $("mtSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
@@ -825,9 +908,27 @@
       if(error){ m.className="msg err"; m.textContent="Couldn't save. "+(error.message||""); $("mtSave").disabled=false; return; }
       proj.maintenance_cents=v>0?Math.round(v*100):0; proj.maintenance_status=status; m.className="msg ok"; m.textContent=status==="active"?"Plan active — client now sees it as active.":"Saved."; $("mtSave").disabled=false;
     });
-    loadProjectInvoices(cl,proj); loadMilestones(cl,proj); loadSignoffs(cl,proj);
+    $("docUp").addEventListener("click",async()=>{ const f=$("docFile").files[0]; const m=$("docMsg"); if(!f){ m.className="msg err"; m.textContent="Choose a file first."; return; } if(f.size>26214400){ m.className="msg err"; m.textContent="File is over 25 MB — please share a link instead."; return; } $("docUp").disabled=true; m.className="msg info"; m.textContent="Uploading…";
+      const safe=f.name.replace(/[^A-Za-z0-9._-]/g,"_"); const path=cl.id+"/"+proj.id+"/"+Date.now()+"_"+safe;
+      const up=await sb.storage.from("documents").upload(path,f,{upsert:false});
+      if(up.error){ m.className="msg err"; m.textContent="Upload failed: "+(up.error.message||"check the storage bucket exists (step 14)."); $("docUp").disabled=false; return; }
+      const ins=await sb.from("documents").insert({project_id:proj.id,client_id:cl.id,name:f.name,storage_path:path,size_bytes:f.size});
+      if(ins.error){ m.className="msg err"; m.textContent="Saved file but couldn't record it: "+(ins.error.message||""); $("docUp").disabled=false; return; }
+      m.className="msg ok"; m.textContent="Uploaded — your client can now download it."; $("docUp").disabled=false; $("docFile").value=""; loadDocs(cl,proj);
+    });
+    loadProjectInvoices(cl,proj); loadMilestones(cl,proj); loadSignoffs(cl,proj); loadDocs(cl,proj);
   }
   let _pcl=null, _pproj=null, _so={}, _ms={};
+  function fmtSize(b){ b=b||0; if(b<1024) return b+" B"; if(b<1048576) return (b/1024).toFixed(0)+" KB"; return (b/1048576).toFixed(1)+" MB"; }
+  async function loadDocs(cl,proj){ const box=$("docList"); if(!box)return;
+    const { data,error }=await sb.from("documents").select("id,name,storage_path,size_bytes,created_at").eq("project_id",proj.id).order("created_at",{ascending:false});
+    if(error){ box.innerHTML='<div class="csub">Couldn\'t load documents — run database step 14.</div>'; return; }
+    if(!data||!data.length){ box.innerHTML='<div class="csub">No documents shared yet.</div>'; return; }
+    box.innerHTML=data.map(d=>'<div class="miniinv"><span style="flex:1">'+esc(d.name)+' <span style="color:var(--muted-2);font-size:11px">· '+fmtSize(d.size_bytes)+'</span></span><button class="linkx" data-ddl="'+d.id+'">download</button> · <button class="linkx del" data-ddel="'+d.id+'">delete</button></div>').join('');
+    const byId=(id)=>data.find(x=>x.id===id);
+    box.querySelectorAll("[data-ddl]").forEach(b=>b.addEventListener("click",async()=>{ const d=byId(b.getAttribute("data-ddl")); const sg=await sb.storage.from("documents").createSignedUrl(d.storage_path,120); if(sg.data&&sg.data.signedUrl) window.open(sg.data.signedUrl,"_blank"); }));
+    box.querySelectorAll("[data-ddel]").forEach(b=>b.addEventListener("click",async()=>{ if(!confirm("Delete this document? The client will no longer see it."))return; const d=byId(b.getAttribute("data-ddel")); await sb.storage.from("documents").remove([d.storage_path]); await sb.from("documents").delete().eq("id",d.id); loadDocs(cl,proj); }));
+  }
   function repaintPipe(){ const p=$("ppPipe"); if(!p||!_pproj)return; const st=_pproj.stage||0; const alerts={}; [1,3].forEach(i=>{ if(i<=st && !_so[i]) alerts[i]=true; }); Object.keys(_ms).forEach(k=>{ const i=+k; if(_ms[i]==="open"&&i<=st) alerts[i]=true; }); p.innerHTML=pipeStepsClickable(st,st,alerts); wireStage(_pcl,_pproj); }
   function wireStage(cl,proj){ const p=$("ppPipe"); if(!p)return; p.querySelectorAll('[data-pstage]').forEach(s=>s.addEventListener('click',()=>setStage(cl,proj,+s.getAttribute('data-pstage')))); }
   async function setStage(cl,proj,i){ if(i===proj.stage)return; proj.stage=i; await sb.from("projects").update({stage:i,updated_at:new Date().toISOString()}).eq("id",proj.id); if($("ppBadge"))$("ppBadge").textContent=STAGES[i]; repaintPipe(); renderStageNoteInputs(cl,proj); loadStageNotes(proj); loadStageLogs(proj); loadSignoffs(cl,proj); loadProjectInvoices(cl,proj); applyStageMode(cl,proj); loadAdmin(); }
@@ -851,7 +952,7 @@
       const ta=$("trep_"+t.id), body=ta.value.trim(); if(!body)return; const btn=$("tsend_"+t.id); btn.disabled=true; btn.textContent="Sending…";
       const { error }=await sb.from("ticket_messages").insert({ticket_id:t.id,client_id:cl.id,author:"admin",body});
       await sb.from("tickets").update({updated_at:new Date().toISOString()}).eq("id",t.id);
-      btn.disabled=false; btn.textContent="Send reply"; if(!error){ loadTicketThread(cl,proj,t); }
+      btn.disabled=false; btn.textContent="Send reply"; if(!error){ notifyClient("ticket_reply",cl.id,{}); loadTicketThread(cl,proj,t); }
     });
     $("tclose_"+t.id).addEventListener("click",async()=>{
       const ns=t.status==="open"?"closed":"open"; await sb.from("tickets").update({status:ns,updated_at:new Date().toISOString()}).eq("id",t.id); t.status=ns; loadTickets(cl,proj);
@@ -920,7 +1021,7 @@
         const cls=i.status==="processing"?' pend':((i.status==="open")?(reached?' due':' sched'):'');
         return '<div class="miniinv'+cls+'"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;margin-top:2px">'+tag+'</span></div>'; }).join('')+
         (anyPaid?'':'<button class="linkx del" id="msClear" style="margin-top:10px">Clear &amp; redo split</button><div class="msg" id="msMsg"></div>');
-      const cb=$("msClear"); if(cb) cb.addEventListener("click",async()=>{ for(const i of data){ if(i.status!=="paid") await sb.from("invoices").delete().eq("id",i.id); } loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin(); });
+      const cb=$("msClear"); if(cb) cb.addEventListener("click",async()=>{ if(!confirm("Delete the deposit and final milestone invoices so you can redo the split?")) return; for(const i of data){ if(i.status!=="paid") await sb.from("invoices").delete().eq("id",i.id); } loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin(); });
     } else {
       const val=proj.value_cents; const dep=Math.round(val*0.30);
       box.innerHTML='<div class="msrow"><div><div class="dlbl">Deposit %</div><input id="msPct" type="number" min="0" max="100" step="1" value="30"></div><div><div class="dlbl">Deposit at Mockup</div><input id="msDep" type="number" step="0.01" min="0" value="'+(dep/100)+'"></div><div><div class="dlbl">Final at Launch</div><input id="msFin" type="number" step="0.01" min="0" value="'+((val-dep)/100)+'"></div></div><div class="csub" style="margin:10px 0 0">Project value '+fmt(val)+'. Amounts don\'t have to add up to the full value.</div><button class="btn" id="msGen" style="width:auto;margin-top:12px">Create these invoices</button><div class="msg" id="msMsg"></div>';
@@ -937,7 +1038,7 @@
         if(f>0){ n++; rows.push({client_id:cl.id,project_id:proj.id,number:"AVI-"+String(n).padStart(4,"0"),description:"Final payment — "+(proj.name||"project"),amount_cents:Math.round(f*100),milestone_stage:3}); }
         const e=(await sb.from("invoices").insert(rows)).error;
         if(e){ m.className="msg err"; m.textContent="Couldn't create. "+(e.message||""); $("msGen").disabled=false; return; }
-        cacheInvoiceCount=n; loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin();
+        cacheInvoiceCount=n; notifyClient("invoice_issued",cl.id,{}); loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin();
       });
     }
   }
@@ -948,20 +1049,21 @@
     if(error){ box.textContent="Couldn't load."; return; }
     if(!data||!data.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">No invoices yet.</div>'; return; }
     const st=proj.stage||0;
-    const dueNow=(i)=> i.status==="open" && (i.milestone_stage==null || i.milestone_stage<=st);
-    const rank=(i)=> dueNow(i)?0:(i.status==="processing"?1:(i.status==="open"?2:3));
+    const dueNow=(i)=> (i.status==="open"||i.status==="failed") && (i.milestone_stage==null || i.milestone_stage<=st);
+    const rank=(i)=> i.status==="failed"?0:(dueNow(i)?1:(i.status==="processing"?2:(i.status==="open"?3:4)));
     const ordered=data.slice().sort((a,b)=>rank(a)-rank(b));
     box.innerHTML=ordered.map(i=>{ let actions; const open=i.status==="open"; const due=dueNow(i);
       if(i.status==="paid") actions='<span class="badge paid" style="padding:3px 8px"><span class="bd"></span>Paid</span> <button class="linkx" data-rcpt="'+i.id+'">receipt</button>';
       else if(i.status==="void") actions='<span class="badge void" style="padding:3px 8px">Void</span>';
+      else if(i.status==="failed") actions='<span class="badge od" style="padding:3px 8px">Failed — awaiting retry</span> · <button class="linkx" data-paid="'+i.id+'">mark paid</button> · <button class="linkx del" data-void="'+i.id+'">void</button>';
       else if(i.status==="processing") actions='<span class="badge pend" style="padding:3px 8px"><span class="bd"></span>Pending — clearing</span> · <button class="linkx" data-paid="'+i.id+'">mark paid</button> · <button class="linkx del" data-void="'+i.id+'">void</button>';
       else if(due) actions='<span class="duetag now">Due now</span> · <button class="linkx" data-paid="'+i.id+'">mark paid</button> · <button class="linkx del" data-void="'+i.id+'">void</button>';
       else actions='<span class="duetag later">Scheduled · due at '+esc(STAGES[i.milestone_stage])+'</span> · <button class="linkx" data-paid="'+i.id+'">mark paid</button> · <button class="linkx del" data-void="'+i.id+'">void</button>';
-      const cls=i.status==="processing"?' pend':(open?(due?' due':' sched'):'');
+      const cls=i.status==="failed"?' due':(i.status==="processing"?' pend':(open?(due?' due':' sched'):''));
       return '<div class="miniinv'+cls+'"><span class="mn">'+esc(i.number)+'</span><span>'+esc(i.description)+(i.milestone_stage!=null?' <span style="color:var(--muted-2);font-size:11px">· milestone</span>':'')+'</span><span class="ma">'+fmt(i.amount_cents)+'</span><span style="width:100%;display:flex;gap:8px;align-items:center;margin-top:2px">'+actions+'</span></div>'; }).join('');
     box.querySelectorAll("[data-paid]").forEach(b=>b.addEventListener("click",async()=>{ await sb.from("invoices").update({status:"paid",paid_at:new Date().toISOString()}).eq("id",b.getAttribute("data-paid")); loadProjectInvoices(cl,proj); loadAdmin(); }));
     box.querySelectorAll("[data-void]").forEach(b=>b.addEventListener("click",async()=>{
-      const id=b.getAttribute("data-void"); b.disabled=true; b.textContent="voiding…";
+      const id=b.getAttribute("data-void"); if(!confirm("Void this invoice? It will no longer be payable by the client.")) return; b.disabled=true; b.textContent="voiding…";
       let note="Invoice voided.";
       try{ const token=(await sb.auth.getSession()).data.session.access_token;
         const r=await fetch("/.netlify/functions/admin-cancel-payment",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({invoice_id:id})}); const j=await r.json();
