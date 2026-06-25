@@ -61,12 +61,13 @@ exports.handler = async (event) => {
     newId = j.id || (j.user && j.user.id);
   } catch (e) { return json(502, { error: "Could not reach the auth service." }); }
 
-  // Stamp company name + email onto the auto-created profile (trigger made the row).
+  // Stamp company name + email onto the auto-created profile, and make
+  // this user the OWNER of their own account (client_id = their own id).
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(newId)}`, {
       method: "PATCH",
       headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ company_name: company || null, email })
+      body: JSON.stringify({ company_name: company || null, email, client_id: newId })
     });
   } catch (e) { /* non-fatal */ }
 
