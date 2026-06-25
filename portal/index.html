@@ -683,7 +683,6 @@
   }
 
   /* ---------- ADMIN ---------- */
-  async function notifyClient(kind, clientId, extra){ try{ const token=(await sb.auth.getSession()).data.session.access_token; await fetch("/.netlify/functions/notify",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(Object.assign({kind,client_id:clientId},extra||{}))}); }catch(e){} }
   let adminPeriod="all";
   function periodStart(p){ const d=new Date(); if(p==="month") return new Date(d.getFullYear(),d.getMonth(),1); if(p==="quarter"){ const q=Math.floor(d.getMonth()/3)*3; return new Date(d.getFullYear(),q,1); } if(p==="year") return new Date(d.getFullYear(),0,1); return null; }
   const periodLabel={all:"all time",month:"this month",quarter:"this quarter",year:"this year"};
@@ -899,7 +898,7 @@
       $("inSave").disabled=true; m.className="msg info"; m.textContent="Adding…";
       const { error }=await sb.from("invoices").insert({client_id:cl.id,project_id:proj.id,number:num,description:desc,amount_cents:Math.round(amt*100),due_date:due});
       if(error){ m.className="msg err"; m.textContent="Couldn't add. "+(error.message||""); $("inSave").disabled=false; return; }
-      m.className="msg ok"; m.textContent="Invoice added."; $("inSave").disabled=false; $("inDesc").value="";$("inAmt").value=""; $("inDue").value=""; cacheInvoiceCount++; $("inNum").value="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); notifyClient("invoice_issued",cl.id,{amount:fmt(Math.round(amt*100))}); loadProjectInvoices(cl,proj); loadAdmin();
+      m.className="msg ok"; m.textContent="Invoice added."; $("inSave").disabled=false; $("inDesc").value="";$("inAmt").value=""; $("inDue").value=""; cacheInvoiceCount++; $("inNum").value="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); loadProjectInvoices(cl,proj); loadAdmin();
     });
     $("mtSave").addEventListener("click",async()=>{
       const m=$("mtMsg"); $("mtSave").disabled=true; m.className="msg info"; m.textContent="Saving…";
@@ -952,7 +951,7 @@
       const ta=$("trep_"+t.id), body=ta.value.trim(); if(!body)return; const btn=$("tsend_"+t.id); btn.disabled=true; btn.textContent="Sending…";
       const { error }=await sb.from("ticket_messages").insert({ticket_id:t.id,client_id:cl.id,author:"admin",body});
       await sb.from("tickets").update({updated_at:new Date().toISOString()}).eq("id",t.id);
-      btn.disabled=false; btn.textContent="Send reply"; if(!error){ notifyClient("ticket_reply",cl.id,{}); loadTicketThread(cl,proj,t); }
+      btn.disabled=false; btn.textContent="Send reply"; if(!error){ loadTicketThread(cl,proj,t); }
     });
     $("tclose_"+t.id).addEventListener("click",async()=>{
       const ns=t.status==="open"?"closed":"open"; await sb.from("tickets").update({status:ns,updated_at:new Date().toISOString()}).eq("id",t.id); t.status=ns; loadTickets(cl,proj);
@@ -1038,7 +1037,7 @@
         if(f>0){ n++; rows.push({client_id:cl.id,project_id:proj.id,number:"AVI-"+String(n).padStart(4,"0"),description:"Final payment — "+(proj.name||"project"),amount_cents:Math.round(f*100),milestone_stage:3}); }
         const e=(await sb.from("invoices").insert(rows)).error;
         if(e){ m.className="msg err"; m.textContent="Couldn't create. "+(e.message||""); $("msGen").disabled=false; return; }
-        cacheInvoiceCount=n; notifyClient("invoice_issued",cl.id,{}); loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin();
+        cacheInvoiceCount=n; loadMilestones(cl,proj); loadProjectInvoices(cl,proj); loadAdmin();
       });
     }
   }
