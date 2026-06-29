@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /portal/
+
+# Make sure favicon + share image stay crawlable for Search
+User-agent: Googlebot-Image
+Allow: /favicon.ico
+Allow: /favicon.svg
+Allow: /favicon-48.png
+Allow: /favicon-96.png
+Allow: /og-image.png
+Allow: /android-chrome-192.png
+Allow: /android-chrome-512.png
+
+Sitemap: https://avidatatechnology.com/sitemap.xml
