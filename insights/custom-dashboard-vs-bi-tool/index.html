@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Custom Dashboard vs. Off-the-Shelf BI Tool: How to Decide (2026) | Avi Data Technology</title>
+<meta name="description" content="A practical, honest comparison of custom dashboards vs. off-the-shelf BI tools like Power BI and Tableau &mdash; real 2026 pricing, where each one wins, and a simple rule for deciding." />
+<link rel="canonical" href="https://avidatatechnology.com/insights/custom-dashboard-vs-bi-tool/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="theme-color" content="#0A0E1A" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" /><link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" /><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" /><link rel="apple-touch-icon" href="/apple-touch-icon.png" /><link rel="manifest" href="/site.webmanifest" /><link rel="alternate icon" href="/favicon.ico" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Avi Data Technology" />
+<meta property="og:title" content="Custom Dashboard vs. Off-the-Shelf BI Tool: How to Actually Decide" />
+<meta property="og:description" content="A practical, honest comparison of custom dashboards vs. off-the-shelf BI tools like Power BI and Tableau &mdash; real 2026 pricing, where each one wins, and a simple rule for deciding." />
+<meta property="og:url" content="https://avidatatechnology.com/insights/custom-dashboard-vs-bi-tool/" />
+<meta property="og:image" content="https://avidatatechnology.com/og-image.png" />
+<meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Custom Dashboard vs. Off-the-Shelf BI Tool: How to Actually Decide" />
+<meta name="twitter:description" content="A practical, honest comparison of custom dashboards vs. off-the-shelf BI tools like Power BI and Tableau &mdash; real 2026 pricing, where each one wins, and a simple rule for deciding." />
+<meta name="twitter:image" content="https://avidatatechnology.com/og-image.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://avidatatechnology.com/insights/custom-dashboard-vs-bi-tool/#post",
+      "headline": "Custom Dashboard vs. Off-the-Shelf BI Tool: How to Actually Decide",
+      "description": "A practical, honest comparison of custom dashboards vs. off-the-shelf BI tools like Power BI and Tableau &mdash; real 2026 pricing, where each one wins, and a simple rule for deciding.",
+      "datePublished": "2026-06-29",
+      "dateModified": "2026-06-29",
+      "image": "https://avidatatechnology.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "Avi Data Technology",
+        "url": "https://avidatatechnology.com/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Avi Data Technology",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://avidatatechnology.com/android-chrome-512.png"
+        }
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://avidatatechnology.com/insights/custom-dashboard-vs-bi-tool/"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is custom software always more expensive than Power BI or Tableau?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Not over time. Per-seat tools are cheaper to start but grow with headcount; a custom build is a higher upfront cost that then stays flat. The fair comparison is the three-year total, not the monthly sticker price."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can't I just embed Power BI or Tableau for my customers?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can, but external or embedded analytics in those tools is a significant engineering project, and the per-viewer economics get expensive fast. Customer-facing portals are often cheaper to build custom."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does a custom dashboard cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It depends entirely on scope. The useful way to size it is against what your current process already costs &mdash; the per-seat licenses plus the hours spent prepping data and rebuilding reports by hand."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which off-the-shelf BI tool is best?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "For Microsoft shops, Power BI is the natural fit and cheapest per seat. For heavy visual exploration, Tableau is strong. Metabase is worth a look if you want something lighter and open-source. The right answer depends on your stack and your analysts."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#0A0E1A;--bg-2:#0C1120;--panel:#111726;--panel-2:#0D1322;--raised:#16203A;
+  --line:#1F2A44;--line-soft:#172033;
+  --text:#EAF0FB;--muted:#8793AE;--muted-2:#566179;
+  --brand:#6E8BFF;--brand-2:#9FB0FF;--mint:#34D8A0;--gold:#F2B45C;--rose:#F2607D;
+  --r:18px;--maxw:1080px;
+  --fd:'Plus Jakarta Sans',system-ui,sans-serif;--fb:'Inter',system-ui,sans-serif;--fm:'JetBrains Mono',ui-monospace,monospace;
+}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(1100px 640px at 84% -14%,rgba(110,139,255,.12),transparent 55%),radial-gradient(900px 560px at -10% 2%,rgba(52,216,160,.07),transparent 55%),var(--bg);color:var(--text);font-family:var(--fb);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+::selection{background:rgba(110,139,255,.32)}
+.mono{font-family:var(--fm)}
+.eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
+.grad{background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:18px;padding:0 24px;height:62px;background:rgba(10,14,26,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line-soft)}
+.brand{display:flex;align-items:center;gap:11px}
+.brand img{width:32px;height:32px;border-radius:9px;display:block}
+.brand b{font-family:var(--fd);font-weight:700;font-size:16px;letter-spacing:-.02em}
+.brand b span{color:var(--muted)}
+.tnav{display:flex;gap:2px;margin-left:10px}
+.tnav a{font-size:13.5px;color:var(--muted);padding:8px 13px;border-radius:9px;font-weight:500;transition:.16s}
+.tnav a:hover{color:var(--text)}
+.tnav a.on{color:var(--text);background:rgba(255,255,255,.05)}
+.tright{margin-left:auto;display:flex;align-items:center;gap:11px}
+.pill{font-family:var(--fd);font-weight:600;font-size:13px;padding:9px 16px;border-radius:11px;cursor:pointer;border:none;transition:.18s;display:inline-flex;align-items:center;gap:8px}
+.pill-grad{background:linear-gradient(110deg,var(--brand),#4a5fd6);color:#fff;box-shadow:0 8px 22px -8px rgba(110,139,255,.7)}
+.pill-grad:hover{transform:translateY(-1px)}
+.pill-ghost{background:#121a2c;color:var(--text);border:1px solid var(--line)}
+.pill-ghost:hover{border-color:var(--brand)}
+
+.shell{max-width:var(--maxw);margin:0 auto;padding:0 24px 40px}
+
+/* hero */
+.phero{padding:62px 0 30px;border-bottom:1px solid var(--line-soft)}
+.phero .crumb{font-family:var(--fm);font-size:11.5px;color:var(--muted-2);letter-spacing:.04em;margin-bottom:18px}
+.phero .crumb a:hover{color:var(--brand-2)}
+.phero h1{font-family:var(--fd);font-weight:800;font-size:clamp(30px,5vw,52px);line-height:1.05;letter-spacing:-.03em;margin:12px 0 0;max-width:18ch}
+.phero p.lede{color:var(--muted);font-size:18px;line-height:1.6;max-width:60ch;margin:18px 0 0}
+.phero .cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+
+/* meta strip (case studies) */
+.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);border-radius:14px;overflow:hidden;margin:30px 0 0}
+.meta div{background:var(--panel);padding:16px 18px}
+.meta .k{font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
+.meta .v{font-family:var(--fd);font-weight:600;font-size:14px;margin-top:7px;letter-spacing:-.01em}
+
+/* section */
+.sec{padding:40px 0 0}
+.sec h2{font-family:var(--fd);font-weight:700;font-size:clamp(21px,3vw,30px);letter-spacing:-.025em;margin:0 0 8px}
+.sec h2 + p{margin:0 0 4px;color:var(--muted);max-width:64ch}
+.sec p{font-size:16px;line-height:1.68}
+.sec p.body{color:#C7D0E4;max-width:66ch}
+
+/* feature cards */
+.grid{display:grid;gap:14px;margin-top:22px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--r);padding:22px;position:relative}
+.card .pi{width:34px;height:34px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;color:var(--brand-2);margin-bottom:14px}
+.card h3{margin:0 0 7px;font-family:var(--fd);font-size:16.5px;font-weight:600;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);font-size:14.5px;line-height:1.6}
+.card ul{margin:13px 0 0;padding:0;list-style:none}
+.card ul li{font-family:var(--fm);font-size:12px;color:var(--muted-2);padding:4px 0 4px 16px;position:relative}
+.card ul li::before{content:"";position:absolute;left:0;top:10px;width:5px;height:5px;border-radius:50%;background:var(--brand)}
+
+/* checklist block */
+.checks{margin:20px 0 0;padding:0;list-style:none;display:grid;gap:11px}
+.checks li{position:relative;padding-left:30px;color:#C7D0E4;font-size:15.5px;line-height:1.55}
+.checks li::before{content:"";position:absolute;left:0;top:3px;width:18px;height:18px;border-radius:6px;background:rgba(52,216,160,.12);border:1px solid rgba(52,216,160,.45)}
+.checks li::after{content:"";position:absolute;left:6px;top:7px;width:5px;height:9px;border:solid var(--mint);border-width:0 2px 2px 0;transform:rotate(45deg)}
+
+/* steps */
+.steps{counter-reset:s;display:grid;gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);border-radius:14px;overflow:hidden;margin-top:22px}
+.steps li{counter-increment:s;list-style:none;background:var(--panel);padding:18px 20px 18px 60px;position:relative}
+.steps li::before{content:counter(s,decimal-leading-zero);position:absolute;left:20px;top:18px;font-family:var(--fm);font-size:12px;color:var(--brand-2)}
+.steps li b{font-family:var(--fd);font-weight:600;font-size:15px}
+.steps li span{display:block;color:var(--muted);font-size:14px;margin-top:3px}
+
+/* who-for tags */
+.tags{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}
+.tags span{font-family:var(--fm);font-size:12.5px;color:#C7D0E4;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 15px}
+
+/* outcome callout */
+.callout{margin-top:22px;background:linear-gradient(120deg,rgba(110,139,255,.10),rgba(52,216,160,.06));border:1px solid var(--line);border-radius:16px;padding:24px}
+.callout .eyebrow{margin-bottom:10px}
+.callout p{margin:0;font-family:var(--fd);font-weight:500;font-size:18px;line-height:1.5;letter-spacing:-.01em;color:var(--text)}
+
+/* cta band */
+.ctaband{margin:50px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:34px;text-align:center}
+.ctaband h2{font-family:var(--fd);font-weight:700;font-size:clamp(22px,3vw,30px);letter-spacing:-.025em;margin:0 0 10px}
+.ctaband p{color:var(--muted);margin:0 auto 22px;max-width:52ch}
+.ctaband .cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+/* work index cards */
+.worklist{display:grid;gap:14px;margin-top:26px}
+.wcard{display:block;background:var(--panel);border:1px solid var(--line-soft);border-radius:var(--r);padding:24px;transition:.18s}
+.wcard:hover{border-color:var(--brand);transform:translateY(-2px)}
+.wcard .wt{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.wcard h3{font-family:var(--fd);font-weight:700;font-size:20px;letter-spacing:-.02em;margin:0}
+.wcard .sector{font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2)}
+.wcard p{color:var(--muted);margin:9px 0 0;font-size:15px;max-width:70ch}
+.wcard .arrow{color:var(--brand-2);font-family:var(--fm);font-size:13px;margin-top:14px;display:inline-block}
+
+/* footer */
+.site-foot{max-width:var(--maxw);margin:54px auto 0;padding:26px 24px 30px;border-top:1px solid var(--line-soft)}
+.site-foot .frow{display:flex;flex-wrap:wrap;gap:30px 48px;align-items:flex-start;justify-content:space-between}
+.site-foot .fbrand{display:flex;align-items:center;gap:12px}
+.site-foot .fbrand img{width:34px;height:34px;border-radius:9px;display:block}
+.site-foot .fbrand b{font-family:var(--fd);font-weight:700;font-size:16px;letter-spacing:-.02em}
+.site-foot .fbrand b span{color:var(--muted)}
+.site-foot .ftag{color:var(--muted);font-size:13.5px;max-width:40ch;margin:11px 0 0}
+.site-foot .fnav{display:flex;flex-wrap:wrap;gap:26px 44px}
+.site-foot .fcol h5{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin:0 0 11px}
+.site-foot .fcol a,.site-foot .fcol .fline{display:block;color:var(--muted);font-size:13.5px;padding:3px 0;transition:.15s}
+.site-foot .fcol a:hover{color:var(--brand-2)}
+.site-foot .fbot{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;margin-top:24px;padding-top:16px;border-top:1px solid var(--line-soft);color:var(--muted-2);font-family:var(--fm);font-size:11.5px}
+.site-foot .fbot .dotmint{display:inline-flex;align-items:center;gap:8px}
+.site-foot .fbot .dotmint i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint)}
+
+@media(max-width:760px){
+  .tnav{display:none}
+  .meta{grid-template-columns:repeat(2,1fr)}
+  .g2,.g3{grid-template-columns:1fr}
+  .shell{padding:0 18px 36px}
+  .topbar{padding:0 16px}
+}
+@media(prefers-reduced-motion:no-preference){
+  .reveal{opacity:0;transform:translateY(10px);animation:rise .6s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+}
+
+.prose{max-width:none}
+.prose h2{font-family:var(--fd);font-weight:700;font-size:clamp(20px,2.6vw,27px);letter-spacing:-.025em;margin:38px 0 12px}
+.prose h3{font-family:var(--fd);font-weight:600;font-size:18px;letter-spacing:-.01em;margin:26px 0 8px}
+.prose p{font-size:16.5px;line-height:1.72;color:#C7D0E4;margin:0 0 16px;max-width:68ch}
+.prose p.lead{font-size:19px;line-height:1.6;color:var(--text);max-width:66ch}
+.prose strong{color:var(--text);font-weight:600}
+.prose a.ln{color:var(--brand-2);border-bottom:1px solid rgba(159,176,255,.35)}
+.prose a.ln:hover{border-color:var(--brand-2)}
+.prose ul.plain{margin:4px 0 18px;padding-left:0;list-style:none;max-width:68ch}
+.prose ul.plain li{position:relative;padding:5px 0 5px 26px;color:#C7D0E4;font-size:16px;line-height:1.6}
+.prose ul.plain li::before{content:"";position:absolute;left:0;top:13px;width:6px;height:6px;border-radius:50%;background:var(--brand)}
+.prose .rule{height:1px;background:var(--line-soft);border:0;margin:34px 0}
+.ptable{width:100%;border-collapse:collapse;margin:18px 0;font-size:14.5px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden}
+.ptable th,.ptable td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.ptable th{font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);background:var(--panel-2)}
+.ptable td{color:#C7D0E4}
+.ptable tr:last-child td{border-bottom:none}
+.ptable td:first-child{font-family:var(--fd);font-weight:600;color:var(--text);white-space:nowrap}
+.artmeta{font-family:var(--fm);font-size:12px;color:var(--muted-2);letter-spacing:.03em;margin:14px 0 0}
+.faq{margin-top:14px}
+.faq details{border-bottom:1px solid var(--line-soft);padding:4px 0}
+.faq summary{cursor:pointer;font-family:var(--fd);font-weight:600;font-size:16px;padding:14px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--brand-2);font-weight:400;font-size:20px;line-height:1}
+.faq details[open] summary::after{content:"\2212"}
+.faq details p{margin:0 0 16px;color:var(--muted);font-size:15px;line-height:1.65;max-width:68ch}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><img src="/favicon.svg" alt="Avi Data Technology logo" /><b>Avi Data <span>Technology</span></b></a>
+  <nav class="tnav">
+    <a href="/services/">Services</a>
+    <a href="/work/">Work</a>
+    <a href="/insights/" class="on">Insights</a>
+    <a href="/#platform">Platform</a>
+  </nav>
+  <div class="tright"><a class="pill pill-grad" href="/#contact">Start a conversation</a></div>
+</header>
+<main class="shell">
+  <article>
+  <section class="phero">
+    <div class="crumb"><a href="/">Home</a> / <a href="/insights/">Insights</a> / Article</div>
+    <span class="eyebrow">Decision guide</span>
+    <h1>Custom dashboard vs. <span class="grad">off-the-shelf BI.</span></h1>
+    <p class="artmeta">Avi Data Technology &middot; 7 min read</p>
+  </section>
+  <section class="sec prose">
+  
+<p class="lead">"Custom or off-the-shelf?" is the wrong first question. The right one is what you're actually trying to do with the data &mdash; explore it, or run on it. Most of the confusion comes from comparing the two on price alone, when price is the smallest part of the bill.</p>
+<p>Here's how the two actually differ, what they really cost in 2026, and a simple rule for deciding.</p>
+
+<h2>What off-the-shelf BI is genuinely good at</h2>
+<p>Tools like Power BI, Tableau, Looker, and Metabase are mature, powerful, and fast to start. If you have an analyst who needs to slice data, test a hypothesis, and chart it five ways before lunch, that's exactly what these tools are built for. You're running in days, not weeks, and for exploratory analysis they're hard to beat.</p>
+
+<h2>Where off-the-shelf BI starts to hurt</h2>
+<p>Three things tend to bite, and they all show up after you've committed.</p>
+<h3>Per-seat pricing scales with headcount &mdash; forever</h3>
+<p>As of 2026, Power BI Pro runs about $14 per user per month and Premium Per User about $24. Tableau Cloud is around $15 a month for a view-only Viewer, $42 for an Explorer, and $75 for a Creator. In most setups both creators <em>and</em> viewers need a paid seat. A 50-person team that all needs access is a real recurring line item &mdash; and it grows every time you hire.</p>
+<h3>Licenses are the small part</h3>
+<p>Across published cost analyses, software licenses tend to be only about a fifth of what a BI deployment actually costs. The rest is data preparation and maintenance: getting messy exports clean enough for the tool to use, and keeping it all running. Teams routinely report spending most of their time prepping data before the tool can even touch it.</p>
+<h3>It shows data; it doesn't let you act on it</h3>
+<p>A BI dashboard is a window. Your team can see the number, but they can't update a record, work a queue, run an approval, or trigger the next step &mdash; they jump back into a spreadsheet or another system to do the actual work. For analysts that's fine. For operators, the dashboard is just one more screen to check.</p>
+<p>And the moment you want to put a dashboard in front of <strong>customers</strong> &mdash; each seeing only their own data &mdash; per-seat BI pricing falls apart fast. Embedding analytics for external users in these tools is a months-long engineering project on top of the license cost.</p>
+
+<h2>What custom is good at</h2>
+<p>Custom software is the right call when the data isn't just something you watch &mdash; it's something you run on:</p>
+<ul class="plain">
+<li><strong>Shaped to your exact workflow,</strong> not a generic template you bend your process around.</li>
+<li><strong>People act in it,</strong> not just view it &mdash; edit, track, approve, get alerted, move to the next step.</li>
+<li><strong>You own the whole pipeline,</strong> so the messy-export problem gets solved once, inside the tool, instead of by hand every week.</li>
+<li><strong>Fixed cost, not per-seat-forever.</strong> You pay to build and maintain it, and adding the 51st user doesn't add a license fee.</li>
+<li><strong>Customer-facing by default.</strong> Branded portals where each client sees only their own data are a core feature, not a separate engineering epic.</li>
+</ul>
+
+<h2>Where custom is the wrong answer</h2>
+<p>It's not always the move, and anyone who says it always is is selling something:</p>
+<ul class="plain">
+<li>You need to explore data freely and don't have a fixed process yet &mdash; buy a BI tool.</li>
+<li>Your requirements change daily and haven't settled &mdash; wait until they do.</li>
+<li>The budget or timeline is tiny and a packaged tool covers 80% of it &mdash; use the packaged tool.</li>
+</ul>
+
+<h2>The real comparison: three-year total cost</h2>
+<p>Compared honestly, this is a question of <strong>total cost of ownership over three years</strong>, not sticker price on day one.</p>
+<table class="ptable">
+<thead><tr><th>&nbsp;</th><th>Off-the-shelf BI</th><th>Custom build</th></tr></thead>
+<tbody>
+<tr><td>Upfront cost</td><td>Low</td><td>Higher</td></tr>
+<tr><td>Ongoing cost</td><td>Per-seat, grows with headcount</td><td>Maintenance, stays flat</td></tr>
+<tr><td>Data prep</td><td>Yours to do, repeatedly</td><td>Built in, solved once</td></tr>
+<tr><td>Acting on data</td><td>View only</td><td>Built in</td></tr>
+<tr><td>Customer-facing</td><td>Costly add-on</td><td>Native</td></tr>
+<tr><td>Fit to your process</td><td>You adapt to it</td><td>It adapts to you</td></tr>
+</tbody>
+</table>
+<p>A cheap monthly price that grows with every hire and still leaves your team prepping data by hand can easily cost more over three years than a flat build that does the prep for you. Sometimes it doesn't &mdash; which is exactly the point. Run the three-year number, not the monthly one.</p>
+
+<h2>A simple way to decide</h2>
+<p>Ask one question: <strong>do people need to look at this data, or work in it?</strong></p>
+<ul class="plain">
+<li><strong>Look at it</strong> &mdash; explore, analyze, chart, report &rarr; an off-the-shelf BI tool is probably right.</li>
+<li><strong>Work in it</strong> &mdash; act, update, approve, share with customers, run the operation &rarr; custom is probably worth it.</li>
+</ul>
+<p>If you're in between, start with the tool and build custom for the one workflow your team lives in every day. You rarely need to replace everything at once &mdash; and you can see the kind of thing we build in <a class="ln" href="/work/">our selected work</a>.</p>
+
+  </section>
+  <section class="sec"><h2>Common questions</h2><div class="faq reveal"><details><summary>Is custom software always more expensive than Power BI or Tableau?</summary><p>Not over time. Per-seat tools are cheaper to start but grow with headcount; a custom build is a higher upfront cost that then stays flat. The fair comparison is the three-year total, not the monthly sticker price.</p></details><details><summary>Can't I just embed Power BI or Tableau for my customers?</summary><p>You can, but external or embedded analytics in those tools is a significant engineering project, and the per-viewer economics get expensive fast. Customer-facing portals are often cheaper to build custom.</p></details><details><summary>How much does a custom dashboard cost?</summary><p>It depends entirely on scope. The useful way to size it is against what your current process already costs &mdash; the per-seat licenses plus the hours spent prepping data and rebuilding reports by hand.</p></details><details><summary>Which off-the-shelf BI tool is best?</summary><p>For Microsoft shops, Power BI is the natural fit and cheapest per seat. For heavy visual exploration, Tableau is strong. Metabase is worth a look if you want something lighter and open-source. The right answer depends on your stack and your analysts.</p></details></div></section>
+  </article>
+
+<section class="ctaband reveal">
+  <h2>Not sure which side you're on?</h2>
+  <p>Tell us what your team does with the data every day &mdash; we'll tell you honestly whether you need a build or a subscription.</p>
+  <div class="cta-row">
+    <a class="pill pill-grad" href="/#contact">Start a conversation</a>
+  </div>
+</section>
+</main>
+<footer class="site-foot">
+  <div class="frow">
+    <div>
+      <div class="fbrand"><img src="/favicon.svg" alt="Avi Data Technology logo" /><b>Avi Data <span>Technology</span></b></div>
+      <p class="ftag">We turn the data your business already produces into the dashboards, financial tooling, and internal apps your team actually runs on.</p>
+    </div>
+    <div class="fnav">
+      <div class="fcol">
+        <h5>Company</h5>
+        <a href="/services/">Services</a>
+        <a href="/work/">Selected work</a>
+        <a href="/insights/">Insights</a>
+        <a href="/#process">Our process</a>
+      </div>
+      <div class="fcol">
+        <h5>Selected work</h5>
+        <a href="/work/wealth-platform/">Wealth-planning platform</a>
+        <a href="/work/workforce-dashboard/">Workforce dashboard</a>
+        <a href="/work/dealership-platform/">Dealership platform</a>
+      </div>
+      <div class="fcol">
+        <h5>Contact</h5>
+        <a href="mailto:hello@avidatatechnology.com">hello@avidatatechnology.com</a>
+        <span class="fline">Greenville&ndash;Taylors, SC</span>
+        <a href="/portal/">Client portal</a>
+        <a href="/#contact">Start a conversation</a>
+      </div>
+    </div>
+  </div>
+  <div class="fbot">
+    <span>&copy; 2026 Avi Data Technology. All rights reserved.</span>
+    <span class="dotmint"><i></i>Built on your data, supported for the long run.</span>
+  </div>
+</footer>
+</body>
+</html>
