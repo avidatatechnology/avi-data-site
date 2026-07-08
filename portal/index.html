@@ -745,7 +745,7 @@
   async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens}; } else { await sb.from("ledger_config").insert({}); } }
   async function fetchSessions(){ const { data }=await sb.from("work_sessions").select("*").order("start_ts",{ascending:false}); sessions=data||[]; }
   async function fetchExpenses(){ const { data }=await sb.from("expenses").select("*").order("txn_date",{ascending:false}); expenses=data||[]; }
-  async function fetchAgg(){ try{ const mx=await sb.from("cb_tokens").select("ts").order("ts",{ascending:false}).limit(1); const maxTs=(mx.data&&mx.data[0])?mx.data[0].ts:null; dataAsOf = maxTs? shiftLocal(maxTs) : nowLocal(); const [a,b]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:dataAsOf}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; }catch(e){ sessTok={}; dailyTok=[]; dataAsOf=nowLocal(); } }
+  async function fetchAgg(){ try{ const mx=await sb.from("cb_tokens").select("ts").order("ts",{ascending:false}).limit(1); const maxTs=(mx.data&&mx.data[0])?mx.data[0].ts:null; dataAsOf = maxTs? shiftLocal(maxTs) : nowLocal(); const [a,b]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:nowLocal()}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; }catch(e){ sessTok={}; dailyTok=[]; dataAsOf=nowLocal(); } }
 
   async function loadSpecial(){
     if(!lgWired){ wireLedger(); lgWired=true; }
