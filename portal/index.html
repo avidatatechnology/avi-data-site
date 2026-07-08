@@ -395,6 +395,27 @@
   .lg-rowedit .lg-timewrap{width:auto}
   .lg-dash{color:var(--muted-2)}
   .lg-manual{color:var(--brand-2);font-size:13px}
+  .lg-live-btn{cursor:pointer}
+  .lg-live-btn:hover{filter:brightness(1.18);text-decoration:underline;text-underline-offset:2px}
+  .lg-ovfilter{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .lg-presets{display:flex;gap:4px;flex-wrap:wrap}
+  .lg-preset{background:var(--panel-2);border:1px solid var(--line-soft);color:var(--muted);font-family:var(--fm);font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer}
+  .lg-preset:hover{color:var(--text)}
+  .lg-preset.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .lg-customdates{display:flex;align-items:center;gap:8px;color:var(--muted-2);font-size:12px}
+  .lg-customdates input{width:120px}
+  .lg-ovsel{width:auto;padding:7px 10px;font-size:13px}
+  .lg-chart{width:100%;height:auto;display:block;margin-top:6px}
+  .lg-axt{fill:var(--muted-2);font-size:10px;font-family:var(--fm)}
+  .lg-donutwrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .lg-donut{width:160px;height:160px;flex:none}
+  .lg-dctr{fill:var(--text);font-family:var(--fd);font-weight:800;font-size:15px}
+  .lg-dsub{fill:var(--muted-2);font-size:8px;text-transform:uppercase;letter-spacing:.1em}
+  .lg-legend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:190px}
+  .lg-leg{display:flex;align-items:center;gap:10px;font-size:13px}
+  .lg-legdot{width:11px;height:11px;border-radius:3px;flex:none}
+  .lg-leglbl{flex:1;color:var(--text)}
+  .lg-legval{color:var(--muted);font-family:var(--fm);font-size:12px}
   .lg-subtabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line-soft)}
   .lg-subtab{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--fd);font-weight:600;font-size:13px;padding:9px 14px;cursor:pointer;margin-bottom:-1px}
   .lg-subtab:hover{color:var(--text)}
@@ -440,8 +461,8 @@
   .lg-livewhen{font-family:var(--fm);font-size:13px;color:var(--muted)}
   .lg-livebody{display:grid;grid-template-columns:170px 190px 1fr;gap:16px;align-items:end}
   .lg-livein label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2);margin-bottom:6px}
-  .lg-livein input::-webkit-outer-spin-button,.lg-livein input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-  .lg-livein input[type=number]{-moz-appearance:textfield;appearance:textfield}
+  #specialView input[type=number]::-webkit-outer-spin-button,#specialView input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  #specialView input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .lg-livestats{display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;justify-content:flex-end}
   .lg-livestat .k{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted-2)}
   .lg-livestat .v{font-family:var(--fd);font-weight:700;font-size:20px;margin-top:3px;white-space:nowrap}
@@ -597,12 +618,33 @@
     <!-- ===== REVENUE SUBTABS ===== -->
     <div id="lgRevTabs" style="display:none">
       <div class="lg-subtabs">
+        <button class="lg-subtab" data-rev="overview">Overview</button>
         <button class="lg-subtab" data-rev="chaturbate">Chaturbate</button>
         <button class="lg-subtab" data-rev="Venmo">Venmo</button>
         <button class="lg-subtab" data-rev="CashApp">CashApp</button>
         <button class="lg-subtab" data-rev="Apple Pay">Apple Pay</button>
         <button class="lg-subtab" data-rev="Gifts">Gifts</button>
       </div>
+    </div>
+
+    <!-- ===== REVENUE OVERVIEW ===== -->
+    <div id="lgRevOv" style="display:none">
+      <div class="lg-ovfilter">
+        <div class="lg-presets" id="lg_ov_presets">
+          <button class="lg-preset" data-ovr="30d">30D</button>
+          <button class="lg-preset" data-ovr="3m">3M</button>
+          <button class="lg-preset" data-ovr="ytd">YTD</button>
+          <button class="lg-preset" data-ovr="12m">12M</button>
+          <button class="lg-preset on" data-ovr="all">All</button>
+        </div>
+        <div class="lg-customdates"><input type="text" id="lg_ov_start" placeholder="mm/dd/yyyy" autocomplete="off"><span>&ndash;</span><input type="text" id="lg_ov_end" placeholder="mm/dd/yyyy" autocomplete="off"></div>
+      </div>
+      <div class="summary" id="lg_ov_kpis"></div>
+      <div class="card">
+        <div class="lg-cardhd" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span>Revenue growth</span><select id="lg_ov_type" class="lg-ovsel"><option value="all">All sources</option><option value="Chaturbate">Chaturbate</option><option value="Venmo">Venmo</option><option value="CashApp">CashApp</option><option value="Apple Pay">Apple Pay</option><option value="Gifts">Gifts</option></select></div>
+        <div id="lg_ov_line"></div>
+      </div>
+      <div class="card"><div class="ch">Revenue by source</div><div id="lg_ov_donut"></div></div>
     </div>
 
     <!-- ===== SESSIONS ===== -->
@@ -818,13 +860,13 @@
   function parseTime(s){ s=(s||"").trim().toLowerCase(); if(!s) return null; const ap=/p/.test(s)?"pm":(/a/.test(s)?"am":null); const dig=s.replace(/[^0-9:]/g,""); if(!dig) return null; let h,m; if(dig.includes(":")){ const parts=dig.split(":"); h=parseInt(parts[0],10); m=parseInt(parts[1]||"0",10); } else if(dig.length<=2){ h=parseInt(dig,10); m=0; } else { m=parseInt(dig.slice(-2),10); h=parseInt(dig.slice(0,-2),10); } if(isNaN(h)||isNaN(m)) return null; if(ap==="pm"&&h<12) h+=12; if(ap==="am"&&h===12) h=0; if(h<0||h>23||m<0||m>59) return null; return pad2n(h)+":"+pad2n(m); }
   function to12(hhmm){ if(!hhmm) return ""; const p=hhmm.split(":"); let H=+p[0]; const M=+p[1]; const ap=H>=12?"PM":"AM"; H=H%12||12; return H+":"+pad2n(M)+" "+ap; }
 
-  function ledgerShow(which){ lgTab=which; const rev=which==="rev"; show($("lgDash"),which==="dash"); show($("lgRevTabs"),rev); show($("lgSess"),rev&&revSrc==="chaturbate"); show($("lgRevSrc"),rev&&revSrc!=="chaturbate"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); if(rev){ renderRevTabs(); if(revSrc!=="chaturbate") renderRevSrc(); } window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
+  function ledgerShow(which){ lgTab=which; const rev=which==="rev"; show($("lgDash"),which==="dash"); show($("lgRevTabs"),rev); show($("lgRevOv"),rev&&revSrc==="overview"); show($("lgSess"),rev&&revSrc==="chaturbate"); show($("lgRevSrc"),rev&&revSrc!=="overview"&&revSrc!=="chaturbate"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); if(rev){ renderRevTabs(); if(revSrc==="overview") renderRevOv(); else if(revSrc==="chaturbate") renderLiveCard(); else renderRevSrc(); } window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
   function revShow(src){ revSrc=src; ledgerShow("rev"); }
   function renderRevTabs(){ document.querySelectorAll("[data-rev]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rev")===revSrc)); }
   function revRows(){ return expenses.filter(e=>(e.kind||"expense")==="income" && (e.source||"")===revSrc); }
   async function addRev(){ const rec={ txn_date:dispToIso($("lg_r_date").value)||today, amount:parseFloat($("lg_r_amt").value)||0, notes:$("lg_r_notes").value.trim()||null, kind:"income", source:revSrc, account:null, category:null, brand:null }; const m=$("lg_r_msg"); if(!rec.amount){ m.className="msg err"; m.textContent="Enter an amount."; return; } $("lg_r_add").disabled=true; m.className="msg info"; m.textContent="Saving\u2026"; const { error }=await sb.from("expenses").insert(rec); $("lg_r_add").disabled=false; if(error){ m.className="msg err"; m.textContent=error.message; return; } $("lg_r_amt").value="";$("lg_r_notes").value=""; m.className="msg ok"; m.textContent=revSrc+" revenue added."; await fetchExpenses(); renderAll(); }
   async function saveRev(id){ const rec={ txn_date:dispToIso($("erv_date_"+id).value)||today, notes:($("erv_notes_"+id).value||"").trim()||null, amount:parseFloat($("erv_amt_"+id).value)||0 }; const { error }=await sb.from("expenses").update(rec).eq("id",id); if(error){ alert(error.message); return; } editingRev=null; await fetchExpenses(); renderAll(); }
-  function renderRevSrc(){ if(revSrc==="chaturbate"||!$("lg_r_title")) return; $("lg_r_title").textContent="Add "+revSrc+" revenue"; const rowsAll=revRows(); const mrows=rowsAll.filter(e=>monthOf(e.txn_date)===curMonth); const tot=mrows.reduce((a,b)=>a+Number(b.amount),0), allTime=rowsAll.reduce((a,b)=>a+Number(b.amount),0); $("lg_r_kpis").innerHTML=kpi("This month",lgUSD(tot),monthLabel(curMonth),"grad")+kpi("Entries",String(mrows.length),"")+kpi("All-time",lgUSD(allTime),""); const col=revSort.col; const rows=rowsAll.slice().sort((a,b)=>{ let va,vb; if(col==="amount"){ va=Number(a.amount);vb=Number(b.amount);} else { const fld=col==="date"?"txn_date":col; va=(a[fld]||"").toString().toLowerCase(); vb=(b[fld]||"").toString().toLowerCase(); } if(va<vb) return revSort.dir==="asc"?-1:1; if(va>vb) return revSort.dir==="asc"?1:-1; return 0; }); updateSortArrows("lg_r_table",revSort,"data-rsort"); if(!rows.length){ $("lg_r_body").innerHTML='<tr><td colspan="4" class="lg-empty">No '+revSrc+' entries yet.</td></tr>'; return; } $("lg_r_body").innerHTML=rows.map(e=>{ if(editingRev===e.id){ return '<tr class="lg-liverow"><td><input class="lg-rowinp" id="erv_date_'+e.id+'" value="'+isoToDisp(e.txn_date)+'" placeholder="mm/dd/yyyy" style="width:110px"></td><td><input class="lg-rowinp" id="erv_notes_'+e.id+'" value="'+esc(e.notes)+'" style="width:100%"></td><td class="num"><input class="lg-rowinp" id="erv_amt_'+e.id+'" type="number" step="0.01" value="'+Number(e.amount)+'" style="width:90px;text-align:right"></td><td class="num"><button class="lg-edit" data-ervsave="'+e.id+'">Save</button> <button class="lg-del" data-ervcancel="'+e.id+'">Cancel</button></td></tr>'; } return '<tr><td>'+isoToDisp(e.txn_date)+'</td><td class="lg-notes">'+esc(e.notes)+'</td><td class="num">'+lgUSD(e.amount)+'</td><td class="num"><button class="lg-edit" data-ervedit="'+e.id+'">Edit</button> <button class="lg-del" data-lgdel-rev="'+e.id+'">Delete</button></td></tr>'; }).join(""); }
+  function renderRevSrc(){ if(revSrc==="chaturbate"||revSrc==="overview"||!$("lg_r_title")) return; $("lg_r_title").textContent="Add "+revSrc+" revenue"; const rowsAll=revRows(); const mrows=rowsAll.filter(e=>monthOf(e.txn_date)===curMonth); const tot=mrows.reduce((a,b)=>a+Number(b.amount),0), allTime=rowsAll.reduce((a,b)=>a+Number(b.amount),0); $("lg_r_kpis").innerHTML=kpi("This month",lgUSD(tot),monthLabel(curMonth),"grad")+kpi("Entries",String(mrows.length),"")+kpi("All-time",lgUSD(allTime),""); const col=revSort.col; const rows=rowsAll.slice().sort((a,b)=>{ let va,vb; if(col==="amount"){ va=Number(a.amount);vb=Number(b.amount);} else { const fld=col==="date"?"txn_date":col; va=(a[fld]||"").toString().toLowerCase(); vb=(b[fld]||"").toString().toLowerCase(); } if(va<vb) return revSort.dir==="asc"?-1:1; if(va>vb) return revSort.dir==="asc"?1:-1; return 0; }); updateSortArrows("lg_r_table",revSort,"data-rsort"); if(!rows.length){ $("lg_r_body").innerHTML='<tr><td colspan="4" class="lg-empty">No '+revSrc+' entries yet.</td></tr>'; return; } $("lg_r_body").innerHTML=rows.map(e=>{ if(editingRev===e.id){ return '<tr class="lg-liverow"><td><input class="lg-rowinp" id="erv_date_'+e.id+'" value="'+isoToDisp(e.txn_date)+'" placeholder="mm/dd/yyyy" style="width:110px"></td><td><input class="lg-rowinp" id="erv_notes_'+e.id+'" value="'+esc(e.notes)+'" style="width:100%"></td><td class="num"><input class="lg-rowinp" id="erv_amt_'+e.id+'" type="number" step="0.01" value="'+Number(e.amount)+'" style="width:90px;text-align:right"></td><td class="num"><button class="lg-edit" data-ervsave="'+e.id+'">Save</button> <button class="lg-del" data-ervcancel="'+e.id+'">Cancel</button></td></tr>'; } return '<tr><td>'+isoToDisp(e.txn_date)+'</td><td class="lg-notes">'+esc(e.notes)+'</td><td class="num">'+lgUSD(e.amount)+'</td><td class="num"><button class="lg-edit" data-ervedit="'+e.id+'">Edit</button> <button class="lg-del" data-lgdel-rev="'+e.id+'">Delete</button></td></tr>'; }).join(""); }
 
   async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens, goal_revenue_daily:(data.goal_revenue_daily!=null?+data.goal_revenue_daily:0)}; } else { await sb.from("ledger_config").insert({}); } }
   async function fetchSessions(){ const { data }=await sb.from("work_sessions").select("*").order("start_ts",{ascending:false}); sessions=data||[]; }
@@ -851,7 +893,7 @@
   const monthSessions=(ym)=>sessions.filter(s=>monthOf(s.session_date)===ym);
   const monthExpenses=(ym)=>expenses.filter(e=>monthOf(e.txn_date)===ym);
 
-  function renderAll(){ renderTokStatus(); renderPeriods(); renderDash(); renderSessions(); renderLiveCard(); renderExpenses(); renderSettings(); if($("lgRevTabs")){ renderRevTabs(); renderRevSrc(); } }
+  function renderAll(){ renderTokStatus(); renderPeriods(); renderDash(); renderSessions(); renderLiveCard(); renderExpenses(); renderSettings(); if($("lgRevTabs")){ renderRevTabs(); renderRevSrc(); if($("lg_ov_line")&&lgTab==="rev"&&revSrc==="overview") renderRevOv(); } }
   function shiftMonth(dir){ const p=curMonth.split("-"); const d=new Date(+p[0], (+p[1])-1+dir, 1); curMonth=d.getFullYear()+"-"+pad2n(d.getMonth()+1); renderDash(); renderExpenses(); }
 
   function periodList(earliest){ const out=[]; const t=new Date(); let y=t.getFullYear(), mo=t.getMonth(), half=(t.getDate()<=15?1:2); const floor=earliest||(y+"-"+pad2n(mo+1)+"-"+pad2n(t.getDate())); for(let k=0;k<400;k++){ const last=new Date(y,mo+1,0).getDate(), ml=MONTHS[mo].slice(0,3), mm=pad2n(mo+1); const p= half===2 ? {label:ml+" 16 – "+ml+" "+last+", "+y, start:y+"-"+mm+"-16", end:y+"-"+mm+"-"+pad2n(last)} : {label:ml+" 01 – "+ml+" 15, "+y, start:y+"-"+mm+"-01", end:y+"-"+mm+"-15"}; out.push(p); if(p.start<=floor) break; if(half===2){ half=1; } else { half=2; mo--; if(mo<0){ mo=11; y--; } } } return out; }
@@ -910,26 +952,85 @@
           '<td class="num" colspan="7" style="color:var(--muted-2)">editing times…</td>'+
           '<td class="num"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></td></tr>';
       }
-      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
+      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live lg-live-btn" data-lgend="'+s.id+'" title="Click to end this session">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
     }).join("");
   }
 
   function renderLiveCard(){
     const live=sessions.find(s=>!s.end_ts), card=$("lgLiveCard");
     if(!live){ card.style.display="none"; liveCardId=null; return; }
-    card.style.display=""; liveCardId=live.id; const m=sessionMetrics(live);
+    card.style.display=""; liveCardId=live.id;
+    if(liveBal[live.id]){ live.bal_start=liveBal[live.id].start; live.bal_now=liveBal[live.id].now; }
+    const m=sessionMetrics(live);
     $("lgLiveWhen").textContent="started "+fmtClock(live.start_ts);
     if(document.activeElement!==$("lg_bal_start")) $("lg_bal_start").value=(live.bal_start!=null?live.bal_start:"");
     if(document.activeElement!==$("lg_bal_now")) $("lg_bal_now").value=(live.bal_now!=null?live.bal_now:"");
     $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Live for</div><div class="v">'+fmtDur(m.mins)+'</div></div><div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
   }
-  async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
+  async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; delete liveBal[live.id]; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
   function onBalInput(){
     const live=sessions.find(s=>s.id===liveCardId); if(!live) return;
     const bs=$("lg_bal_start").value.trim(), bn=$("lg_bal_now").value.trim();
     live.bal_start = bs===""?null:(parseInt(bs,10)||0); live.bal_now = bn===""?null:(parseInt(bn,10)||0);
+    liveBal[live.id]={start:live.bal_start,now:live.bal_now};
     renderLiveCard(); renderSessions();
     clearTimeout(balSaveTimer); balSaveTimer=setTimeout(()=>{ sb.from("work_sessions").update({bal_start:live.bal_start,bal_now:live.bal_now}).eq("id",live.id); }, 600);
+  }
+  var OVCOLORS={ "Chaturbate":"#6E8BFF", "Venmo":"#34D8A0", "CashApp":"#5BD6C0", "Apple Pay":"#C9A2FF", "Gifts":"#F2607D", "Other":"#8793AE" };
+  function ovColor(s){ return OVCOLORS[s]||"#6E8BFF"; }
+  function ymd(dt){ return dt.getFullYear()+"-"+pad2n(dt.getMonth()+1)+"-"+pad2n(dt.getDate()); }
+  function svgLine(pts){
+    const W=720,H=290,pl=58,pr=16,ptp=14,pb=32,pw=W-pl-pr,ph=H-ptp-pb;
+    const xs=pts.map(p=>p.t),ys=pts.map(p=>p.y);
+    let minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs); if(minX===maxX){ minX-=86400000; maxX+=86400000; }
+    const maxY=Math.max(Math.max.apply(null,ys),1)*1.08;
+    const X=t=>pl+(t-minX)/(maxX-minX)*pw, Y=v=>ptp+ph-(v/maxY)*ph;
+    let grid=""; for(let i=0;i<=4;i++){ const v=maxY*i/4,y=Y(v); grid+="<line x1='"+pl+"' y1='"+y.toFixed(1)+"' x2='"+(W-pr)+"' y2='"+y.toFixed(1)+"' stroke='rgba(255,255,255,.06)'/><text x='"+(pl-8)+"' y='"+(y+3.5).toFixed(1)+"' text-anchor='end' class='lg-axt'>"+lgUSD(v)+"</text>"; }
+    const fmtD=ms=>{ const d=new Date(ms); return (d.getMonth()+1)+"/"+d.getDate(); };
+    let xlab=""; [0,0.5,1].forEach(fx=>{ const t=minX+(maxX-minX)*fx,x=X(t); xlab+="<text x='"+x.toFixed(1)+"' y='"+(H-10)+"' text-anchor='middle' class='lg-axt'>"+fmtD(t)+"</text>"; });
+    const path=pts.map((p,i)=>(i?"L":"M")+X(p.t).toFixed(1)+" "+Y(p.y).toFixed(1)).join(" ");
+    const area=path+" L "+X(pts[pts.length-1].t).toFixed(1)+" "+Y(0).toFixed(1)+" L "+X(pts[0].t).toFixed(1)+" "+Y(0).toFixed(1)+" Z";
+    return "<svg viewBox='0 0 "+W+" "+H+"' class='lg-chart' preserveAspectRatio='xMidYMid meet'><defs><linearGradient id='lgArea' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#6E8BFF' stop-opacity='0.26'/><stop offset='1' stop-color='#6E8BFF' stop-opacity='0'/></linearGradient></defs>"+grid+"<path d='"+area+"' fill='url(#lgArea)'/><path d='"+path+"' fill='none' stroke='#6E8BFF' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round'/>"+xlab+"</svg>";
+  }
+  function svgDonut(segs){
+    const total=segs.reduce((a,b)=>a+b.value,0);
+    if(total<=0) return "<div class='lg-muted' style='padding:36px;text-align:center'>No revenue in this range.</div>";
+    const r=54,cx=70,cy=70,C=2*Math.PI*r,sw=22; let off=0,arcs="";
+    segs.forEach(s=>{ const len=s.value/total*C; arcs+="<circle cx='"+cx+"' cy='"+cy+"' r='"+r+"' fill='none' stroke='"+s.color+"' stroke-width='"+sw+"' stroke-dasharray='"+len.toFixed(2)+" "+(C-len).toFixed(2)+"' stroke-dashoffset='"+(-off).toFixed(2)+"'/>"; off+=len; });
+    const svg="<svg viewBox='0 0 140 140' class='lg-donut'><g transform='rotate(-90 "+cx+" "+cy+")'>"+arcs+"</g><text x='"+cx+"' y='"+(cy-1)+"' text-anchor='middle' class='lg-dctr'>"+lgUSD(total)+"</text><text x='"+cx+"' y='"+(cy+13)+"' text-anchor='middle' class='lg-dsub'>total</text></svg>";
+    const legend="<div class='lg-legend'>"+segs.map(s=>"<div class='lg-leg'><span class='lg-legdot' style='background:"+s.color+"'></span><span class='lg-leglbl'>"+esc(s.label)+"</span><span class='lg-legval'>"+lgUSD(s.value)+" &middot; "+Math.round(s.value/total*100)+"%</span></div>").join("")+"</div>";
+    return "<div class='lg-donutwrap'>"+svg+legend+"</div>";
+  }
+  function renderRevOv(){
+    if(!$("lg_ov_line")) return;
+    const bySrcDay={};
+    dailyTok.forEach(r=>{ const v=Number(r.tokens||0)*cfg.token_rate; if(v>0){ (bySrcDay["Chaturbate"]=bySrcDay["Chaturbate"]||{}); bySrcDay["Chaturbate"][r.d]=(bySrcDay["Chaturbate"][r.d]||0)+v; } });
+    expenses.filter(e=>(e.kind||"expense")==="income").forEach(e=>{ const s=e.source||"Other"; (bySrcDay[s]=bySrcDay[s]||{}); bySrcDay[s][e.txn_date]=(bySrcDay[s][e.txn_date]||0)+Number(e.amount); });
+    let allDates=[]; Object.keys(bySrcDay).forEach(s=>allDates.push.apply(allDates,Object.keys(bySrcDay[s])));
+    const allStart=allDates.length?allDates.sort()[0]:today;
+    const end=(ovRange.preset==="custom"&&ovRange.end)?ovRange.end:today; let start; const base=new Date(today+"T00:00:00");
+    if(ovRange.preset==="30d"){ base.setDate(base.getDate()-29); start=ymd(base); }
+    else if(ovRange.preset==="3m"){ base.setDate(base.getDate()-89); start=ymd(base); }
+    else if(ovRange.preset==="12m"){ base.setDate(base.getDate()-364); start=ymd(base); }
+    else if(ovRange.preset==="ytd"){ start=today.slice(0,4)+"-01-01"; }
+    else if(ovRange.preset==="custom"){ start=ovRange.start||allStart; }
+    else { start=allStart; }
+    const rs=start, re=end, inRange=d=>d>=rs&&d<=re;
+    document.querySelectorAll("[data-ovr]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-ovr")===ovRange.preset));
+    if(document.activeElement!==$("lg_ov_start")) $("lg_ov_start").value=(ovRange.preset==="custom")?(ovRange.start?isoToDisp(ovRange.start):""):isoToDisp(rs);
+    if(document.activeElement!==$("lg_ov_end")) $("lg_ov_end").value=(ovRange.preset==="custom")?(ovRange.end?isoToDisp(ovRange.end):""):isoToDisp(re);
+    const totalBySrc={}; Object.keys(bySrcDay).forEach(s=>{ let t=0; Object.keys(bySrcDay[s]).forEach(d=>{ if(inRange(d)) t+=bySrcDay[s][d]; }); if(t>0) totalBySrc[s]=t; });
+    const grand=Object.keys(totalBySrc).reduce((a,k)=>a+totalBySrc[k],0);
+    const daysSet={}; Object.keys(bySrcDay).forEach(s=>Object.keys(bySrcDay[s]).forEach(d=>{ if(inRange(d)) daysSet[d]=1; })); const nDays=Object.keys(daysSet).length;
+    const srcKeys=Object.keys(totalBySrc).sort((a,b)=>totalBySrc[b]-totalBySrc[a]); const topSrc=srcKeys[0]||"\u2014";
+    $("lg_ov_kpis").innerHTML=kpi("Total revenue",lgUSD(grand),"","grad")+kpi("Avg / day",nDays?lgUSD(grand/nDays):"\u2014",nDays+" active days")+kpi("Top source",topSrc,totalBySrc[topSrc]?lgUSD(totalBySrc[topSrc]):"")+kpi("Sources",String(srcKeys.length),"");
+    let dayMap={};
+    if(ovType==="all"){ Object.keys(bySrcDay).forEach(s=>Object.keys(bySrcDay[s]).forEach(d=>{ if(inRange(d)) dayMap[d]=(dayMap[d]||0)+bySrcDay[s][d]; })); }
+    else if(bySrcDay[ovType]){ Object.keys(bySrcDay[ovType]).forEach(d=>{ if(inRange(d)) dayMap[d]=(dayMap[d]||0)+bySrcDay[ovType][d]; }); }
+    const sortedDays=Object.keys(dayMap).sort();
+    if(!sortedDays.length){ $("lg_ov_line").innerHTML="<div class='lg-muted' style='padding:40px;text-align:center'>No "+(ovType==="all"?"":esc(ovType)+" ")+"revenue in this range.</div>"; }
+    else { let cum=0; const pts=[{t:new Date(rs+"T00:00:00").getTime(),y:0}]; sortedDays.forEach(d=>{ cum+=dayMap[d]; pts.push({t:new Date(d+"T00:00:00").getTime(),y:cum}); }); pts.push({t:new Date(re+"T00:00:00").getTime(),y:cum}); $("lg_ov_line").innerHTML=svgLine(pts); }
+    $("lg_ov_donut").innerHTML=svgDonut(srcKeys.map(s=>({label:s,value:totalBySrc[s],color:ovColor(s)})));
   }
   function txnRows(){ return expenses.filter(e=>(e.kind||"expense")===txnKind); }
   function renderCatMgr(){ const list=(cats[txnKind]||[]); $("lg_cat_list").innerHTML=list.length?list.map(c=>'<span class="lg-catchip">'+esc(c)+'<button data-catdel="'+esc(c)+'" title="Remove">&times;</button></span>').join(""):'<span class="lg-muted">No categories yet \u2014 add one below.</span>'; }
@@ -970,9 +1071,9 @@
     cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt,goal_revenue_daily:gd}; m.className="msg ok"; m.textContent="Saved."; renderAll();
   }
 
-  let editingSession=null, editingRow=null, offDetail=null, offEvents={}, liveCardId=null, balSaveTimer=null;
+  let editingSession=null, editingRow=null, offDetail=null, offEvents={}, liveCardId=null, balSaveTimer=null, liveBal={};
   let txnKind="expense", txnSort={col:"date",dir:"desc"}, sessSort=null, editingTxn=null, cats={expense:[],income:[]};
-  let revSrc="chaturbate", revSort={col:"date",dir:"desc"}, editingRev=null;
+  let revSrc="overview", revSort={col:"date",dir:"desc"}, editingRev=null, ovType="all", ovRange={preset:"all",start:null,end:null};
   function resetSessionForm(){ editingSession=null; $("lg_s_start").value="";$("lg_s_end").value=""; $("lg_s_add").textContent="Add session"; $("lg_s_cancel").style.display="none"; }
   function editSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; editingSession=id; $("lg_s_date").value=isoToDisp(s.session_date); $("lg_s_start").value=to12((s.start_ts||"").slice(11,16)); $("lg_s_end").value=s.end_ts?to12(s.end_ts.slice(11,16)):""; $("lg_s_platform").value=s.platform||"Chaturbate"; $("lg_s_add").textContent="Update session"; $("lg_s_cancel").style.display=""; const m=$("lg_s_msg"); m.className="msg info"; m.textContent="Editing this session — change the times and Update."; window.scrollTo({top:$("lgSess").offsetTop-20,behavior:"smooth"}); }
   async function addSession(){
@@ -1001,6 +1102,7 @@
     if(error){ alert(error.message); return; }
     editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll();
   }
+  async function endLive(id){ const s=sessions.find(x=>x.id===id); if(!s) return; if(!confirm("End this live session now? It'll be timestamped to the current time and switch to your imported token totals.")) return; const end=nowLocal(); delete liveBal[id]; const { error }=await sb.from("work_sessions").update({end_ts:end,bal_start:null,bal_now:null}).eq("id",id); if(error){ alert(error.message); return; } editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
   async function fetchOffEvents(d){ try{ const { data }=await sb.rpc("ledger_offsession_events",{p_shift:TZ_SHIFT,p_day:d,p_now:nowLocal()}); offEvents[d]=data||[]; }catch(e){ offEvents[d]=[]; } if(offDetail===d) renderSessions(); }
 
   async function addExpense(){
@@ -1028,7 +1130,7 @@
     m.className="msg info"; m.textContent="Importing "+rows.length+"…"; let err=null;
     for(let i=0;i<rows.length;i+=500){ const { error }=await sb.from("cb_tokens").upsert(rows.slice(i,i+500),{ onConflict:"user_id,ts", ignoreDuplicates:true }); if(error){ err=error; break; } }
     if(err){ m.className="msg err"; m.textContent=err.message; return; }
-    for(let i=0;i<sessions.length;i++){ const s=sessions[i]; if(!s.end_ts && s.bal_now!=null){ s.bal_start=null; s.bal_now=null; sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",s.id); } }
+    for(let i=0;i<sessions.length;i++){ const s=sessions[i]; if(!s.end_ts && (s.bal_now!=null || liveBal[s.id])){ delete liveBal[s.id]; s.bal_start=null; s.bal_now=null; sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",s.id); } }
     await fetchAgg(); renderAll(); m.className="msg ok"; m.textContent=lgN(rows.length)+" rows processed from "+list.length+" file"+(list.length>1?"s":"")+".";
   }
 
@@ -1047,6 +1149,10 @@
     $("lg_e_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-tsort]"); if(!th) return; const col=th.getAttribute("data-tsort"); if(txnSort.col===col){ txnSort.dir=txnSort.dir==="asc"?"desc":"asc"; } else { txnSort={col,dir:"desc"}; } renderExpenses(); });
     $("lg_s_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-ssort]"); if(!th) return; const col=th.getAttribute("data-ssort"); if(sessSort&&sessSort.col===col){ sessSort.dir=sessSort.dir==="asc"?"desc":"asc"; } else { sessSort={col,dir:"desc"}; } renderSessions(); });
     $("lgRevTabs").addEventListener("click",e=>{ const b=e.target.closest("[data-rev]"); if(b) revShow(b.getAttribute("data-rev")); });
+    $("lg_ov_type").addEventListener("change",()=>{ ovType=$("lg_ov_type").value; renderRevOv(); });
+    $("lg_ov_presets").addEventListener("click",e=>{ const b=e.target.closest("[data-ovr]"); if(!b) return; ovRange={preset:b.getAttribute("data-ovr"),start:null,end:null}; renderRevOv(); });
+    $("lg_ov_start").addEventListener("change",()=>{ const v=dispToIso($("lg_ov_start").value); if(v){ ovRange.preset="custom"; ovRange.start=v; renderRevOv(); } });
+    $("lg_ov_end").addEventListener("change",()=>{ const v=dispToIso($("lg_ov_end").value); if(v){ ovRange.preset="custom"; ovRange.end=v; renderRevOv(); } });
     $("lg_r_add").addEventListener("click",addRev);
     $("lg_r_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-rsort]"); if(!th) return; const col=th.getAttribute("data-rsort"); if(revSort.col===col){ revSort.dir=revSort.dir==="asc"?"desc":"asc"; } else { revSort={col,dir:"desc"}; } renderRevSrc(); });
     $("lg_r_body").addEventListener("click",e=>{
@@ -1063,11 +1169,14 @@
     $("lg_s_cancel").addEventListener("click",resetSessionForm);
     $("lg_bal_start").addEventListener("input",onBalInput);
     $("lg_bal_now").addEventListener("input",onBalInput);
+    $("lg_bal_start").addEventListener("change",onBalInput);
+    $("lg_bal_now").addEventListener("change",onBalInput);
     $("lg_bal_clear").addEventListener("click",clearBal);
     ["lg_s_start","lg_s_end"].forEach(id=>$(id).addEventListener("blur",()=>{ const v=parseTime($(id).value); if(v) $(id).value=to12(v); }));
     $("lg_s_endclear").addEventListener("click",()=>{ $("lg_s_end").value=""; $("lg_s_end").focus(); });
     $("lg_s_body").addEventListener("click",e=>{
       const off=e.target.closest("[data-lgoff]"); if(off){ const d=off.getAttribute("data-lgoff"); if(offDetail===d){ offDetail=null; renderSessions(); } else { offDetail=d; renderSessions(); if(offEvents[d]===undefined) fetchOffEvents(d); } return; }
+      const en=e.target.closest("[data-lgend]"); if(en){ endLive(en.getAttribute("data-lgend")); return; }
       const ed=e.target.closest("[data-lgedit-sess]"); if(ed){ editingRow=ed.getAttribute("data-lgedit-sess"); renderSessions(); return; }
       const cl=e.target.closest("[data-lgclearend]"); if(cl){ const inp=$("rowend_"+cl.getAttribute("data-lgclearend")); if(inp){ inp.value=""; inp.focus(); } return; }
       const sv=e.target.closest("[data-lgsave-sess]"); if(sv){ saveRow(sv.getAttribute("data-lgsave-sess")); return; }
