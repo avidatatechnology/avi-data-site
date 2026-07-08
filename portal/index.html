@@ -394,6 +394,7 @@
   .lg-rowinp{width:104px;padding:7px 9px!important;font-size:13px}
   .lg-rowedit .lg-timewrap{width:auto}
   .lg-dash{color:var(--muted-2)}
+  .lg-manual{color:var(--brand-2);font-size:13px}
   @media (max-width:900px){.lg-sess-top{grid-template-columns:1fr}}
   .lg-grid-e{grid-template-columns:150px 130px 1fr 130px 130px}
   .lg-grid-set{grid-template-columns:1fr 1fr}
@@ -721,7 +722,7 @@
   function adminShow(which){ show($("adminView"),which==="dash"); show($("clientPage"),which==="client"); show($("projectPage"),which==="project"); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
   /* ---------- SPECIAL: private ledger (timesheet + P&L) ---------- */
-  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[];
+  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[], dataAsOf=null;
   const TZ_SHIFT=(function(){ try{ const d=new Date(); const la=new Date(d.toLocaleString("en-US",{timeZone:"America/Los_Angeles"})); const loc=new Date(d.toLocaleString("en-US")); return Math.round((loc-la)/3600000); }catch(e){ return 3; } })();
   const lgUSD=(n)=>Number(n||0).toLocaleString("en-US",{style:"currency",currency:"USD"});
   const lgN=(n)=>Math.round(Number(n||0)).toLocaleString("en-US");
@@ -732,6 +733,7 @@
   function fmtDur(mins){ const h=Math.floor(mins/60), m=Math.round(mins%60); return h+":"+pad2n(m); }
   function fmtClock(ts){ const d=new Date(ts); let h=d.getHours(), m=d.getMinutes(); const ap=h>=12?"PM":"AM"; h=h%12||12; return h+":"+pad2n(m)+" "+ap; }
   function nowLocal(){ const d=new Date(); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+pad2n(d.getHours())+":"+pad2n(d.getMinutes())+":"+pad2n(d.getSeconds()); }
+  function shiftLocal(ts){ const d=new Date(new Date(ts).getTime()+TZ_SHIFT*3600000); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+pad2n(d.getHours())+":"+pad2n(d.getMinutes())+":"+pad2n(d.getSeconds()); }
   function parseTime(s){ s=(s||"").trim().toLowerCase(); if(!s) return null; const ap=/p/.test(s)?"pm":(/a/.test(s)?"am":null); const dig=s.replace(/[^0-9:]/g,""); if(!dig) return null; let h,m; if(dig.includes(":")){ const parts=dig.split(":"); h=parseInt(parts[0],10); m=parseInt(parts[1]||"0",10); } else if(dig.length<=2){ h=parseInt(dig,10); m=0; } else { m=parseInt(dig.slice(-2),10); h=parseInt(dig.slice(0,-2),10); } if(isNaN(h)||isNaN(m)) return null; if(ap==="pm"&&h<12) h+=12; if(ap==="am"&&h===12) h=0; if(h<0||h>23||m<0||m>59) return null; return pad2n(h)+":"+pad2n(m); }
   function to12(hhmm){ if(!hhmm) return ""; const p=hhmm.split(":"); let H=+p[0]; const M=+p[1]; const ap=H>=12?"PM":"AM"; H=H%12||12; return H+":"+pad2n(M)+" "+ap; }
 
@@ -740,7 +742,7 @@
   async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens}; } else { await sb.from("ledger_config").insert({}); } }
   async function fetchSessions(){ const { data }=await sb.from("work_sessions").select("*").order("start_ts",{ascending:false}); sessions=data||[]; }
   async function fetchExpenses(){ const { data }=await sb.from("expenses").select("*").order("txn_date",{ascending:false}); expenses=data||[]; }
-  async function fetchAgg(){ try{ const [a,b]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:nowLocal()}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; }catch(e){ sessTok={}; dailyTok=[]; } }
+  async function fetchAgg(){ try{ const mx=await sb.from("cb_tokens").select("ts").order("ts",{ascending:false}).limit(1); const maxTs=(mx.data&&mx.data[0])?mx.data[0].ts:null; dataAsOf = maxTs? shiftLocal(maxTs) : nowLocal(); const [a,b]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:dataAsOf}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; }catch(e){ sessTok={}; dailyTok=[]; dataAsOf=nowLocal(); } }
 
   async function loadSpecial(){
     if(!lgWired){ wireLedger(); lgWired=true; }
@@ -753,7 +755,7 @@
     renderAll(); ledgerShow(lgTab);
   }
 
-  function sessionMetrics(s){ const tokens=sessTok[s.id]||0; const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=s.end_ts||nowLocal(); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
+  function sessionMetrics(s){ const tokens=(s.manual_tokens!=null)?Number(s.manual_tokens):(sessTok[s.id]||0); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=s.end_ts||dataAsOf||nowLocal(); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
 
   const monthSessions=(ym)=>sessions.filter(s=>monthOf(s.session_date)===ym);
   const monthExpenses=(ym)=>expenses.filter(e=>monthOf(e.txn_date)===ym);
@@ -773,7 +775,7 @@
   function renderDash(){
     $("lg_month_lbl").textContent=monthLabel(curMonth); const ym=curMonth;
     const dmap={}; dailyTok.forEach(r=>{ if(monthOf(r.d)===ym) dmap[r.d]=(dmap[r.d]||0)+Number(r.tokens||0); });
-    const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(s.end_ts||nowLocal())-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
+    const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(s.end_ts||dataAsOf||nowLocal())-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
     let tokens=0; for(const k in dmap) tokens+=dmap[k]; const rev=tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; let mins=0; for(const k in smin) mins+=smin[k];
     $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(rev),"","grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(net),"")+kpi("Tokens",lgN(tokens),"");
     const goalTok=cfg.token_rate>0?cfg.goal_revenue/cfg.token_rate:0; const gRev=cfg.goal_revenue?rev/cfg.goal_revenue*100:0, gTok=goalTok?tokens/goalTok*100:0;
@@ -791,10 +793,15 @@
   function renderSessions(){
     if(!sessions.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
     $("lg_s_body").innerHTML=sessions.map(s=>{ const m=sessionMetrics(s);
-      if(editingRow===s.id){ const sv=to12((s.start_ts||"").slice(11,16)), ev=s.end_ts?to12(s.end_ts.slice(11,16)):"";
-        return '<tr class="lg-liverow"><td>'+isoToDisp(s.session_date)+'</td><td><div class="lg-rowedit"><input class="lg-time lg-rowinp" id="rowstart_'+s.id+'" value="'+sv+'"><span class="lg-dash">–</span><div class="lg-timewrap"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div></td><td class="num" colspan="7" style="color:var(--muted-2)">editing times…</td><td class="num"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></td></tr>';
+      if(editingRow===s.id){ const sv=to12((s.start_ts||"").slice(11,16)), ev=s.end_ts?to12(s.end_ts.slice(11,16)):"", tv=(s.manual_tokens!=null)?s.manual_tokens:"";
+        return '<tr class="lg-liverow"><td>'+isoToDisp(s.session_date)+'</td>'+
+          '<td><div class="lg-rowedit"><input class="lg-time lg-rowinp" id="rowstart_'+s.id+'" value="'+sv+'"><span class="lg-dash">–</span><div class="lg-timewrap"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div></td>'+
+          '<td class="num" style="color:var(--muted-2)">—</td><td style="color:var(--muted-2)">—</td>'+
+          '<td class="num"><input class="lg-rowinp" id="rowtok_'+s.id+'" placeholder="auto" value="'+tv+'" style="width:88px;text-align:right"></td>'+
+          '<td class="num" colspan="4" style="color:var(--muted-2)">blank = auto from import</td>'+
+          '<td class="num"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></td></tr>';
       }
-      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
+      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+(s.manual_tokens!=null?' <span class="lg-manual" title="manually set">&#9679;</span>':'')+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
     }).join("");
   }
 
@@ -843,7 +850,8 @@
     if(rawEnd&&!en){ alert("End time not understood — try 10:50 PM, or clear it to stay live."); return; }
     const dateIso=s.session_date; let start=dateIso+"T"+st+":00", end=null;
     if(en){ end=dateIso+"T"+en+":00"; if(new Date(end)<=new Date(start)){ const d=new Date(dateIso+"T00:00:00"); d.setDate(d.getDate()+1); end=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+en+":00"; } }
-    const { error }=await sb.from("work_sessions").update({start_ts:start,end_ts:end}).eq("id",id);
+    const mtRaw=($("rowtok_"+id).value||"").trim(); const manual_tokens = mtRaw===""? null : (parseInt(mtRaw.replace(/[^0-9]/g,""),10)||0);
+    const { error }=await sb.from("work_sessions").update({start_ts:start,end_ts:end,manual_tokens}).eq("id",id);
     if(error){ alert(error.message); return; }
     editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll();
   }
