@@ -731,7 +731,7 @@
   function adminShow(which){ show($("adminView"),which==="dash"); show($("clientPage"),which==="client"); show($("projectPage"),which==="project"); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
   /* ---------- SPECIAL: private ledger (timesheet + P&L) ---------- */
-  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[], dataAsOf=null;
+  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[], dataAsOf=null, offDaily=[];
   const TZ_SHIFT=(function(){ try{ const d=new Date(); const la=new Date(d.toLocaleString("en-US",{timeZone:"America/Los_Angeles"})); const loc=new Date(d.toLocaleString("en-US")); return Math.round((loc-la)/3600000); }catch(e){ return 3; } })();
   const lgUSD=(n)=>Number(n||0).toLocaleString("en-US",{style:"currency",currency:"USD"});
   const lgN=(n)=>Math.round(Number(n||0)).toLocaleString("en-US");
@@ -751,7 +751,7 @@
   async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens}; } else { await sb.from("ledger_config").insert({}); } }
   async function fetchSessions(){ const { data }=await sb.from("work_sessions").select("*").order("start_ts",{ascending:false}); sessions=data||[]; }
   async function fetchExpenses(){ const { data }=await sb.from("expenses").select("*").order("txn_date",{ascending:false}); expenses=data||[]; }
-  async function fetchAgg(){ try{ const mx=await sb.from("cb_tokens").select("ts").order("ts",{ascending:false}).limit(1); const maxTs=(mx.data&&mx.data[0])?mx.data[0].ts:null; dataAsOf = maxTs? shiftLocal(maxTs) : nowLocal(); const [a,b]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:nowLocal()}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; }catch(e){ sessTok={}; dailyTok=[]; dataAsOf=nowLocal(); } }
+  async function fetchAgg(){ try{ const mx=await sb.from("cb_tokens").select("ts").order("ts",{ascending:false}).limit(1); const maxTs=(mx.data&&mx.data[0])?mx.data[0].ts:null; dataAsOf = maxTs? shiftLocal(maxTs) : nowLocal(); const [a,b,c]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:nowLocal()}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}), sb.rpc("ledger_offsession_daily",{p_shift:TZ_SHIFT,p_now:nowLocal()}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; offDaily=c.data||[]; }catch(e){ sessTok={}; dailyTok=[]; offDaily=[]; dataAsOf=nowLocal(); } }
 
   async function loadSpecial(){
     if(!lgWired){ wireLedger(); lgWired=true; }
@@ -801,11 +801,9 @@
   }
 
   function renderSessions(){
-    const activeByDay={}; sessions.forEach(s=>{ if(s.session_date) activeByDay[s.session_date]=(activeByDay[s.session_date]||0)+(sessTok[s.id]||0); });
-    const dayTotal={}; dailyTok.forEach(r=>{ dayTotal[r.d]=(dayTotal[r.d]||0)+Number(r.tokens||0); });
     const items=sessions.map(s=>({off:false,s:s}));
-    Object.keys(dayTotal).forEach(d=>{ const o=dayTotal[d]-(activeByDay[d]||0); if(o>0) items.push({off:true,d:d,tokens:o}); });
-    items.sort((a,b)=>{ const da=a.off?a.d:a.s.session_date, db=b.off?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; if(a.off!==b.off) return a.off?1:-1; if(!a.off&&!b.off) return (a.s.start_ts>b.s.start_ts)?1:-1; return 0; });
+    offDaily.forEach(r=>{ const tk=Number(r.tokens)||0; if(tk>0) items.push({off:true,d:r.d,tokens:tk,st:r.last_lts||(r.d+"T23:59:59")}); });
+    items.sort((a,b)=>{ const da=a.off?a.d:a.s.session_date, db=b.off?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; const ta=a.off?a.st:a.s.start_ts, tb=b.off?b.st:b.s.start_ts; return ta<tb?1:-1; });
     if(!items.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
     $("lg_s_body").innerHTML=items.map(it=>{
       if(it.off){ const rev=it.tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; const exp=offDetail===it.d;
