@@ -805,7 +805,7 @@
     const dayTotal={}; dailyTok.forEach(r=>{ dayTotal[r.d]=(dayTotal[r.d]||0)+Number(r.tokens||0); });
     const items=sessions.map(s=>({off:false,s:s}));
     Object.keys(dayTotal).forEach(d=>{ const o=dayTotal[d]-(activeByDay[d]||0); if(o>0) items.push({off:true,d:d,tokens:o}); });
-    items.sort((a,b)=>{ const da=a.off?a.d:a.s.session_date, db=b.off?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; if(a.off!==b.off) return a.off?1:-1; if(!a.off&&!b.off) return (a.s.start_ts<b.s.start_ts)?1:-1; return 0; });
+    items.sort((a,b)=>{ const da=a.off?a.d:a.s.session_date, db=b.off?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; if(a.off!==b.off) return a.off?1:-1; if(!a.off&&!b.off) return (a.s.start_ts>b.s.start_ts)?1:-1; return 0; });
     if(!items.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
     $("lg_s_body").innerHTML=items.map(it=>{
       if(it.off){ const rev=it.tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; const exp=offDetail===it.d;
