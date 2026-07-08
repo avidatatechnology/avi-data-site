@@ -406,13 +406,17 @@
   .lg-customdates input{width:120px}
   .lg-ovsel{width:auto;padding:7px 10px;font-size:13px}
   .lg-chart{width:100%;height:auto;display:block;margin-top:6px}
-  .lg-axt{fill:var(--muted-2);font-size:10px;font-family:var(--fm)}
-  .lg-donutwrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap;margin-top:8px}
-  .lg-donut{width:160px;height:160px;flex:none}
-  .lg-dctr{fill:var(--text);font-family:var(--fd);font-weight:800;font-size:15px}
+  .lg-axt{fill:var(--muted-2);font-size:9px;font-family:var(--fm)}
+  .lg-ovgrid{align-items:stretch}
+  @media (max-width:760px){.lg-ovgrid{grid-template-columns:1fr}}
+  .lg-donutwrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:6px}
+  .lg-donut{width:132px;height:132px;flex:none}
+  .lg-dctr{fill:var(--text);font-family:var(--fd);font-weight:800;font-size:13px}
   .lg-dsub{fill:var(--muted-2);font-size:8px;text-transform:uppercase;letter-spacing:.1em}
-  .lg-legend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:190px}
-  .lg-leg{display:flex;align-items:center;gap:10px;font-size:13px}
+  .lg-legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:150px}
+  .lg-seg{cursor:pointer;transition:stroke-width .15s ease, opacity .15s ease}
+  .lg-leg{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;transition:opacity .15s ease;border-radius:7px;padding:3px 5px;margin:-3px -5px}
+  .lg-leg.hot{background:rgba(255,255,255,.05)}
   .lg-legdot{width:11px;height:11px;border-radius:3px;flex:none}
   .lg-leglbl{flex:1;color:var(--text)}
   .lg-legval{color:var(--muted);font-family:var(--fm);font-size:12px}
@@ -640,11 +644,13 @@
         <div class="lg-customdates"><input type="text" id="lg_ov_start" placeholder="mm/dd/yyyy" autocomplete="off"><span>&ndash;</span><input type="text" id="lg_ov_end" placeholder="mm/dd/yyyy" autocomplete="off"></div>
       </div>
       <div class="summary" id="lg_ov_kpis"></div>
+      <div class="lg-two lg-ovgrid">
       <div class="card">
         <div class="lg-cardhd" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span>Revenue growth</span><select id="lg_ov_type" class="lg-ovsel"><option value="all">All sources</option><option value="Chaturbate">Chaturbate</option><option value="Venmo">Venmo</option><option value="CashApp">CashApp</option><option value="Apple Pay">Apple Pay</option><option value="Gifts">Gifts</option></select></div>
         <div id="lg_ov_line"></div>
       </div>
       <div class="card"><div class="ch">Revenue by source</div><div id="lg_ov_donut"></div></div>
+      </div>
     </div>
 
     <!-- ===== SESSIONS ===== -->
@@ -980,26 +986,32 @@
   function ovColor(s){ return OVCOLORS[s]||"#6E8BFF"; }
   function ymd(dt){ return dt.getFullYear()+"-"+pad2n(dt.getMonth()+1)+"-"+pad2n(dt.getDate()); }
   function svgLine(pts){
-    const W=720,H=290,pl=58,pr=16,ptp=14,pb=32,pw=W-pl-pr,ph=H-ptp-pb;
+    const W=560,H=196,pl=48,pr=12,ptp=10,pb=24,pw=W-pl-pr,ph=H-ptp-pb;
     const xs=pts.map(p=>p.t),ys=pts.map(p=>p.y);
     let minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs); if(minX===maxX){ minX-=86400000; maxX+=86400000; }
-    const maxY=Math.max(Math.max.apply(null,ys),1)*1.08;
+    const maxY=Math.max(Math.max.apply(null,ys),1)*1.1;
     const X=t=>pl+(t-minX)/(maxX-minX)*pw, Y=v=>ptp+ph-(v/maxY)*ph;
-    let grid=""; for(let i=0;i<=4;i++){ const v=maxY*i/4,y=Y(v); grid+="<line x1='"+pl+"' y1='"+y.toFixed(1)+"' x2='"+(W-pr)+"' y2='"+y.toFixed(1)+"' stroke='rgba(255,255,255,.06)'/><text x='"+(pl-8)+"' y='"+(y+3.5).toFixed(1)+"' text-anchor='end' class='lg-axt'>"+lgUSD(v)+"</text>"; }
+    let grid=""; for(let i=0;i<=2;i++){ const v=maxY*i/2,y=Y(v); grid+="<line x1='"+pl+"' y1='"+y.toFixed(1)+"' x2='"+(W-pr)+"' y2='"+y.toFixed(1)+"' stroke='rgba(255,255,255,.05)' stroke-width='1'/><text x='"+(pl-7)+"' y='"+(y+3).toFixed(1)+"' text-anchor='end' class='lg-axt'>"+lgUSD(v)+"</text>"; }
     const fmtD=ms=>{ const d=new Date(ms); return (d.getMonth()+1)+"/"+d.getDate(); };
-    let xlab=""; [0,0.5,1].forEach(fx=>{ const t=minX+(maxX-minX)*fx,x=X(t); xlab+="<text x='"+x.toFixed(1)+"' y='"+(H-10)+"' text-anchor='middle' class='lg-axt'>"+fmtD(t)+"</text>"; });
+    let xlab=""; [0,1].forEach(fx=>{ const t=minX+(maxX-minX)*fx,x=X(t); xlab+="<text x='"+x.toFixed(1)+"' y='"+(H-8)+"' text-anchor='"+(fx===0?"start":"end")+"' class='lg-axt'>"+fmtD(t)+"</text>"; });
     const path=pts.map((p,i)=>(i?"L":"M")+X(p.t).toFixed(1)+" "+Y(p.y).toFixed(1)).join(" ");
     const area=path+" L "+X(pts[pts.length-1].t).toFixed(1)+" "+Y(0).toFixed(1)+" L "+X(pts[0].t).toFixed(1)+" "+Y(0).toFixed(1)+" Z";
-    return "<svg viewBox='0 0 "+W+" "+H+"' class='lg-chart' preserveAspectRatio='xMidYMid meet'><defs><linearGradient id='lgArea' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#6E8BFF' stop-opacity='0.26'/><stop offset='1' stop-color='#6E8BFF' stop-opacity='0'/></linearGradient></defs>"+grid+"<path d='"+area+"' fill='url(#lgArea)'/><path d='"+path+"' fill='none' stroke='#6E8BFF' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round'/>"+xlab+"</svg>";
+    return "<svg viewBox='0 0 "+W+" "+H+"' class='lg-chart' preserveAspectRatio='xMidYMid meet'><defs><linearGradient id='lgArea' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#6E8BFF' stop-opacity='0.18'/><stop offset='1' stop-color='#6E8BFF' stop-opacity='0'/></linearGradient></defs>"+grid+"<path d='"+area+"' fill='url(#lgArea)'/><path d='"+path+"' fill='none' stroke='#6E8BFF' stroke-width='1.75' stroke-linejoin='round' stroke-linecap='round'/>"+xlab+"</svg>";
   }
   function svgDonut(segs){
     const total=segs.reduce((a,b)=>a+b.value,0);
     if(total<=0) return "<div class='lg-muted' style='padding:36px;text-align:center'>No revenue in this range.</div>";
-    const r=54,cx=70,cy=70,C=2*Math.PI*r,sw=22; let off=0,arcs="";
-    segs.forEach(s=>{ const len=s.value/total*C; arcs+="<circle cx='"+cx+"' cy='"+cy+"' r='"+r+"' fill='none' stroke='"+s.color+"' stroke-width='"+sw+"' stroke-dasharray='"+len.toFixed(2)+" "+(C-len).toFixed(2)+"' stroke-dashoffset='"+(-off).toFixed(2)+"'/>"; off+=len; });
-    const svg="<svg viewBox='0 0 140 140' class='lg-donut'><g transform='rotate(-90 "+cx+" "+cy+")'>"+arcs+"</g><text x='"+cx+"' y='"+(cy-1)+"' text-anchor='middle' class='lg-dctr'>"+lgUSD(total)+"</text><text x='"+cx+"' y='"+(cy+13)+"' text-anchor='middle' class='lg-dsub'>total</text></svg>";
-    const legend="<div class='lg-legend'>"+segs.map(s=>"<div class='lg-leg'><span class='lg-legdot' style='background:"+s.color+"'></span><span class='lg-leglbl'>"+esc(s.label)+"</span><span class='lg-legval'>"+lgUSD(s.value)+" &middot; "+Math.round(s.value/total*100)+"%</span></div>").join("")+"</div>";
+    const r=52,cx=70,cy=70,C=2*Math.PI*r,sw=17; let off=0,arcs="";
+    segs.forEach(s=>{ const frac=s.value/total, len=frac*C, fm=(off/C)+(frac/2), th=fm*2*Math.PI, tx=(Math.sin(th)*7).toFixed(1), ty=(-Math.cos(th)*7).toFixed(1);
+      arcs+="<circle class='lg-seg' data-src='"+esc(s.label)+"' data-tx='"+tx+"' data-ty='"+ty+"' cx='"+cx+"' cy='"+cy+"' r='"+r+"' fill='none' stroke='"+s.color+"' stroke-width='"+sw+"' stroke-dasharray='"+len.toFixed(2)+" "+(C-len).toFixed(2)+"' stroke-dashoffset='"+(-off).toFixed(2)+"' transform='rotate(-90 "+cx+" "+cy+")'/>"; off+=len; });
+    const svg="<svg viewBox='0 0 140 140' class='lg-donut'>"+arcs+"<text x='"+cx+"' y='"+(cy-1)+"' text-anchor='middle' class='lg-dctr'>"+lgUSD(total)+"</text><text x='"+cx+"' y='"+(cy+13)+"' text-anchor='middle' class='lg-dsub'>total</text></svg>";
+    const legend="<div class='lg-legend'>"+segs.map(s=>"<div class='lg-leg' data-src='"+esc(s.label)+"'><span class='lg-legdot' style='background:"+s.color+"'></span><span class='lg-leglbl'>"+esc(s.label)+"</span><span class='lg-legval'>"+lgUSD(s.value)+" \u00b7 "+Math.round(s.value/total*100)+"%</span></div>").join("")+"</div>";
     return "<div class='lg-donutwrap'>"+svg+legend+"</div>";
+  }
+  function ovHighlight(src){
+    const box=$("lg_ov_donut"); if(!box) return;
+    box.querySelectorAll(".lg-seg").forEach(c=>{ const on=src&&c.getAttribute("data-src")===src; c.style.strokeWidth=on?"23":"17"; c.style.opacity=(src&&!on)?"0.32":"1"; c.setAttribute("transform",(on?("translate("+c.getAttribute("data-tx")+" "+c.getAttribute("data-ty")+") "):"")+"rotate(-90 70 70)"); });
+    box.querySelectorAll(".lg-leg").forEach(l=>{ const on=src&&l.getAttribute("data-src")===src; l.classList.toggle("hot",!!on); l.style.opacity=(src&&!on)?"0.5":"1"; });
   }
   function renderRevOv(){
     if(!$("lg_ov_line")) return;
@@ -1150,6 +1162,11 @@
     $("lg_s_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-ssort]"); if(!th) return; const col=th.getAttribute("data-ssort"); if(sessSort&&sessSort.col===col){ sessSort.dir=sessSort.dir==="asc"?"desc":"asc"; } else { sessSort={col,dir:"desc"}; } renderSessions(); });
     $("lgRevTabs").addEventListener("click",e=>{ const b=e.target.closest("[data-rev]"); if(b) revShow(b.getAttribute("data-rev")); });
     $("lg_ov_type").addEventListener("change",()=>{ ovType=$("lg_ov_type").value; renderRevOv(); });
+    (function(){ const box=$("lg_ov_donut"); if(!box) return;
+      box.addEventListener("mouseover",e=>{ const el=e.target.closest("[data-src]"); ovHighlight(el?el.getAttribute("data-src"):null); });
+      box.addEventListener("mouseleave",()=>ovHighlight(null));
+      box.addEventListener("click",e=>{ const el=e.target.closest("[data-src]"); if(!el) return; const src=el.getAttribute("data-src"); const tabs={Chaturbate:"chaturbate",Venmo:"Venmo",CashApp:"CashApp","Apple Pay":"Apple Pay",Gifts:"Gifts"}; if(tabs[src]) revShow(tabs[src]); });
+    })();
     $("lg_ov_presets").addEventListener("click",e=>{ const b=e.target.closest("[data-ovr]"); if(!b) return; ovRange={preset:b.getAttribute("data-ovr"),start:null,end:null}; renderRevOv(); });
     $("lg_ov_start").addEventListener("change",()=>{ const v=dispToIso($("lg_ov_start").value); if(v){ ovRange.preset="custom"; ovRange.start=v; renderRevOv(); } });
     $("lg_ov_end").addEventListener("change",()=>{ const v=dispToIso($("lg_ov_end").value); if(v){ ovRange.preset="custom"; ovRange.end=v; renderRevOv(); } });
