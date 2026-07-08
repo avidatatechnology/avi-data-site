@@ -401,6 +401,11 @@
   .lg-per-btn{background:var(--raised);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 13px;font-size:12px;font-weight:600;font-family:var(--fb);cursor:pointer;transition:.14s}
   .lg-per-btn:hover{border-color:var(--brand);color:#fff}
   .lg-per-btn.primary{background:linear-gradient(110deg,var(--brand),#4a5fd6);border:none;color:#fff}
+  .lg-form{margin-top:16px}
+  .lg-edit{background:none;border:none;color:var(--muted-2);font-size:12px;cursor:pointer;padding:4px 8px;border-radius:7px;transition:.14s;font-family:var(--fb)}
+  .lg-edit:hover{color:var(--brand-2);background:rgba(110,139,255,.1)}
+  .lg-live{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 9px;border-radius:20px;background:rgba(52,216,160,.16);color:var(--mint)}
+  table.lgt tr.lg-liverow td{background:rgba(52,216,160,.045)}
   @media (max-width:760px){.lg-two{grid-template-columns:1fr}.lg-grid-s,.lg-grid-e,.lg-grid-set{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -538,7 +543,7 @@
       </div>
       <div class="card lg-form">
         <div class="ch">Log a Chaturbate session</div>
-        <div class="csub">Tokens earned come from the import automatically &mdash; anything received between your start and end times counts.</div>
+        <div class="csub">Tokens come from the import automatically &mdash; anything received between your start and end counts. <b>Still streaming? Leave End blank</b> and the session stays open, counting up to now.</div>
         <div class="lg-grid lg-grid-s" style="margin-top:8px">
           <div><label>Date</label><div class="dp"><input type="text" class="dpi" id="lg_s_date" placeholder="mm/dd/yyyy" autocomplete="off"><button type="button" class="dpbtn" tabindex="-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button></div></div>
           <div><label>Start</label><input type="time" id="lg_s_start"></div>
@@ -546,7 +551,7 @@
           <div><label>Platform</label><input type="text" id="lg_s_platform" value="Chaturbate"></div>
         </div>
         <label style="margin-top:12px">Notes</label><input type="text" id="lg_s_notes" placeholder="optional">
-        <div class="lg-actions"><button class="btn" id="lg_s_add" style="width:auto">Add session</button><span class="msg" id="lg_s_msg"></span></div>
+        <div class="lg-actions"><button class="btn" id="lg_s_add" style="width:auto">Add session</button><button class="btn-ghost" id="lg_s_cancel" style="width:auto;display:none">Cancel</button><span class="msg" id="lg_s_msg"></span></div>
       </div>
       <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt"><thead><tr><th>Date</th><th>Time</th><th class="num">Dur</th><th>Platform</th><th class="num">Tokens</th><th class="num">Revenue</th><th class="num">Tax</th><th class="num">Net</th><th class="num">$/hr</th><th></th></tr></thead><tbody id="lg_s_body"></tbody></table></div></div>
     </div>
@@ -713,13 +718,14 @@
   function monthLabel(ym){ if(!ym) return "—"; const p=ym.split("-"); return MONTHS[(+p[1])-1]+" "+p[0]; }
   function fmtDur(mins){ const h=Math.floor(mins/60), m=Math.round(mins%60); return h+":"+pad2n(m); }
   function fmtClock(ts){ const d=new Date(ts); let h=d.getHours(), m=d.getMinutes(); const ap=h>=12?"PM":"AM"; h=h%12||12; return h+":"+pad2n(m)+" "+ap; }
+  function nowLocal(){ const d=new Date(); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+pad2n(d.getHours())+":"+pad2n(d.getMinutes())+":"+pad2n(d.getSeconds()); }
 
   function ledgerShow(which){ lgTab=which; show($("lgDash"),which==="dash"); show($("lgSess"),which==="sess"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
   async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens}; } else { await sb.from("ledger_config").insert({}); } }
   async function fetchSessions(){ const { data }=await sb.from("work_sessions").select("*").order("start_ts",{ascending:false}); sessions=data||[]; }
   async function fetchExpenses(){ const { data }=await sb.from("expenses").select("*").order("txn_date",{ascending:false}); expenses=data||[]; }
-  async function fetchAgg(){ try{ const [a,b]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; }catch(e){ sessTok={}; dailyTok=[]; } }
+  async function fetchAgg(){ try{ const [a,b]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:nowLocal()}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; }catch(e){ sessTok={}; dailyTok=[]; } }
 
   async function loadSpecial(){
     if(!lgWired){ wireLedger(); lgWired=true; }
@@ -732,7 +738,7 @@
     renderAll(); ledgerShow(lgTab);
   }
 
-  function sessionMetrics(s){ const tokens=sessTok[s.id]||0; const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const mins=Math.max(0,(new Date(s.end_ts)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0 }; }
+  function sessionMetrics(s){ const tokens=sessTok[s.id]||0; const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=s.end_ts||nowLocal(); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
 
   const monthSessions=(ym)=>sessions.filter(s=>monthOf(s.session_date)===ym);
   const monthExpenses=(ym)=>expenses.filter(e=>monthOf(e.txn_date)===ym);
@@ -752,7 +758,7 @@
   function renderDash(){
     $("lg_month_lbl").textContent=monthLabel(curMonth); const ym=curMonth;
     const dmap={}; dailyTok.forEach(r=>{ if(monthOf(r.d)===ym) dmap[r.d]=(dmap[r.d]||0)+Number(r.tokens||0); });
-    const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(s.end_ts)-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
+    const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(s.end_ts||nowLocal())-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
     let tokens=0; for(const k in dmap) tokens+=dmap[k]; const rev=tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; let mins=0; for(const k in smin) mins+=smin[k];
     $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(rev),"","grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(net),"")+kpi("Tokens",lgN(tokens),"");
     const goalTok=cfg.token_rate>0?cfg.goal_revenue/cfg.token_rate:0; const gRev=cfg.goal_revenue?rev/cfg.goal_revenue*100:0, gTok=goalTok?tokens/goalTok*100:0;
@@ -769,7 +775,7 @@
 
   function renderSessions(){
     if(!sessions.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet. Add one above, then import your token export.</td></tr>'; return; }
-    $("lg_s_body").innerHTML=sessions.map(s=>{ const m=sessionMetrics(s); return '<tr><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+fmtClock(s.end_ts)+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>'; }).join("");
+    $("lg_s_body").innerHTML=sessions.map(s=>{ const m=sessionMetrics(s); return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>'; }).join("");
   }
 
   function renderExpenses(){
@@ -792,16 +798,21 @@
     cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt}; m.className="msg ok"; m.textContent="Saved."; renderAll();
   }
 
+  let editingSession=null;
+  function resetSessionForm(){ editingSession=null; $("lg_s_start").value="";$("lg_s_end").value="";$("lg_s_notes").value=""; $("lg_s_add").textContent="Add session"; $("lg_s_cancel").style.display="none"; }
+  function editSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; editingSession=id; $("lg_s_date").value=isoToDisp(s.session_date); $("lg_s_start").value=(s.start_ts||"").slice(11,16); $("lg_s_end").value=(s.end_ts||"").slice(11,16); $("lg_s_platform").value=s.platform||"Chaturbate"; $("lg_s_notes").value=s.notes||""; $("lg_s_add").textContent="Update session"; $("lg_s_cancel").style.display=""; const m=$("lg_s_msg"); m.className="msg info"; m.textContent="Editing this session — change the times and Update."; window.scrollTo({top:$("lgSess").offsetTop-20,behavior:"smooth"}); }
   async function addSession(){
     const dateIso=dispToIso($("lg_s_date").value)||today, st=$("lg_s_start").value, en=$("lg_s_end").value, m=$("lg_s_msg");
-    if(!st||!en){ m.className="msg err"; m.textContent="Enter start and end times."; return; }
-    let start=dateIso+"T"+st+":00", end=dateIso+"T"+en+":00";
-    if(new Date(end)<=new Date(start)){ const d=new Date(dateIso+"T00:00:00"); d.setDate(d.getDate()+1); end=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+en+":00"; }
+    if(!st){ m.className="msg err"; m.textContent="Enter at least a start time."; return; }
+    let start=dateIso+"T"+st+":00", end=null;
+    if(en){ end=dateIso+"T"+en+":00"; if(new Date(end)<=new Date(start)){ const d=new Date(dateIso+"T00:00:00"); d.setDate(d.getDate()+1); end=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+en+":00"; } }
     const rec={ session_date:dateIso, start_ts:start, end_ts:end, platform:$("lg_s_platform").value.trim()||"Chaturbate", notes:$("lg_s_notes").value.trim()||null };
+    const wasEdit=!!editingSession;
     $("lg_s_add").disabled=true; m.className="msg info"; m.textContent="Saving…";
-    const { error }=await sb.from("work_sessions").insert(rec); $("lg_s_add").disabled=false;
+    const { error }= wasEdit ? await sb.from("work_sessions").update(rec).eq("id",editingSession) : await sb.from("work_sessions").insert(rec);
+    $("lg_s_add").disabled=false;
     if(error){ m.className="msg err"; m.textContent=error.message; return; }
-    $("lg_s_start").value="";$("lg_s_end").value="";$("lg_s_notes").value=""; m.className="msg ok"; m.textContent="Session added.";
+    resetSessionForm(); m.className="msg ok"; m.textContent= wasEdit? "Session updated." : "Session added.";
     await Promise.all([fetchSessions(),fetchAgg()]); curMonth=monthOf(dateIso); renderAll();
   }
 
@@ -857,7 +868,8 @@
     $("lg_periods").addEventListener("click",e=>{ if(e.target.closest('[data-per="upload"]')) $("lg_tok_file").click(); });
     $("lg_exp_btn").addEventListener("click",()=>$("lg_exp_file").click());
     $("lg_exp_file").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) importExpenses(f); });
-    $("lg_s_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }); });
+    $("lg_s_cancel").addEventListener("click",resetSessionForm);
+    $("lg_s_body").addEventListener("click",e=>{ const ed=e.target.closest("[data-lgedit-sess]"); if(ed){ editSession(ed.getAttribute("data-lgedit-sess")); return; } const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ if(editingSession===b.getAttribute("data-lgdel-sess")) resetSessionForm(); await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }); });
     $("lg_e_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ await fetchExpenses(); renderAll(); }); });
   }
 
