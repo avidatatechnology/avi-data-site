@@ -395,6 +395,37 @@
   .lg-rowedit .lg-timewrap{width:auto}
   .lg-dash{color:var(--muted-2)}
   .lg-manual{color:var(--brand-2);font-size:13px}
+  .lg-subtabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line-soft)}
+  .lg-subtab{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--fd);font-weight:600;font-size:13px;padding:9px 14px;cursor:pointer;margin-bottom:-1px}
+  .lg-subtab:hover{color:var(--text)}
+  .lg-subtab.on{color:var(--text);border-bottom-color:var(--brand)}
+  .lg-grid-r{grid-template-columns:170px 160px}
+  .lg-sortable{cursor:pointer;user-select:none;white-space:nowrap}
+  .lg-sortable:hover{color:var(--text)}
+  .lg-arrow{color:var(--brand-2);font-size:10px}
+  .lg-catmgr{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:12px}
+  .lg-catmgr-tog{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--fb);padding:0}
+  .lg-catmgr-tog:hover{color:var(--text)}
+  .lg-catmgr-body{margin-top:12px}
+  .lg-catlist{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .lg-catchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:var(--fm);background:var(--panel-2);border:1px solid var(--line-soft);border-radius:20px;padding:4px 6px 4px 11px;color:var(--muted)}
+  .lg-catchip button{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
+  .lg-catchip button:hover{color:var(--rose)}
+  .lg-catadd{display:flex;gap:8px;max-width:360px}
+  .lg-catadd input{flex:1}
+  .lg-rowinp{padding:7px 9px!important;font-size:13px}
+  select.lg-rowinp{min-width:110px}
+  .lg-pnl{max-width:560px}
+  .pnl-sec{font-family:var(--fm);font-size:10px;letter-spacing:.1em;color:var(--muted-2);margin:16px 0 4px;text-transform:uppercase}
+  .pnl-sec:first-child{margin-top:6px}
+  .pnl-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:14px;font-variant-numeric:tabular-nums}
+  .pnl-row span:first-child{color:var(--muted)}
+  .pnl-row span:last-child{font-family:var(--fm);color:var(--text)}
+  .pnl-sub{border-bottom:2px solid var(--line)}
+  .pnl-sub span{font-weight:700}.pnl-sub span:first-child{color:var(--text)}
+  .pnl-net{border-bottom:none;margin-top:12px;padding-top:14px;border-top:2px solid var(--line)}
+  .pnl-net span{font-family:var(--fd);font-weight:800;font-size:17px}.pnl-net span:first-child{color:var(--text)}
+  .pnl-net .pos{color:var(--mint)}.pnl-net .neg{color:var(--rose)}
   .lg-offrow td{color:var(--muted)!important;background:rgba(255,255,255,.015)}
   .lg-offlbl{font-style:italic;color:var(--muted-2)}
   .lg-auto{font-size:11px;color:var(--muted-2);font-family:var(--fm)}
@@ -541,7 +572,7 @@
       <div><div class="eyebrow">Private · owner only</div><h1>Ledger</h1></div>
       <div class="lg-tabs">
         <button class="lg-tab active" data-lg="dash">Dashboard</button>
-        <button class="lg-tab" data-lg="sess">Chaturbate Sessions</button>
+        <button class="lg-tab" data-lg="rev">Revenue</button>
         <button class="lg-tab" data-lg="exp">Expenses</button>
         <button class="lg-tab" data-lg="set">Settings</button>
       </div>
@@ -559,11 +590,19 @@
         <div class="card"><div class="ch">Goals vs actual</div><div id="lg_d_goals"></div></div>
         <div class="card"><div class="ch">Daily averages</div><div id="lg_d_avg"></div></div>
       </div>
-      <div class="lg-two">
-        <div class="card"><div class="ch">Expenses by category</div><div id="lg_d_expcat"></div></div>
-        <div class="card lg-netcard"><div class="ch">Net income</div><div id="lg_d_net"></div></div>
-      </div>
       <div class="card lg-tablecard"><div class="lg-cardhd">Daily breakdown</div><div class="lg-scroll"><table class="lgt"><thead><tr><th>Date</th><th class="num">Hours</th><th class="num">Tokens</th><th class="num">Revenue</th><th class="num">Tax</th><th class="num">Net</th><th class="num">$/hr</th></tr></thead><tbody id="lg_d_daily"></tbody></table></div></div>
+      <div class="card lg-pnl"><div class="ch">Profit &amp; Loss &middot; <span id="lg_pnl_month" style="color:var(--muted);font-weight:400"></span></div><div id="lg_d_pnl"></div></div>
+    </div>
+
+    <!-- ===== REVENUE SUBTABS ===== -->
+    <div id="lgRevTabs" style="display:none">
+      <div class="lg-subtabs">
+        <button class="lg-subtab" data-rev="chaturbate">Chaturbate</button>
+        <button class="lg-subtab" data-rev="Venmo">Venmo</button>
+        <button class="lg-subtab" data-rev="CashApp">CashApp</button>
+        <button class="lg-subtab" data-rev="Apple Pay">Apple Pay</button>
+        <button class="lg-subtab" data-rev="Gifts">Gifts</button>
+      </div>
     </div>
 
     <!-- ===== SESSIONS ===== -->
@@ -597,28 +636,40 @@
           <div class="lg-livestats" id="lgLiveStats"></div>
         </div>
       </div>
-      <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt"><thead><tr><th>Date</th><th>Time</th><th class="num">Dur</th><th>Platform</th><th class="num">Tokens</th><th class="num">Revenue</th><th class="num">Tax</th><th class="num">Net</th><th class="num">$/hr</th><th></th></tr></thead><tbody id="lg_s_body"></tbody></table></div></div>
+      <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt" id="lg_s_table"><thead><tr><th class="lg-sortable" data-ssort="date">Date</th><th class="lg-sortable" data-ssort="time">Time</th><th class="num lg-sortable" data-ssort="dur">Dur</th><th class="lg-sortable" data-ssort="platform">Platform</th><th class="num lg-sortable" data-ssort="tokens">Tokens</th><th class="num lg-sortable" data-ssort="revenue">Revenue</th><th class="num lg-sortable" data-ssort="tax">Tax</th><th class="num lg-sortable" data-ssort="net">Net</th><th class="num lg-sortable" data-ssort="hourly">$/hr</th><th></th></tr></thead><tbody id="lg_s_body"></tbody></table></div></div>
+    </div>
+
+    <!-- ===== REVENUE SOURCE (manual) ===== -->
+    <div id="lgRevSrc" style="display:none">
+      <div class="summary" id="lg_r_kpis"></div>
+      <div class="card lg-form">
+        <div class="ch" id="lg_r_title">Add revenue</div>
+        <div class="lg-grid lg-grid-r" style="margin-top:10px">
+          <div><label>Date</label><div class="dp"><input type="text" class="dpi" id="lg_r_date" placeholder="mm/dd/yyyy" autocomplete="off"><button type="button" class="dpbtn" tabindex="-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button></div></div>
+          <div><label>Amount ($)</label><input type="number" step="0.01" min="0" id="lg_r_amt" placeholder="0.00"></div>
+        </div>
+        <label style="margin-top:12px">Notes</label><input type="text" id="lg_r_notes" placeholder="what it was">
+        <div class="lg-actions"><button class="btn" id="lg_r_add" style="width:auto">Add</button><span class="msg" id="lg_r_msg"></span></div>
+      </div>
+      <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt" id="lg_r_table"><thead><tr><th class="lg-sortable" data-rsort="date">Date</th><th class="lg-sortable" data-rsort="notes">Notes</th><th class="num lg-sortable" data-rsort="amount">Amount</th><th></th></tr></thead><tbody id="lg_r_body"></tbody></table></div></div>
     </div>
 
     <!-- ===== EXPENSES ===== -->
     <div id="lgExp" style="display:none">
-      <div class="card lg-import">
-        <div class="lg-imp-l"><div class="ch">Import expenses</div><div class="lg-imp-sub">CSV columns: Date, Account, Category, Type, Notes, Amount</div></div>
-        <div class="lg-imp-r"><input type="file" id="lg_exp_file" accept=".csv" hidden><button class="btn" id="lg_exp_btn" style="width:auto">Upload expense CSV</button><span class="msg" id="lg_exp_imsg"></span></div>
-      </div>
+      <div class="summary" id="lg_e_kpis"></div>
       <div class="card lg-form">
-        <div class="ch">Add expense</div>
-        <div class="lg-grid lg-grid-e" style="margin-top:8px">
+        <div class="ch" id="txnFormTitle">Add expense</div>
+        <div class="lg-grid lg-grid-e" style="margin-top:10px">
           <div><label>Date</label><div class="dp"><input type="text" class="dpi" id="lg_e_date" placeholder="mm/dd/yyyy" autocomplete="off"><button type="button" class="dpbtn" tabindex="-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button></div></div>
           <div><label>Account</label><input type="text" id="lg_e_account" placeholder="Chase"></div>
-          <div><label>Category</label><input type="text" id="lg_e_cat" list="lg_e_catlist" placeholder="Technology"><datalist id="lg_e_catlist"></datalist></div>
+          <div><label>Category</label><select id="lg_e_cat"></select></div>
           <div><label>Amount ($)</label><input type="number" step="0.01" min="0" id="lg_e_amt" placeholder="0.00"></div>
         </div>
         <label style="margin-top:12px">Notes</label><input type="text" id="lg_e_notes" placeholder="what it was">
         <div class="lg-actions"><button class="btn" id="lg_e_add" style="width:auto">Add expense</button><span class="msg" id="lg_e_msg"></span></div>
+        <div class="lg-catmgr"><button type="button" class="lg-catmgr-tog" id="lg_cat_tog">Manage categories ▸</button><div class="lg-catmgr-body" id="lg_cat_body" style="display:none"><div class="lg-catlist" id="lg_cat_list"></div><div class="lg-catadd"><input type="text" id="lg_cat_new" placeholder="New category name"><button class="lg-per-btn primary" id="lg_cat_add">Add</button></div></div></div>
       </div>
-      <div class="summary" id="lg_e_kpis"></div>
-      <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt"><thead><tr><th>Date</th><th>Account</th><th>Category</th><th>Notes</th><th class="num">Amount</th><th></th></tr></thead><tbody id="lg_e_body"></tbody></table></div></div>
+      <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt" id="lg_e_table"><thead><tr><th class="lg-sortable" data-tsort="date">Date</th><th class="lg-sortable" data-tsort="account">Account</th><th class="lg-sortable" data-tsort="category">Category</th><th class="lg-sortable" data-tsort="notes">Notes</th><th class="num lg-sortable" data-tsort="amount">Amount</th><th></th></tr></thead><tbody id="lg_e_body"></tbody></table></div></div>
     </div>
 
     <!-- ===== SETTINGS ===== -->
@@ -630,6 +681,7 @@
           <div><label>Token value ($)</label><input type="number" step="0.001" min="0" id="lg_cfg_rate"></div>
           <div><label>Tax rate (%)</label><input type="number" step="1" min="0" max="100" id="lg_cfg_tax"></div>
           <div><label>Monthly revenue goal ($)</label><input type="number" step="1" min="0" id="lg_cfg_goalrev"></div>
+          <div><label>Daily revenue goal ($)</label><input type="number" step="1" min="0" id="lg_cfg_goalday"></div>
           <div><label>Monthly token goal</label><input type="number" id="lg_cfg_goaltok" readonly><div class="lg-hint">Auto-calculated from revenue goal &divide; token value.</div></div>
         </div>
         <div class="lg-actions"><button class="btn" id="lg_cfg_save" style="width:auto">Save settings</button><span class="msg" id="lg_cfg_msg"></span></div>
@@ -751,7 +803,7 @@
   function adminShow(which){ show($("adminView"),which==="dash"); show($("clientPage"),which==="client"); show($("projectPage"),which==="project"); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
   /* ---------- SPECIAL: private ledger (timesheet + P&L) ---------- */
-  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[], dataAsOf=null, offDaily=[];
+  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0,goal_revenue_daily:0}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[], dataAsOf=null, offDaily=[];
   const TZ_SHIFT=(function(){ try{ const d=new Date(); const la=new Date(d.toLocaleString("en-US",{timeZone:"America/Los_Angeles"})); const loc=new Date(d.toLocaleString("en-US")); return Math.round((loc-la)/3600000); }catch(e){ return 3; } })();
   const lgUSD=(n)=>Number(n||0).toLocaleString("en-US",{style:"currency",currency:"USD"});
   const lgN=(n)=>Math.round(Number(n||0)).toLocaleString("en-US");
@@ -766,31 +818,40 @@
   function parseTime(s){ s=(s||"").trim().toLowerCase(); if(!s) return null; const ap=/p/.test(s)?"pm":(/a/.test(s)?"am":null); const dig=s.replace(/[^0-9:]/g,""); if(!dig) return null; let h,m; if(dig.includes(":")){ const parts=dig.split(":"); h=parseInt(parts[0],10); m=parseInt(parts[1]||"0",10); } else if(dig.length<=2){ h=parseInt(dig,10); m=0; } else { m=parseInt(dig.slice(-2),10); h=parseInt(dig.slice(0,-2),10); } if(isNaN(h)||isNaN(m)) return null; if(ap==="pm"&&h<12) h+=12; if(ap==="am"&&h===12) h=0; if(h<0||h>23||m<0||m>59) return null; return pad2n(h)+":"+pad2n(m); }
   function to12(hhmm){ if(!hhmm) return ""; const p=hhmm.split(":"); let H=+p[0]; const M=+p[1]; const ap=H>=12?"PM":"AM"; H=H%12||12; return H+":"+pad2n(M)+" "+ap; }
 
-  function ledgerShow(which){ lgTab=which; show($("lgDash"),which==="dash"); show($("lgSess"),which==="sess"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
+  function ledgerShow(which){ lgTab=which; const rev=which==="rev"; show($("lgDash"),which==="dash"); show($("lgRevTabs"),rev); show($("lgSess"),rev&&revSrc==="chaturbate"); show($("lgRevSrc"),rev&&revSrc!=="chaturbate"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); if(rev){ renderRevTabs(); if(revSrc!=="chaturbate") renderRevSrc(); } window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
+  function revShow(src){ revSrc=src; ledgerShow("rev"); }
+  function renderRevTabs(){ document.querySelectorAll("[data-rev]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rev")===revSrc)); }
+  function revRows(){ return expenses.filter(e=>(e.kind||"expense")==="income" && (e.source||"")===revSrc); }
+  async function addRev(){ const rec={ txn_date:dispToIso($("lg_r_date").value)||today, amount:parseFloat($("lg_r_amt").value)||0, notes:$("lg_r_notes").value.trim()||null, kind:"income", source:revSrc, account:null, category:null, brand:null }; const m=$("lg_r_msg"); if(!rec.amount){ m.className="msg err"; m.textContent="Enter an amount."; return; } $("lg_r_add").disabled=true; m.className="msg info"; m.textContent="Saving\u2026"; const { error }=await sb.from("expenses").insert(rec); $("lg_r_add").disabled=false; if(error){ m.className="msg err"; m.textContent=error.message; return; } $("lg_r_amt").value="";$("lg_r_notes").value=""; m.className="msg ok"; m.textContent=revSrc+" revenue added."; await fetchExpenses(); renderAll(); }
+  async function saveRev(id){ const rec={ txn_date:dispToIso($("erv_date_"+id).value)||today, notes:($("erv_notes_"+id).value||"").trim()||null, amount:parseFloat($("erv_amt_"+id).value)||0 }; const { error }=await sb.from("expenses").update(rec).eq("id",id); if(error){ alert(error.message); return; } editingRev=null; await fetchExpenses(); renderAll(); }
+  function renderRevSrc(){ if(revSrc==="chaturbate"||!$("lg_r_title")) return; $("lg_r_title").textContent="Add "+revSrc+" revenue"; const rowsAll=revRows(); const mrows=rowsAll.filter(e=>monthOf(e.txn_date)===curMonth); const tot=mrows.reduce((a,b)=>a+Number(b.amount),0), allTime=rowsAll.reduce((a,b)=>a+Number(b.amount),0); $("lg_r_kpis").innerHTML=kpi("This month",lgUSD(tot),monthLabel(curMonth),"grad")+kpi("Entries",String(mrows.length),"")+kpi("All-time",lgUSD(allTime),""); const col=revSort.col; const rows=rowsAll.slice().sort((a,b)=>{ let va,vb; if(col==="amount"){ va=Number(a.amount);vb=Number(b.amount);} else { const fld=col==="date"?"txn_date":col; va=(a[fld]||"").toString().toLowerCase(); vb=(b[fld]||"").toString().toLowerCase(); } if(va<vb) return revSort.dir==="asc"?-1:1; if(va>vb) return revSort.dir==="asc"?1:-1; return 0; }); updateSortArrows("lg_r_table",revSort,"data-rsort"); if(!rows.length){ $("lg_r_body").innerHTML='<tr><td colspan="4" class="lg-empty">No '+revSrc+' entries yet.</td></tr>'; return; } $("lg_r_body").innerHTML=rows.map(e=>{ if(editingRev===e.id){ return '<tr class="lg-liverow"><td><input class="lg-rowinp" id="erv_date_'+e.id+'" value="'+isoToDisp(e.txn_date)+'" placeholder="mm/dd/yyyy" style="width:110px"></td><td><input class="lg-rowinp" id="erv_notes_'+e.id+'" value="'+esc(e.notes)+'" style="width:100%"></td><td class="num"><input class="lg-rowinp" id="erv_amt_'+e.id+'" type="number" step="0.01" value="'+Number(e.amount)+'" style="width:90px;text-align:right"></td><td class="num"><button class="lg-edit" data-ervsave="'+e.id+'">Save</button> <button class="lg-del" data-ervcancel="'+e.id+'">Cancel</button></td></tr>'; } return '<tr><td>'+isoToDisp(e.txn_date)+'</td><td class="lg-notes">'+esc(e.notes)+'</td><td class="num">'+lgUSD(e.amount)+'</td><td class="num"><button class="lg-edit" data-ervedit="'+e.id+'">Edit</button> <button class="lg-del" data-lgdel-rev="'+e.id+'">Delete</button></td></tr>'; }).join(""); }
 
-  async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens}; } else { await sb.from("ledger_config").insert({}); } }
+  async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens, goal_revenue_daily:(data.goal_revenue_daily!=null?+data.goal_revenue_daily:0)}; } else { await sb.from("ledger_config").insert({}); } }
   async function fetchSessions(){ const { data }=await sb.from("work_sessions").select("*").order("start_ts",{ascending:false}); sessions=data||[]; }
   async function fetchExpenses(){ const { data }=await sb.from("expenses").select("*").order("txn_date",{ascending:false}); expenses=data||[]; }
+  async function fetchCats(){ try{ const { data }=await sb.from("ledger_categories").select("kind,name"); cats={expense:[],income:[]}; (data||[]).forEach(r=>{ (cats[r.kind]=cats[r.kind]||[]).push(r.name); }); (cats.expense||[]).sort(); (cats.income||[]).sort(); }catch(e){ cats={expense:[],income:[]}; } }
   async function fetchAgg(){ try{ const mx=await sb.from("cb_tokens").select("ts").order("ts",{ascending:false}).limit(1); const maxTs=(mx.data&&mx.data[0])?mx.data[0].ts:null; dataAsOf = maxTs? shiftLocal(maxTs) : nowLocal(); const [a,b,c]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:nowLocal()}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}), sb.rpc("ledger_offsession_daily",{p_shift:TZ_SHIFT,p_now:nowLocal()}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; offDaily=c.data||[]; }catch(e){ sessTok={}; dailyTok=[]; offDaily=[]; dataAsOf=nowLocal(); } }
 
   async function loadSpecial(){
     if(!lgWired){ wireLedger(); lgWired=true; }
     if(!$("lg_s_date").value) $("lg_s_date").value=isoToDisp(today);
     if(!$("lg_e_date").value) $("lg_e_date").value=isoToDisp(today);
+    if($("lg_r_date") && !$("lg_r_date").value) $("lg_r_date").value=isoToDisp(today);
     attachAllDP($("specialView"));
-    try{ await Promise.all([fetchCfg(),fetchSessions(),fetchExpenses(),fetchAgg()]); }catch(e){}
+    try{ await Promise.all([fetchCfg(),fetchSessions(),fetchExpenses(),fetchAgg(),fetchCats()]); }catch(e){}
     const months=sessions.map(s=>monthOf(s.session_date)).filter(Boolean).sort();
     curMonth = months.length ? months[months.length-1] : today.slice(0,7);
     renderAll(); ledgerShow(lgTab);
   }
 
   function sessEnd(s){ return s.end_ts || ((s.bal_now!=null)? nowLocal() : (dataAsOf||nowLocal())); }
+  function sessSortVal(it,col){ if(it.off){ const rev=it.tokens*cfg.token_rate; switch(col){ case "date":return it.d; case "time":return it.st||it.d; case "dur":return -1; case "platform":return ""; case "tokens":return it.tokens; case "revenue":return rev; case "tax":return rev*cfg.tax_rate; case "net":return rev-rev*cfg.tax_rate; case "hourly":return -1; default:return it.d; } } const s=it.s, m=sessionMetrics(s); switch(col){ case "date":return s.session_date; case "time":return s.start_ts||""; case "dur":return m.mins; case "platform":return (s.platform||"").toLowerCase(); case "tokens":return m.tokens; case "revenue":return m.rev; case "tax":return m.tax; case "net":return m.net; case "hourly":return m.hourly; default:return s.session_date; } }
   function sessionMetrics(s){ const tokens=(s.bal_now!=null)?Math.max(0,Number(s.bal_now)-Number(s.bal_start||0)):(sessTok[s.id]||0); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=sessEnd(s); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
 
   const monthSessions=(ym)=>sessions.filter(s=>monthOf(s.session_date)===ym);
   const monthExpenses=(ym)=>expenses.filter(e=>monthOf(e.txn_date)===ym);
 
-  function renderAll(){ renderTokStatus(); renderPeriods(); renderDash(); renderSessions(); renderLiveCard(); renderExpenses(); renderSettings(); }
+  function renderAll(){ renderTokStatus(); renderPeriods(); renderDash(); renderSessions(); renderLiveCard(); renderExpenses(); renderSettings(); if($("lgRevTabs")){ renderRevTabs(); renderRevSrc(); } }
   function shiftMonth(dir){ const p=curMonth.split("-"); const d=new Date(+p[0], (+p[1])-1+dir, 1); curMonth=d.getFullYear()+"-"+pad2n(d.getMonth()+1); renderDash(); renderExpenses(); }
 
   function periodList(earliest){ const out=[]; const t=new Date(); let y=t.getFullYear(), mo=t.getMonth(), half=(t.getDate()<=15?1:2); const floor=earliest||(y+"-"+pad2n(mo+1)+"-"+pad2n(t.getDate())); for(let k=0;k<400;k++){ const last=new Date(y,mo+1,0).getDate(), ml=MONTHS[mo].slice(0,3), mm=pad2n(mo+1); const p= half===2 ? {label:ml+" 16 – "+ml+" "+last+", "+y, start:y+"-"+mm+"-16", end:y+"-"+mm+"-"+pad2n(last)} : {label:ml+" 01 – "+ml+" 15, "+y, start:y+"-"+mm+"-01", end:y+"-"+mm+"-15"}; out.push(p); if(p.start<=floor) break; if(half===2){ half=1; } else { half=2; mo--; if(mo<0){ mo=11; y--; } } } return out; }
@@ -808,22 +869,33 @@
     const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(sessEnd(s))-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
     let tokens=0; for(const k in dmap) tokens+=dmap[k]; const rev=tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; let mins=0; for(const k in smin) mins+=smin[k];
     $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(rev),"","grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(net),"")+kpi("Tokens",lgN(tokens),"");
-    const goalTok=cfg.token_rate>0?cfg.goal_revenue/cfg.token_rate:0; const gRev=cfg.goal_revenue?rev/cfg.goal_revenue*100:0, gTok=goalTok?tokens/goalTok*100:0;
-    $("lg_d_goals").innerHTML=goalRow("Revenue",lgUSD(rev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"—",gRev)+goalRow("Tokens",lgN(tokens),goalTok?lgN(goalTok):"—",gTok);
     const days=Object.keys(dmap).length;
-    $("lg_d_avg").innerHTML=avgRow("Revenue / day",days?lgUSD(rev/days):"—")+avgRow("Net / day",days?lgUSD(net/days):"—")+avgRow("Tokens / day",days?lgN(tokens/days):"—")+avgRow("Hours / day",days?(mins/60/days).toFixed(1)+"h":"—")+avgRow("Days worked",String(days));
-    const me2=monthExpenses(ym); const cat={}; let expTot=0; me2.forEach(e=>{ const c=e.category||"Uncategorized"; cat[c]=(cat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
-    const catKeys=Object.keys(cat).sort(); $("lg_d_expcat").innerHTML=(catKeys.length?catKeys.map(c=>catRow(c,lgUSD(cat[c]))).join(""):'<div class="lg-muted">No expenses this month.</div>')+(expTot?'<div class="lg-cattot"><span>Total</span><span>'+lgUSD(expTot)+'</span></div>':"");
-    const ni=rev-expTot;
-    $("lg_d_net").innerHTML='<div class="lg-nettop"><div><div class="lg-netk">Revenue</div><div class="lg-netv pos">'+lgUSD(rev)+'</div></div><div class="lg-netop">&minus;</div><div><div class="lg-netk">Expenses</div><div class="lg-netv neg">'+lgUSD(expTot)+'</div></div></div><div class="lg-netbig '+(ni>=0?"pos":"neg")+'">'+lgUSD(ni)+'</div><div class="lg-netlbl">Net income · '+monthLabel(ym)+'</div>';
+    const goalTok=cfg.token_rate>0?cfg.goal_revenue/cfg.token_rate:0; const gRev=cfg.goal_revenue?rev/cfg.goal_revenue*100:0, gTok=goalTok?tokens/goalTok*100:0;
+    const avgDayRev=days?rev/days:0; const gDay=cfg.goal_revenue_daily?avgDayRev/cfg.goal_revenue_daily*100:0;
+    $("lg_d_goals").innerHTML=goalRow("Revenue (month)",lgUSD(rev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"\u2014",gRev)+goalRow("Tokens (month)",lgN(tokens),goalTok?lgN(goalTok):"\u2014",gTok)+goalRow("Revenue / day (avg)",lgUSD(avgDayRev),cfg.goal_revenue_daily?lgUSD(cfg.goal_revenue_daily):"\u2014",gDay);
+    $("lg_d_avg").innerHTML=avgRow("Revenue / day",days?lgUSD(rev/days):"\u2014")+avgRow("Net / day",days?lgUSD(net/days):"\u2014")+avgRow("Tokens / day",days?lgN(tokens/days):"\u2014")+avgRow("Hours / day",days?(mins/60/days).toFixed(1)+"h":"\u2014")+avgRow("Days worked",String(days));
+    const monthTx=expenses.filter(e=>monthOf(e.txn_date)===ym);
+    const incRows=monthTx.filter(e=>(e.kind||"expense")==="income"); const otherIncome=incRows.reduce((a,b)=>a+Number(b.amount),0); const incBySource={}; incRows.forEach(e=>{ const s=e.source||"Other"; incBySource[s]=(incBySource[s]||0)+Number(e.amount); });
+    const expCat={}; let expTot=0; monthTx.filter(e=>(e.kind||"expense")==="expense").forEach(e=>{ const c=e.category||"Uncategorized"; expCat[c]=(expCat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
+    const totalRev=rev+otherIncome, netInc=totalRev-expTot;
     const dates=[...new Set([...Object.keys(dmap),...Object.keys(smin)])].sort().reverse();
-    $("lg_d_daily").innerHTML=dates.length?dates.map(d=>{ const tk=dmap[d]||0, dmins=smin[d]||0, drev=tk*cfg.token_rate, dtax=drev*cfg.tax_rate, dnet=drev-dtax, hrs=dmins/60; return '<tr><td>'+isoToDisp(d)+'</td><td class="num">'+(dmins?fmtDur(dmins):"—")+'</td><td class="num">'+lgN(tk)+'</td><td class="num">'+lgUSD(drev)+'</td><td class="num">'+lgUSD(dtax)+'</td><td class="num">'+lgUSD(dnet)+'</td><td class="num">'+(hrs>0?lgUSD(dnet/hrs):"—")+'</td></tr>'; }).join(""):'<tr><td colspan="7" class="lg-empty">No activity in '+monthLabel(ym)+'.</td></tr>';
+    $("lg_d_daily").innerHTML=dates.length?dates.map(d=>{ const tk=dmap[d]||0, dmins=smin[d]||0, drev=tk*cfg.token_rate, dtax=drev*cfg.tax_rate, dnet=drev-dtax, hrs=dmins/60; return '<tr><td>'+isoToDisp(d)+'</td><td class="num">'+(dmins?fmtDur(dmins):"\u2014")+'</td><td class="num">'+lgN(tk)+'</td><td class="num">'+lgUSD(drev)+'</td><td class="num">'+lgUSD(dtax)+'</td><td class="num">'+lgUSD(dnet)+'</td><td class="num">'+(hrs>0?lgUSD(dnet/hrs):"\u2014")+'</td></tr>'; }).join(""):'<tr><td colspan="7" class="lg-empty">No activity in '+monthLabel(ym)+'.</td></tr>';
+    if($("lg_pnl_month")) $("lg_pnl_month").textContent=monthLabel(ym);
+    const catKeys=Object.keys(expCat).sort();
+    let pnl='<div class="pnl-sec">Revenue</div><div class="pnl-row"><span>Chaturbate (tokens)</span><span>'+lgUSD(rev)+'</span></div>';
+    Object.keys(incBySource).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+'</span><span>'+lgUSD(incBySource[s])+'</span></div>'; });
+    pnl+='<div class="pnl-row pnl-sub"><span>Total revenue</span><span>'+lgUSD(totalRev)+'</span></div>';
+    pnl+='<div class="pnl-sec">Expenses</div>'+(catKeys.length?catKeys.map(c=>'<div class="pnl-row"><span>'+esc(c)+'</span><span>'+lgUSD(expCat[c])+'</span></div>').join(""):'<div class="pnl-row"><span class="lg-muted">No expenses</span><span>'+lgUSD(0)+'</span></div>');
+    pnl+='<div class="pnl-row pnl-sub"><span>Total expenses</span><span>'+lgUSD(expTot)+'</span></div>';
+    pnl+='<div class="pnl-row pnl-net"><span>Net income</span><span class="'+(netInc>=0?"pos":"neg")+'">'+lgUSD(netInc)+'</span></div>';
+    $("lg_d_pnl").innerHTML=pnl;
   }
 
   function renderSessions(){
     const items=sessions.map(s=>({off:false,s:s}));
     offDaily.forEach(r=>{ const tk=Number(r.tokens)||0; if(tk>0) items.push({off:true,d:r.d,tokens:tk,st:r.last_lts||(r.d+"T23:59:59")}); });
-    items.sort((a,b)=>{ const da=a.off?a.d:a.s.session_date, db=b.off?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; const ta=a.off?a.st:a.s.start_ts, tb=b.off?b.st:b.s.start_ts; return ta<tb?1:-1; });
+    if(sessSort){ items.sort((a,b)=>{ const va=sessSortVal(a,sessSort.col), vb=sessSortVal(b,sessSort.col); if(va<vb) return sessSort.dir==="asc"?-1:1; if(va>vb) return sessSort.dir==="asc"?1:-1; return 0; }); } else { items.sort((a,b)=>{ const da=a.off?a.d:a.s.session_date, db=b.off?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; const ta=a.off?a.st:a.s.start_ts, tb=b.off?b.st:b.s.start_ts; return ta<tb?1:-1; }); }
+    updateSortArrows("lg_s_table",sessSort,"data-ssort");
     if(!items.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
     $("lg_s_body").innerHTML=items.map(it=>{
       if(it.off){ const rev=it.tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; const exp=offDetail===it.d;
@@ -859,27 +931,48 @@
     renderLiveCard(); renderSessions();
     clearTimeout(balSaveTimer); balSaveTimer=setTimeout(()=>{ sb.from("work_sessions").update({bal_start:live.bal_start,bal_now:live.bal_now}).eq("id",live.id); }, 600);
   }
+  function txnRows(){ return expenses.filter(e=>(e.kind||"expense")===txnKind); }
+  function renderCatMgr(){ const list=(cats[txnKind]||[]); $("lg_cat_list").innerHTML=list.length?list.map(c=>'<span class="lg-catchip">'+esc(c)+'<button data-catdel="'+esc(c)+'" title="Remove">&times;</button></span>').join(""):'<span class="lg-muted">No categories yet \u2014 add one below.</span>'; }
+  async function addCategory(){ const name=$("lg_cat_new").value.trim(); if(!name) return; const { error }=await sb.from("ledger_categories").insert({ user_id:me.id, kind:txnKind, name }); if(error && !/duplicate|unique/i.test(error.message||"")){ alert(error.message); return; } $("lg_cat_new").value=""; await fetchCats(); renderExpenses(); }
+  async function removeCategory(name){ if(!confirm('Remove category "'+name+'"? Existing entries keep their text.')) return; await sb.from("ledger_categories").delete().eq("kind",txnKind).eq("name",name); await fetchCats(); renderExpenses(); }
+  function updateSortArrows(tableId,st,attr){ const t=$(tableId); if(!t) return; t.querySelectorAll("th["+attr+"]").forEach(th=>{ const a=th.querySelector(".lg-arrow"); if(a) a.remove(); if(st && st.col===th.getAttribute(attr)){ const s=document.createElement("span"); s.className="lg-arrow"; s.textContent=st.dir==="asc"?" \u25b2":" \u25bc"; th.appendChild(s); } }); }
+  async function saveTxn(id){ const rec={ txn_date:dispToIso($("etx_date_"+id).value)||today, account:($("etx_acct_"+id).value||"").trim()||null, category:($("etx_cat_"+id).value||"").trim()||null, notes:($("etx_notes_"+id).value||"").trim()||null, amount:parseFloat($("etx_amt_"+id).value)||0 }; const { error }=await sb.from("expenses").update(rec).eq("id",id); if(error){ alert(error.message); return; } editingTxn=null; await fetchExpenses(); renderAll(); }
   function renderExpenses(){
-    const cats=[...new Set(expenses.map(e=>e.category).filter(Boolean))].sort(); $("lg_e_catlist").innerHTML=cats.map(c=>'<option value="'+esc(c)+'">').join("");
-    const me2=monthExpenses(curMonth); let tot=0; const bycat={}; me2.forEach(e=>{ tot+=Number(e.amount); const c=e.category||"—"; bycat[c]=(bycat[c]||0)+Number(e.amount); });
-    const allTime=expenses.reduce((a,b)=>a+Number(b.amount),0);
-    $("lg_e_kpis").innerHTML=kpi("This month",lgUSD(tot),monthLabel(curMonth),"warn")+kpi("Entries",String(me2.length),"")+kpi("Categories",String(Object.keys(bycat).length),"")+kpi("All-time",lgUSD(allTime),"");
-    if(!expenses.length){ $("lg_e_body").innerHTML='<tr><td colspan="6" class="lg-empty">No expenses yet.</td></tr>'; return; }
-    $("lg_e_body").innerHTML=expenses.map(e=>'<tr><td>'+isoToDisp(e.txn_date)+'</td><td>'+esc(e.account)+'</td><td>'+esc(e.category)+'</td><td class="lg-notes">'+esc(e.notes)+'</td><td class="num">'+lgUSD(e.amount)+'</td><td class="num"><button class="lg-del" data-lgdel-exp="'+e.id+'">Delete</button></td></tr>').join("");
+    const isInc=txnKind==="income";
+    $("txnFormTitle").textContent=isInc?"Add revenue":"Add expense";
+    $("lg_e_add").textContent=isInc?"Add revenue":"Add expense";
+    document.querySelectorAll("[data-txnkind]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-txnkind")===txnKind));
+    const sel=$("lg_e_cat"), cur=sel.value; sel.innerHTML='<option value="">\u2014 category \u2014</option>'+(cats[txnKind]||[]).map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join(""); sel.value=cur;
+    renderCatMgr();
+    const rowsAll=txnRows();
+    const mrows=rowsAll.filter(e=>monthOf(e.txn_date)===curMonth); let tot=0; const bycat={}; mrows.forEach(e=>{ tot+=Number(e.amount); const cc=e.category||"\u2014"; bycat[cc]=(bycat[cc]||0)+Number(e.amount); });
+    const allTime=rowsAll.reduce((a,b)=>a+Number(b.amount),0);
+    $("lg_e_kpis").innerHTML=kpi("This month",lgUSD(tot),monthLabel(curMonth),isInc?"grad":"warn")+kpi("Entries",String(mrows.length),"")+kpi("Categories",String(Object.keys(bycat).length),"")+kpi("All-time",lgUSD(allTime),"");
+    const col=txnSort.col; const rows=rowsAll.slice().sort((a,b)=>{ let va,vb; if(col==="amount"){ va=Number(a.amount); vb=Number(b.amount); } else { const fld=col==="date"?"txn_date":col; va=(a[fld]||"").toString().toLowerCase(); vb=(b[fld]||"").toString().toLowerCase(); } if(va<vb) return txnSort.dir==="asc"?-1:1; if(va>vb) return txnSort.dir==="asc"?1:-1; return 0; });
+    updateSortArrows("lg_e_table",txnSort,"data-tsort");
+    if(!rows.length){ $("lg_e_body").innerHTML='<tr><td colspan="6" class="lg-empty">No '+(isInc?"revenue":"expenses")+' yet.</td></tr>'; return; }
+    $("lg_e_body").innerHTML=rows.map(e=>{
+      if(editingTxn===e.id){ const opts=(cats[txnKind]||[]).slice(); if(e.category && opts.indexOf(e.category)<0) opts.push(e.category);
+        return '<tr class="lg-liverow"><td><input class="lg-rowinp" id="etx_date_'+e.id+'" value="'+isoToDisp(e.txn_date)+'" placeholder="mm/dd/yyyy" style="width:100px"></td><td><input class="lg-rowinp" id="etx_acct_'+e.id+'" value="'+esc(e.account)+'" style="width:100px"></td><td><select class="lg-rowinp" id="etx_cat_'+e.id+'"><option value="">\u2014</option>'+opts.map(cc=>'<option value="'+esc(cc)+'"'+(cc===e.category?' selected':'')+'>'+esc(cc)+'</option>').join("")+'</select></td><td><input class="lg-rowinp" id="etx_notes_'+e.id+'" value="'+esc(e.notes)+'" style="width:100%"></td><td class="num"><input class="lg-rowinp" id="etx_amt_'+e.id+'" type="number" step="0.01" value="'+Number(e.amount)+'" style="width:90px;text-align:right"></td><td class="num"><button class="lg-edit" data-etxsave="'+e.id+'">Save</button> <button class="lg-del" data-etxcancel="'+e.id+'">Cancel</button></td></tr>';
+      }
+      return '<tr><td>'+isoToDisp(e.txn_date)+'</td><td>'+esc(e.account)+'</td><td>'+esc(e.category)+'</td><td class="lg-notes">'+esc(e.notes)+'</td><td class="num">'+lgUSD(e.amount)+'</td><td class="num"><button class="lg-edit" data-etxedit="'+e.id+'">Edit</button> <button class="lg-del" data-lgdel-exp="'+e.id+'">Delete</button></td></tr>';
+    }).join("");
   }
 
-  function renderSettings(){ $("lg_cfg_rate").value=cfg.token_rate; $("lg_cfg_tax").value=Math.round(cfg.tax_rate*100); $("lg_cfg_goalrev").value=cfg.goal_revenue||""; recalcTokenGoal(); }
+  function renderSettings(){ $("lg_cfg_rate").value=cfg.token_rate; $("lg_cfg_tax").value=Math.round(cfg.tax_rate*100); $("lg_cfg_goalrev").value=cfg.goal_revenue||""; $("lg_cfg_goalday").value=cfg.goal_revenue_daily||""; recalcTokenGoal(); }
   function recalcTokenGoal(){ const rate=parseFloat($("lg_cfg_rate").value)||0, gr=parseFloat($("lg_cfg_goalrev").value)||0; $("lg_cfg_goaltok").value=(rate>0&&gr>0)?Math.round(gr/rate).toLocaleString("en-US"):""; }
 
   async function saveCfg(){
-    const rate=parseFloat($("lg_cfg_rate").value)||0, tax=(parseFloat($("lg_cfg_tax").value)||0)/100, gr=parseFloat($("lg_cfg_goalrev").value)||0; const gt=rate>0?Math.round(gr/rate):0;
+    const rate=parseFloat($("lg_cfg_rate").value)||0, tax=(parseFloat($("lg_cfg_tax").value)||0)/100, gr=parseFloat($("lg_cfg_goalrev").value)||0, gd=parseFloat($("lg_cfg_goalday").value)||0; const gt=rate>0?Math.round(gr/rate):0;
     const m=$("lg_cfg_msg"); $("lg_cfg_save").disabled=true; m.className="msg info"; m.textContent="Saving…";
-    const { error }=await sb.from("ledger_config").upsert({ user_id:me.id, token_rate:rate, tax_rate:tax, goal_revenue:gr, goal_tokens:gt },{ onConflict:"user_id" });
+    const { error }=await sb.from("ledger_config").upsert({ user_id:me.id, token_rate:rate, tax_rate:tax, goal_revenue:gr, goal_tokens:gt, goal_revenue_daily:gd },{ onConflict:"user_id" });
     $("lg_cfg_save").disabled=false; if(error){ m.className="msg err"; m.textContent=error.message; return; }
-    cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt}; m.className="msg ok"; m.textContent="Saved."; renderAll();
+    cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt,goal_revenue_daily:gd}; m.className="msg ok"; m.textContent="Saved."; renderAll();
   }
 
   let editingSession=null, editingRow=null, offDetail=null, offEvents={}, liveCardId=null, balSaveTimer=null;
+  let txnKind="expense", txnSort={col:"date",dir:"desc"}, sessSort=null, editingTxn=null, cats={expense:[],income:[]};
+  let revSrc="chaturbate", revSort={col:"date",dir:"desc"}, editingRev=null;
   function resetSessionForm(){ editingSession=null; $("lg_s_start").value="";$("lg_s_end").value=""; $("lg_s_add").textContent="Add session"; $("lg_s_cancel").style.display="none"; }
   function editSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; editingSession=id; $("lg_s_date").value=isoToDisp(s.session_date); $("lg_s_start").value=to12((s.start_ts||"").slice(11,16)); $("lg_s_end").value=s.end_ts?to12(s.end_ts.slice(11,16)):""; $("lg_s_platform").value=s.platform||"Chaturbate"; $("lg_s_add").textContent="Update session"; $("lg_s_cancel").style.display=""; const m=$("lg_s_msg"); m.className="msg info"; m.textContent="Editing this session — change the times and Update."; window.scrollTo({top:$("lgSess").offsetTop-20,behavior:"smooth"}); }
   async function addSession(){
@@ -911,12 +1004,12 @@
   async function fetchOffEvents(d){ try{ const { data }=await sb.rpc("ledger_offsession_events",{p_shift:TZ_SHIFT,p_day:d,p_now:nowLocal()}); offEvents[d]=data||[]; }catch(e){ offEvents[d]=[]; } if(offDetail===d) renderSessions(); }
 
   async function addExpense(){
-    const rec={ txn_date:dispToIso($("lg_e_date").value)||today, account:$("lg_e_account").value.trim()||null, category:$("lg_e_cat").value.trim()||null, brand:null, amount:parseFloat($("lg_e_amt").value)||0, notes:$("lg_e_notes").value.trim()||null };
+    const rec={ txn_date:dispToIso($("lg_e_date").value)||today, account:$("lg_e_account").value.trim()||null, category:$("lg_e_cat").value.trim()||null, brand:null, amount:parseFloat($("lg_e_amt").value)||0, notes:$("lg_e_notes").value.trim()||null, kind:txnKind };
     const m=$("lg_e_msg"); if(!rec.amount){ m.className="msg err"; m.textContent="Enter an amount."; return; }
-    $("lg_e_add").disabled=true; m.className="msg info"; m.textContent="Saving…";
+    $("lg_e_add").disabled=true; m.className="msg info"; m.textContent="Saving\u2026";
     const { error }=await sb.from("expenses").insert(rec); $("lg_e_add").disabled=false;
     if(error){ m.className="msg err"; m.textContent=error.message; return; }
-    $("lg_e_cat").value="";$("lg_e_amt").value="";$("lg_e_notes").value=""; m.className="msg ok"; m.textContent="Expense added.";
+    $("lg_e_account").value="";$("lg_e_amt").value="";$("lg_e_notes").value=""; m.className="msg ok"; m.textContent=(txnKind==="income"?"Revenue":"Expense")+" added.";
     await fetchExpenses(); renderAll();
   }
 
@@ -939,16 +1032,7 @@
     await fetchAgg(); renderAll(); m.className="msg ok"; m.textContent=lgN(rows.length)+" rows processed from "+list.length+" file"+(list.length>1?"s":"")+".";
   }
 
-  function importExpenses(file){
-    const m=$("lg_exp_imsg"); m.className="msg info"; m.textContent="Reading…";
-    if(typeof Papa==="undefined"){ m.className="msg err"; m.textContent="CSV parser not loaded — refresh and try again."; return; }
-    Papa.parse(file,{ header:true, skipEmptyLines:true, complete: async (res)=>{
-      const rows=res.data.map(r=>{ const amt=parseFloat(String(r["Amount"]!=null?r["Amount"]:"").replace(/[^0-9.\-]/g,"")); const iso=normDate(r["Date"]); if(!iso||isNaN(amt)) return null; return { user_id:me.id, txn_date:iso, account:(r["Account"]||"").trim()||null, category:(r["Category"]||"").trim()||null, brand:(r["Type"]||"").trim()||null, notes:(r["Notes"]||"").trim()||null, amount:amt }; }).filter(Boolean);
-      if(!rows.length){ m.className="msg err"; m.textContent="No valid rows (need Date, Category, Amount)."; return; }
-      const { error }=await sb.from("expenses").insert(rows); if(error){ m.className="msg err"; m.textContent=error.message; return; }
-      await fetchExpenses(); renderAll(); m.className="msg ok"; m.textContent="Imported "+rows.length+" expenses.";
-    }, error:()=>{ m.className="msg err"; m.textContent="Couldn't read that file."; } });
-  }
+
 
   function wireLedger(){
     document.querySelectorAll(".lg-tab").forEach(b=>b.addEventListener("click",()=>ledgerShow(b.getAttribute("data-lg"))));
@@ -956,13 +1040,26 @@
     $("lg_m_next").addEventListener("click",()=>shiftMonth(1));
     $("lg_s_add").addEventListener("click",addSession);
     $("lg_e_add").addEventListener("click",addExpense);
+    $("lg_cat_tog").addEventListener("click",()=>{ const bd=$("lg_cat_body"); const open=bd.style.display==="none"; bd.style.display=open?"block":"none"; $("lg_cat_tog").textContent=open?"Manage categories \u25be":"Manage categories \u25b8"; });
+    $("lg_cat_add").addEventListener("click",addCategory);
+    $("lg_cat_new").addEventListener("keydown",e=>{ if(e.key==="Enter") addCategory(); });
+    $("lg_cat_list").addEventListener("click",e=>{ const b=e.target.closest("[data-catdel]"); if(b) removeCategory(b.getAttribute("data-catdel")); });
+    $("lg_e_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-tsort]"); if(!th) return; const col=th.getAttribute("data-tsort"); if(txnSort.col===col){ txnSort.dir=txnSort.dir==="asc"?"desc":"asc"; } else { txnSort={col,dir:"desc"}; } renderExpenses(); });
+    $("lg_s_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-ssort]"); if(!th) return; const col=th.getAttribute("data-ssort"); if(sessSort&&sessSort.col===col){ sessSort.dir=sessSort.dir==="asc"?"desc":"asc"; } else { sessSort={col,dir:"desc"}; } renderSessions(); });
+    $("lgRevTabs").addEventListener("click",e=>{ const b=e.target.closest("[data-rev]"); if(b) revShow(b.getAttribute("data-rev")); });
+    $("lg_r_add").addEventListener("click",addRev);
+    $("lg_r_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-rsort]"); if(!th) return; const col=th.getAttribute("data-rsort"); if(revSort.col===col){ revSort.dir=revSort.dir==="asc"?"desc":"asc"; } else { revSort={col,dir:"desc"}; } renderRevSrc(); });
+    $("lg_r_body").addEventListener("click",e=>{
+      const ed=e.target.closest("[data-ervedit]"); if(ed){ editingRev=ed.getAttribute("data-ervedit"); renderRevSrc(); return; }
+      const sv=e.target.closest("[data-ervsave]"); if(sv){ saveRev(sv.getAttribute("data-ervsave")); return; }
+      const cn=e.target.closest("[data-ervcancel]"); if(cn){ editingRev=null; renderRevSrc(); return; }
+      const b=e.target.closest("[data-lgdel-rev]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-rev"),async()=>{ editingRev=null; await fetchExpenses(); renderAll(); });
+    });
     $("lg_cfg_save").addEventListener("click",saveCfg);
     ["lg_cfg_rate","lg_cfg_goalrev"].forEach(id=>$(id).addEventListener("input",recalcTokenGoal));
     $("lg_tok_btn").addEventListener("click",()=>$("lg_tok_file").click());
     $("lg_tok_file").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length) importTokenFiles(fs); });
     $("lg_periods").addEventListener("click",e=>{ if(e.target.closest('[data-per="upload"]')) $("lg_tok_file").click(); });
-    $("lg_exp_btn").addEventListener("click",()=>$("lg_exp_file").click());
-    $("lg_exp_file").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) importExpenses(f); });
     $("lg_s_cancel").addEventListener("click",resetSessionForm);
     $("lg_bal_start").addEventListener("input",onBalInput);
     $("lg_bal_now").addEventListener("input",onBalInput);
@@ -977,7 +1074,12 @@
       const cn=e.target.closest("[data-lgcancel-sess]"); if(cn){ editingRow=null; renderSessions(); return; }
       const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); });
     });
-    $("lg_e_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ await fetchExpenses(); renderAll(); }); });
+    $("lg_e_body").addEventListener("click",e=>{
+      const ed=e.target.closest("[data-etxedit]"); if(ed){ editingTxn=ed.getAttribute("data-etxedit"); renderExpenses(); return; }
+      const sv=e.target.closest("[data-etxsave]"); if(sv){ saveTxn(sv.getAttribute("data-etxsave")); return; }
+      const cn=e.target.closest("[data-etxcancel]"); if(cn){ editingTxn=null; renderExpenses(); return; }
+      const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ editingTxn=null; await fetchExpenses(); renderAll(); });
+    });
     setInterval(()=>{ if(sessions.some(s=>!s.end_ts)){ renderLiveCard(); if(!editingRow) renderSessions(); if(lgTab==="dash") renderDash(); } }, 30000);
   }
 
