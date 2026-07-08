@@ -755,7 +755,8 @@
     renderAll(); ledgerShow(lgTab);
   }
 
-  function sessionMetrics(s){ const tokens=(s.manual_tokens!=null)?Number(s.manual_tokens):(sessTok[s.id]||0); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=s.end_ts||dataAsOf||nowLocal(); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
+  function sessEnd(s){ return s.end_ts || ((s.manual_tokens!=null)? nowLocal() : (dataAsOf||nowLocal())); }
+  function sessionMetrics(s){ const tokens=(s.manual_tokens!=null)?Number(s.manual_tokens):(sessTok[s.id]||0); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=sessEnd(s); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
 
   const monthSessions=(ym)=>sessions.filter(s=>monthOf(s.session_date)===ym);
   const monthExpenses=(ym)=>expenses.filter(e=>monthOf(e.txn_date)===ym);
@@ -775,7 +776,7 @@
   function renderDash(){
     $("lg_month_lbl").textContent=monthLabel(curMonth); const ym=curMonth;
     const dmap={}; dailyTok.forEach(r=>{ if(monthOf(r.d)===ym) dmap[r.d]=(dmap[r.d]||0)+Number(r.tokens||0); });
-    const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(s.end_ts||dataAsOf||nowLocal())-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
+    const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(sessEnd(s))-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
     let tokens=0; for(const k in dmap) tokens+=dmap[k]; const rev=tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; let mins=0; for(const k in smin) mins+=smin[k];
     $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(rev),"","grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(net),"")+kpi("Tokens",lgN(tokens),"");
     const goalTok=cfg.token_rate>0?cfg.goal_revenue/cfg.token_rate:0; const gRev=cfg.goal_revenue?rev/cfg.goal_revenue*100:0, gTok=goalTok?tokens/goalTok*100:0;
@@ -919,6 +920,7 @@
       const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); });
     });
     $("lg_e_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ await fetchExpenses(); renderAll(); }); });
+    setInterval(()=>{ if(!editingRow && sessions.some(s=>!s.end_ts)){ renderSessions(); if(lgTab==="dash") renderDash(); } }, 30000);
   }
 
   /* ---------- CLIENT ---------- */
