@@ -582,8 +582,7 @@
           <div><label>Token value ($)</label><input type="number" step="0.001" min="0" id="lg_cfg_rate"></div>
           <div><label>Tax rate (%)</label><input type="number" step="1" min="0" max="100" id="lg_cfg_tax"></div>
           <div><label>Monthly revenue goal ($)</label><input type="number" step="1" min="0" id="lg_cfg_goalrev"></div>
-          <div><label>Monthly token goal</label><input type="number" step="1" min="0" id="lg_cfg_goaltok"></div>
-          <div><label>Token export time shift (hrs)</label><input type="number" step="1" id="lg_cfg_tz"><div class="lg-hint">Chaturbate exports in Pacific time. 3 shifts it to US Eastern so tips line up with your session times.</div></div>
+          <div><label>Monthly token goal</label><input type="number" id="lg_cfg_goaltok" readonly><div class="lg-hint">Auto-calculated from revenue goal &divide; token value.</div></div>
         </div>
         <div class="lg-actions"><button class="btn" id="lg_cfg_save" style="width:auto">Save settings</button><span class="msg" id="lg_cfg_msg"></span></div>
       </div>
@@ -704,7 +703,8 @@
   function adminShow(which){ show($("adminView"),which==="dash"); show($("clientPage"),which==="client"); show($("projectPage"),which==="project"); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
   /* ---------- SPECIAL: private ledger (timesheet + P&L) ---------- */
-  let cbTokens=[], sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0,tz_shift:3}, curMonth=null, lgTab="dash", lgWired=false;
+  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[];
+  const TZ_SHIFT=(function(){ try{ const d=new Date(); const la=new Date(d.toLocaleString("en-US",{timeZone:"America/Los_Angeles"})); const loc=new Date(d.toLocaleString("en-US")); return Math.round((loc-la)/3600000); }catch(e){ return 3; } })();
   const lgUSD=(n)=>Number(n||0).toLocaleString("en-US",{style:"currency",currency:"USD"});
   const lgN=(n)=>Math.round(Number(n||0)).toLocaleString("en-US");
   const pad2n=(n)=>(n<10?"0":"")+n;
@@ -716,24 +716,23 @@
 
   function ledgerShow(which){ lgTab=which; show($("lgDash"),which==="dash"); show($("lgSess"),which==="sess"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
-  async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens, tz_shift:(data.tz_shift!=null?+data.tz_shift:3)}; } else { await sb.from("ledger_config").insert({}); } }
+  async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens}; } else { await sb.from("ledger_config").insert({}); } }
   async function fetchSessions(){ const { data }=await sb.from("work_sessions").select("*").order("start_ts",{ascending:false}); sessions=data||[]; }
   async function fetchExpenses(){ const { data }=await sb.from("expenses").select("*").order("txn_date",{ascending:false}); expenses=data||[]; }
-  async function fetchTokens(){ const { data }=await sb.from("cb_tokens").select("ts,token_change").order("ts",{ascending:true}); cbTokens=data||[]; }
+  async function fetchAgg(){ try{ const [a,b]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; }catch(e){ sessTok={}; dailyTok=[]; } }
 
   async function loadSpecial(){
     if(!lgWired){ wireLedger(); lgWired=true; }
     if(!$("lg_s_date").value) $("lg_s_date").value=isoToDisp(today);
     if(!$("lg_e_date").value) $("lg_e_date").value=isoToDisp(today);
     attachAllDP($("specialView"));
-    try{ await Promise.all([fetchCfg(),fetchSessions(),fetchExpenses(),fetchTokens()]); }catch(e){}
+    try{ await Promise.all([fetchCfg(),fetchSessions(),fetchExpenses(),fetchAgg()]); }catch(e){}
     const months=sessions.map(s=>monthOf(s.session_date)).filter(Boolean).sort();
     curMonth = months.length ? months[months.length-1] : today.slice(0,7);
     renderAll(); ledgerShow(lgTab);
   }
 
-  function tokensForSession(s){ const a=new Date(s.start_ts).getTime(), b=new Date(s.end_ts).getTime(), sh=(cfg.tz_shift||0)*3600000; let t=0; for(let i=0;i<cbTokens.length;i++){ const ev=cbTokens[i]; if(ev.token_change>0){ const et=new Date(ev.ts).getTime()+sh; if(et>=a&&et<=b) t+=ev.token_change; } } return t; }
-  function sessionMetrics(s){ const tokens=tokensForSession(s); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const mins=Math.max(0,(new Date(s.end_ts)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0 }; }
+  function sessionMetrics(s){ const tokens=sessTok[s.id]||0; const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const mins=Math.max(0,(new Date(s.end_ts)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0 }; }
 
   const monthSessions=(ym)=>sessions.filter(s=>monthOf(s.session_date)===ym);
   const monthExpenses=(ym)=>expenses.filter(e=>monthOf(e.txn_date)===ym);
@@ -742,31 +741,30 @@
   function shiftMonth(dir){ const p=curMonth.split("-"); const d=new Date(+p[0], (+p[1])-1+dir, 1); curMonth=d.getFullYear()+"-"+pad2n(d.getMonth()+1); renderDash(); renderExpenses(); }
 
   function periodList(){ const out=[]; const now=new Date(); let y=now.getFullYear(), mo=now.getMonth(); for(let k=0;k<16;k++){ const last=new Date(y,mo+1,0).getDate(); const ml=MONTHS[mo].slice(0,3), mm=pad2n(mo+1); out.push({label:ml+" 16 – "+ml+" "+last+", "+y, start:y+"-"+mm+"-16", end:y+"-"+mm+"-"+pad2n(last)}); out.push({label:ml+" 01 – "+ml+" 15, "+y, start:y+"-"+mm+"-01", end:y+"-"+mm+"-15"}); mo--; if(mo<0){ mo=11; y--; } } return out; }
-  function tokensByLocalDate(){ const map={}, sh=(cfg.tz_shift||0)*3600000; for(let i=0;i<cbTokens.length;i++){ const ev=cbTokens[i]; if(ev.token_change>0){ const d=new Date(new Date(ev.ts).getTime()+sh); const key=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate()); map[key]=(map[key]||0)+ev.token_change; } } return map; }
-  function renderPeriods(){ const map=tokensByLocalDate(); $("lg_periods").innerHTML=periodList().map(p=>{ let t=0; for(const k in map){ if(k>=p.start&&k<=p.end) t+=map[k]; } const done=t>0; const right=done?('<span class="lg-per-done">✓ '+lgN(t)+' tokens · '+lgUSD(t*cfg.token_rate)+'</span><button class="lg-per-btn" data-per="upload">Replace</button>'):'<button class="lg-per-btn primary" data-per="upload">Upload</button>'; return '<div class="lg-per'+(done?' on':'')+'"><div class="lg-per-lbl">'+p.label+'</div><div class="lg-per-r">'+right+'</div></div>'; }).join(""); }
+  function renderPeriods(){ const map={}; dailyTok.forEach(r=>{ map[r.d]=(map[r.d]||0)+Number(r.tokens||0); }); $("lg_periods").innerHTML=periodList().map(p=>{ let t=0; for(const k in map){ if(k>=p.start&&k<=p.end) t+=map[k]; } const done=t>0; const right=done?('<span class="lg-per-done">✓ '+lgN(t)+' tokens · '+lgUSD(t*cfg.token_rate)+'</span><button class="lg-per-btn" data-per="upload">Replace</button>'):'<button class="lg-per-btn primary" data-per="upload">Upload</button>'; return '<div class="lg-per'+(done?' on':'')+'"><div class="lg-per-lbl">'+p.label+'</div><div class="lg-per-r">'+right+'</div></div>'; }).join(""); }
 
-  function renderTokStatus(){ const el=$("lg_tok_status"); if(!cbTokens.length){ el.textContent="No tokens imported yet."; return; } const pos=cbTokens.filter(t=>t.token_change>0); const total=pos.reduce((a,b)=>a+b.token_change,0); const sh=(cfg.tz_shift||0)*3600000, dl=(ts)=>{ const d=new Date(new Date(ts).getTime()+sh); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate()); }; el.textContent=lgN(cbTokens.length)+" events · "+dl(cbTokens[0].ts)+" to "+dl(cbTokens[cbTokens.length-1].ts)+" · "+lgN(total)+" tokens ("+lgUSD(total*cfg.token_rate)+")"; }
+  function renderTokStatus(){ const el=$("lg_tok_status"); if(!dailyTok.length){ el.textContent="No tokens imported yet."; return; } let total=0; dailyTok.forEach(r=>total+=Number(r.tokens||0)); el.textContent=dailyTok.length+" active days · "+dailyTok[0].d+" to "+dailyTok[dailyTok.length-1].d+" · "+lgN(total)+" tokens ("+lgUSD(total*cfg.token_rate)+")"; }
 
   function goalRow(label,actual,goal,pct){ return '<div class="lg-goal"><div class="lg-goalhd"><span>'+label+'</span><span class="lg-goalnums">'+actual+' <span class="lg-muted">/ '+goal+'</span></span></div><div class="lg-bar"><span style="width:'+Math.max(0,Math.min(100,pct)).toFixed(0)+'%"></span></div><div class="lg-goalpct">'+pct.toFixed(0)+'% of goal</div></div>'; }
   function avgRow(k,v){ return '<div class="lg-avg"><span>'+k+'</span><b>'+v+'</b></div>'; }
   function catRow(k,v){ return '<div class="lg-cat"><span>'+esc(k)+'</span><span>'+v+'</span></div>'; }
 
   function renderDash(){
-    $("lg_month_lbl").textContent=monthLabel(curMonth);
-    const ms=monthSessions(curMonth);
-    let rev=0,tax=0,net=0,tokens=0,mins=0; const byDate={};
-    ms.forEach(s=>{ const m=sessionMetrics(s); rev+=m.rev;tax+=m.tax;net+=m.net;tokens+=m.tokens;mins+=m.mins; const d=s.session_date; const b=byDate[d]||(byDate[d]={tokens:0,rev:0,tax:0,net:0,mins:0}); b.tokens+=m.tokens;b.rev+=m.rev;b.tax+=m.tax;b.net+=m.net;b.mins+=m.mins; });
+    $("lg_month_lbl").textContent=monthLabel(curMonth); const ym=curMonth;
+    const dmap={}; dailyTok.forEach(r=>{ if(monthOf(r.d)===ym) dmap[r.d]=(dmap[r.d]||0)+Number(r.tokens||0); });
+    const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(s.end_ts)-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
+    let tokens=0; for(const k in dmap) tokens+=dmap[k]; const rev=tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; let mins=0; for(const k in smin) mins+=smin[k];
     $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(rev),"","grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(net),"")+kpi("Tokens",lgN(tokens),"");
-    const gRev=cfg.goal_revenue?rev/cfg.goal_revenue*100:0, gTok=cfg.goal_tokens?tokens/cfg.goal_tokens*100:0;
-    $("lg_d_goals").innerHTML=goalRow("Revenue",lgUSD(rev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"—",gRev)+goalRow("Tokens",lgN(tokens),cfg.goal_tokens?lgN(cfg.goal_tokens):"—",gTok);
-    const days=Object.keys(byDate).length;
+    const goalTok=cfg.token_rate>0?cfg.goal_revenue/cfg.token_rate:0; const gRev=cfg.goal_revenue?rev/cfg.goal_revenue*100:0, gTok=goalTok?tokens/goalTok*100:0;
+    $("lg_d_goals").innerHTML=goalRow("Revenue",lgUSD(rev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"—",gRev)+goalRow("Tokens",lgN(tokens),goalTok?lgN(goalTok):"—",gTok);
+    const days=Object.keys(dmap).length;
     $("lg_d_avg").innerHTML=avgRow("Revenue / day",days?lgUSD(rev/days):"—")+avgRow("Net / day",days?lgUSD(net/days):"—")+avgRow("Tokens / day",days?lgN(tokens/days):"—")+avgRow("Hours / day",days?(mins/60/days).toFixed(1)+"h":"—")+avgRow("Days worked",String(days));
-    const me2=monthExpenses(curMonth); const cat={}; let expTot=0; me2.forEach(e=>{ const c=e.category||"Uncategorized"; cat[c]=(cat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
+    const me2=monthExpenses(ym); const cat={}; let expTot=0; me2.forEach(e=>{ const c=e.category||"Uncategorized"; cat[c]=(cat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
     const catKeys=Object.keys(cat).sort(); $("lg_d_expcat").innerHTML=(catKeys.length?catKeys.map(c=>catRow(c,lgUSD(cat[c]))).join(""):'<div class="lg-muted">No expenses this month.</div>')+(expTot?'<div class="lg-cattot"><span>Total</span><span>'+lgUSD(expTot)+'</span></div>':"");
     const ni=rev-expTot;
-    $("lg_d_net").innerHTML='<div class="lg-nettop"><div><div class="lg-netk">Revenue</div><div class="lg-netv pos">'+lgUSD(rev)+'</div></div><div class="lg-netop">&minus;</div><div><div class="lg-netk">Expenses</div><div class="lg-netv neg">'+lgUSD(expTot)+'</div></div></div><div class="lg-netbig '+(ni>=0?"pos":"neg")+'">'+lgUSD(ni)+'</div><div class="lg-netlbl">Net income · '+monthLabel(curMonth)+'</div>';
-    const dates=Object.keys(byDate).sort().reverse();
-    $("lg_d_daily").innerHTML=dates.length?dates.map(d=>{ const b=byDate[d]; const hrs=b.mins/60; return '<tr><td>'+isoToDisp(d)+'</td><td class="num">'+fmtDur(b.mins)+'</td><td class="num">'+lgN(b.tokens)+'</td><td class="num">'+lgUSD(b.rev)+'</td><td class="num">'+lgUSD(b.tax)+'</td><td class="num">'+lgUSD(b.net)+'</td><td class="num">'+(hrs>0?lgUSD(b.net/hrs):"—")+'</td></tr>'; }).join(""):'<tr><td colspan="7" class="lg-empty">No sessions in '+monthLabel(curMonth)+'.</td></tr>';
+    $("lg_d_net").innerHTML='<div class="lg-nettop"><div><div class="lg-netk">Revenue</div><div class="lg-netv pos">'+lgUSD(rev)+'</div></div><div class="lg-netop">&minus;</div><div><div class="lg-netk">Expenses</div><div class="lg-netv neg">'+lgUSD(expTot)+'</div></div></div><div class="lg-netbig '+(ni>=0?"pos":"neg")+'">'+lgUSD(ni)+'</div><div class="lg-netlbl">Net income · '+monthLabel(ym)+'</div>';
+    const dates=[...new Set([...Object.keys(dmap),...Object.keys(smin)])].sort().reverse();
+    $("lg_d_daily").innerHTML=dates.length?dates.map(d=>{ const tk=dmap[d]||0, dmins=smin[d]||0, drev=tk*cfg.token_rate, dtax=drev*cfg.tax_rate, dnet=drev-dtax, hrs=dmins/60; return '<tr><td>'+isoToDisp(d)+'</td><td class="num">'+(dmins?fmtDur(dmins):"—")+'</td><td class="num">'+lgN(tk)+'</td><td class="num">'+lgUSD(drev)+'</td><td class="num">'+lgUSD(dtax)+'</td><td class="num">'+lgUSD(dnet)+'</td><td class="num">'+(hrs>0?lgUSD(dnet/hrs):"—")+'</td></tr>'; }).join(""):'<tr><td colspan="7" class="lg-empty">No activity in '+monthLabel(ym)+'.</td></tr>';
   }
 
   function renderSessions(){
@@ -783,14 +781,15 @@
     $("lg_e_body").innerHTML=expenses.map(e=>'<tr><td>'+isoToDisp(e.txn_date)+'</td><td>'+esc(e.account)+'</td><td>'+esc(e.category)+'</td><td>'+esc(e.brand)+'</td><td class="lg-notes">'+esc(e.notes)+'</td><td class="num">'+lgUSD(e.amount)+'</td><td class="num"><button class="lg-del" data-lgdel-exp="'+e.id+'">Delete</button></td></tr>').join("");
   }
 
-  function renderSettings(){ $("lg_cfg_rate").value=cfg.token_rate; $("lg_cfg_tax").value=Math.round(cfg.tax_rate*100); $("lg_cfg_goalrev").value=cfg.goal_revenue||""; $("lg_cfg_goaltok").value=cfg.goal_tokens||""; $("lg_cfg_tz").value=cfg.tz_shift; }
+  function renderSettings(){ $("lg_cfg_rate").value=cfg.token_rate; $("lg_cfg_tax").value=Math.round(cfg.tax_rate*100); $("lg_cfg_goalrev").value=cfg.goal_revenue||""; recalcTokenGoal(); }
+  function recalcTokenGoal(){ const rate=parseFloat($("lg_cfg_rate").value)||0, gr=parseFloat($("lg_cfg_goalrev").value)||0; $("lg_cfg_goaltok").value=(rate>0&&gr>0)?Math.round(gr/rate).toLocaleString("en-US"):""; }
 
   async function saveCfg(){
-    const rate=parseFloat($("lg_cfg_rate").value)||0, tax=(parseFloat($("lg_cfg_tax").value)||0)/100, gr=parseFloat($("lg_cfg_goalrev").value)||0, gt=parseFloat($("lg_cfg_goaltok").value)||0, tz=parseFloat($("lg_cfg_tz").value)||0;
+    const rate=parseFloat($("lg_cfg_rate").value)||0, tax=(parseFloat($("lg_cfg_tax").value)||0)/100, gr=parseFloat($("lg_cfg_goalrev").value)||0; const gt=rate>0?Math.round(gr/rate):0;
     const m=$("lg_cfg_msg"); $("lg_cfg_save").disabled=true; m.className="msg info"; m.textContent="Saving…";
-    const { error }=await sb.from("ledger_config").upsert({ user_id:me.id, token_rate:rate, tax_rate:tax, goal_revenue:gr, goal_tokens:gt, tz_shift:tz },{ onConflict:"user_id" });
+    const { error }=await sb.from("ledger_config").upsert({ user_id:me.id, token_rate:rate, tax_rate:tax, goal_revenue:gr, goal_tokens:gt },{ onConflict:"user_id" });
     $("lg_cfg_save").disabled=false; if(error){ m.className="msg err"; m.textContent=error.message; return; }
-    cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt,tz_shift:tz}; m.className="msg ok"; m.textContent="Saved."; renderAll();
+    cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt}; m.className="msg ok"; m.textContent="Saved."; renderAll();
   }
 
   async function addSession(){
@@ -803,7 +802,7 @@
     const { error }=await sb.from("work_sessions").insert(rec); $("lg_s_add").disabled=false;
     if(error){ m.className="msg err"; m.textContent=error.message; return; }
     $("lg_s_start").value="";$("lg_s_end").value="";$("lg_s_notes").value=""; m.className="msg ok"; m.textContent="Session added.";
-    await fetchSessions(); curMonth=monthOf(dateIso); renderAll();
+    await Promise.all([fetchSessions(),fetchAgg()]); curMonth=monthOf(dateIso); renderAll();
   }
 
   async function addExpense(){
@@ -831,7 +830,7 @@
     m.className="msg info"; m.textContent="Importing "+rows.length+"…"; let err=null;
     for(let i=0;i<rows.length;i+=500){ const { error }=await sb.from("cb_tokens").upsert(rows.slice(i,i+500),{ onConflict:"user_id,ts", ignoreDuplicates:true }); if(error){ err=error; break; } }
     if(err){ m.className="msg err"; m.textContent=err.message; return; }
-    await fetchTokens(); renderAll(); m.className="msg ok"; m.textContent=lgN(rows.length)+" rows processed from "+list.length+" file"+(list.length>1?"s":"")+".";
+    await fetchAgg(); renderAll(); m.className="msg ok"; m.textContent=lgN(rows.length)+" rows processed from "+list.length+" file"+(list.length>1?"s":"")+".";
   }
 
   function importExpenses(file){
@@ -852,12 +851,13 @@
     $("lg_s_add").addEventListener("click",addSession);
     $("lg_e_add").addEventListener("click",addExpense);
     $("lg_cfg_save").addEventListener("click",saveCfg);
+    ["lg_cfg_rate","lg_cfg_goalrev"].forEach(id=>$(id).addEventListener("input",recalcTokenGoal));
     $("lg_tok_btn").addEventListener("click",()=>$("lg_tok_file").click());
     $("lg_tok_file").addEventListener("change",e=>{ if(e.target.files.length) importTokenFiles(e.target.files); e.target.value=""; });
     $("lg_periods").addEventListener("click",e=>{ if(e.target.closest('[data-per="upload"]')) $("lg_tok_file").click(); });
     $("lg_exp_btn").addEventListener("click",()=>$("lg_exp_file").click());
     $("lg_exp_file").addEventListener("change",e=>{ if(e.target.files[0]) importExpenses(e.target.files[0]); e.target.value=""; });
-    $("lg_s_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await fetchSessions(); renderAll(); }); });
+    $("lg_s_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }); });
     $("lg_e_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ await fetchExpenses(); renderAll(); }); });
   }
 
