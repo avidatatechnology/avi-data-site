@@ -500,7 +500,7 @@
       <div><div class="eyebrow">Private · owner only</div><h1>Ledger</h1></div>
       <div class="lg-tabs">
         <button class="lg-tab active" data-lg="dash">Dashboard</button>
-        <button class="lg-tab" data-lg="sess">Sessions</button>
+        <button class="lg-tab" data-lg="sess">Chaturbate Sessions</button>
         <button class="lg-tab" data-lg="exp">Expenses</button>
         <button class="lg-tab" data-lg="set">Settings</button>
       </div>
@@ -537,7 +537,7 @@
         <div class="lg-periods" id="lg_periods"></div>
       </div>
       <div class="card lg-form">
-        <div class="ch">Log a session</div>
+        <div class="ch">Log a Chaturbate session</div>
         <div class="csub">Tokens earned come from the import automatically &mdash; anything received between your start and end times counts.</div>
         <div class="lg-grid lg-grid-s" style="margin-top:8px">
           <div><label>Date</label><div class="dp"><input type="text" class="dpi" id="lg_s_date" placeholder="mm/dd/yyyy" autocomplete="off"><button type="button" class="dpbtn" tabindex="-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button></div></div>
@@ -740,8 +740,8 @@
   function renderAll(){ renderTokStatus(); renderPeriods(); renderDash(); renderSessions(); renderExpenses(); renderSettings(); }
   function shiftMonth(dir){ const p=curMonth.split("-"); const d=new Date(+p[0], (+p[1])-1+dir, 1); curMonth=d.getFullYear()+"-"+pad2n(d.getMonth()+1); renderDash(); renderExpenses(); }
 
-  function periodList(){ const out=[]; const now=new Date(); let y=now.getFullYear(), mo=now.getMonth(); for(let k=0;k<16;k++){ const last=new Date(y,mo+1,0).getDate(); const ml=MONTHS[mo].slice(0,3), mm=pad2n(mo+1); out.push({label:ml+" 16 – "+ml+" "+last+", "+y, start:y+"-"+mm+"-16", end:y+"-"+mm+"-"+pad2n(last)}); out.push({label:ml+" 01 – "+ml+" 15, "+y, start:y+"-"+mm+"-01", end:y+"-"+mm+"-15"}); mo--; if(mo<0){ mo=11; y--; } } return out; }
-  function renderPeriods(){ const map={}; dailyTok.forEach(r=>{ map[r.d]=(map[r.d]||0)+Number(r.tokens||0); }); $("lg_periods").innerHTML=periodList().map(p=>{ let t=0; for(const k in map){ if(k>=p.start&&k<=p.end) t+=map[k]; } const done=t>0; const right=done?('<span class="lg-per-done">✓ '+lgN(t)+' tokens · '+lgUSD(t*cfg.token_rate)+'</span><button class="lg-per-btn" data-per="upload">Replace</button>'):'<button class="lg-per-btn primary" data-per="upload">Upload</button>'; return '<div class="lg-per'+(done?' on':'')+'"><div class="lg-per-lbl">'+p.label+'</div><div class="lg-per-r">'+right+'</div></div>'; }).join(""); }
+  function periodList(earliest){ const out=[]; const t=new Date(); let y=t.getFullYear(), mo=t.getMonth(), half=(t.getDate()<=15?1:2); const floor=earliest||(y+"-"+pad2n(mo+1)+"-"+pad2n(t.getDate())); for(let k=0;k<400;k++){ const last=new Date(y,mo+1,0).getDate(), ml=MONTHS[mo].slice(0,3), mm=pad2n(mo+1); const p= half===2 ? {label:ml+" 16 – "+ml+" "+last+", "+y, start:y+"-"+mm+"-16", end:y+"-"+mm+"-"+pad2n(last)} : {label:ml+" 01 – "+ml+" 15, "+y, start:y+"-"+mm+"-01", end:y+"-"+mm+"-15"}; out.push(p); if(p.start<=floor) break; if(half===2){ half=1; } else { half=2; mo--; if(mo<0){ mo=11; y--; } } } return out; }
+  function renderPeriods(){ const map={}; dailyTok.forEach(r=>{ map[r.d]=(map[r.d]||0)+Number(r.tokens||0); }); $("lg_periods").innerHTML=periodList(dailyTok.length?dailyTok[0].d:null).map(p=>{ let t=0; for(const k in map){ if(k>=p.start&&k<=p.end) t+=map[k]; } const done=t>0; const right=done?('<span class="lg-per-done">✓ '+lgN(t)+' tokens · '+lgUSD(t*cfg.token_rate)+'</span><button class="lg-per-btn" data-per="upload">Replace</button>'):'<button class="lg-per-btn primary" data-per="upload">Upload</button>'; return '<div class="lg-per'+(done?' on':'')+'"><div class="lg-per-lbl">'+p.label+'</div><div class="lg-per-r">'+right+'</div></div>'; }).join(""); }
 
   function renderTokStatus(){ const el=$("lg_tok_status"); if(!dailyTok.length){ el.textContent="No tokens imported yet."; return; } let total=0; dailyTok.forEach(r=>total+=Number(r.tokens||0)); el.textContent=dailyTok.length+" active days · "+dailyTok[0].d+" to "+dailyTok[dailyTok.length-1].d+" · "+lgN(total)+" tokens ("+lgUSD(total*cfg.token_rate)+")"; }
 
@@ -825,7 +825,7 @@
     if(typeof Papa==="undefined"){ m.className="msg err"; m.textContent="CSV parser not loaded — refresh and try again."; return; }
     m.className="msg info"; m.textContent="Reading "+list.length+" file"+(list.length>1?"s":"")+"…";
     let raw=[]; for(let i=0;i<list.length;i++){ raw=raw.concat(await parseOne(list[i])); }
-    const rows=raw.map(r=>{ const ts=(r["Timestamp"]||"").trim(); const ch=parseInt(String(r["Token change"]!=null?r["Token change"]:"").replace(/[^\-0-9]/g,""),10); if(!ts||isNaN(ch)) return null; return { user_id:me.id, ts: ts.split(".")[0].replace(" ","T"), token_change: ch, ttype:(r["Transaction type"]||"").slice(0,60) }; }).filter(Boolean);
+    const rows=raw.map(r=>{ const ts=(r["Timestamp"]||"").trim(); const ch=parseInt(String(r["Token change"]!=null?r["Token change"]:"").replace(/[^\-0-9]/g,""),10); if(!ts||isNaN(ch)) return null; return { user_id:me.id, ts: ts.replace(" ","T"), token_change: ch, ttype:(r["Transaction type"]||"").slice(0,60) }; }).filter(Boolean);
     if(!rows.length){ m.className="msg err"; m.textContent="No rows found — is this the token export (Timestamp / Token change …)?"; return; }
     m.className="msg info"; m.textContent="Importing "+rows.length+"…"; let err=null;
     for(let i=0;i<rows.length;i+=500){ const { error }=await sb.from("cb_tokens").upsert(rows.slice(i,i+500),{ onConflict:"user_id,ts", ignoreDuplicates:true }); if(error){ err=error; break; } }
@@ -853,10 +853,10 @@
     $("lg_cfg_save").addEventListener("click",saveCfg);
     ["lg_cfg_rate","lg_cfg_goalrev"].forEach(id=>$(id).addEventListener("input",recalcTokenGoal));
     $("lg_tok_btn").addEventListener("click",()=>$("lg_tok_file").click());
-    $("lg_tok_file").addEventListener("change",e=>{ if(e.target.files.length) importTokenFiles(e.target.files); e.target.value=""; });
+    $("lg_tok_file").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length) importTokenFiles(fs); });
     $("lg_periods").addEventListener("click",e=>{ if(e.target.closest('[data-per="upload"]')) $("lg_tok_file").click(); });
     $("lg_exp_btn").addEventListener("click",()=>$("lg_exp_file").click());
-    $("lg_exp_file").addEventListener("change",e=>{ if(e.target.files[0]) importExpenses(e.target.files[0]); e.target.value=""; });
+    $("lg_exp_file").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) importExpenses(f); });
     $("lg_s_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }); });
     $("lg_e_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ await fetchExpenses(); renderAll(); }); });
   }
