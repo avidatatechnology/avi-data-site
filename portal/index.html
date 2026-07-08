@@ -404,6 +404,17 @@
   .lg-offdetail td{background:rgba(255,255,255,.02);padding:12px 16px!important}
   .lg-offlist{display:flex;flex-wrap:wrap;gap:6px}
   .lg-offchip{font-family:var(--fm);font-size:11px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;color:var(--muted)}
+  .lg-livecard{border:1px solid rgba(52,216,160,.35);background:linear-gradient(180deg,rgba(52,216,160,.06),transparent);margin-bottom:14px}
+  .lg-livehd{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .lg-livewhen{font-family:var(--fm);font-size:13px;color:var(--muted)}
+  .lg-livebody{display:grid;grid-template-columns:170px 190px 1fr;gap:16px;align-items:end}
+  .lg-livein label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2);margin-bottom:6px}
+  .lg-livestats{display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;justify-content:flex-end}
+  .lg-livestat .k{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted-2)}
+  .lg-livestat .v{font-family:var(--fd);font-weight:700;font-size:20px;margin-top:3px;white-space:nowrap}
+  .lg-livestat .v .u{font-size:12px;color:var(--muted);font-weight:400}
+  .lg-livestat.hero .v{font-size:30px;background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent}
+  @media (max-width:760px){.lg-livebody{grid-template-columns:1fr 1fr}.lg-livestats{grid-column:1/-1;justify-content:flex-start;margin-top:6px}}
   @media (max-width:900px){.lg-sess-top{grid-template-columns:1fr}}
   .lg-grid-e{grid-template-columns:150px 130px 1fr 130px 130px}
   .lg-grid-set{grid-template-columns:1fr 1fr}
@@ -555,6 +566,14 @@
 
     <!-- ===== SESSIONS ===== -->
     <div id="lgSess" style="display:none">
+      <div class="card lg-livecard" id="lgLiveCard" style="display:none">
+        <div class="lg-livehd"><span class="lg-live">live</span><span class="lg-livewhen" id="lgLiveWhen">—</span></div>
+        <div class="lg-livebody">
+          <div class="lg-livein"><label>Balance at start</label><input type="number" inputmode="numeric" id="lg_bal_start" placeholder="0"></div>
+          <div class="lg-livein"><label>Balance now</label><input type="number" inputmode="numeric" id="lg_bal_now" placeholder="your token balance"></div>
+          <div class="lg-livestats" id="lgLiveStats"></div>
+        </div>
+      </div>
       <div class="lg-sess-top">
         <div class="lg-sess-col">
           <div class="card lg-import" style="margin:0">
@@ -764,13 +783,13 @@
     renderAll(); ledgerShow(lgTab);
   }
 
-  function sessEnd(s){ return s.end_ts || ((s.manual_tokens!=null)? nowLocal() : (dataAsOf||nowLocal())); }
-  function sessionMetrics(s){ const tokens=(s.manual_tokens!=null)?Number(s.manual_tokens):(sessTok[s.id]||0); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=sessEnd(s); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
+  function sessEnd(s){ return s.end_ts || ((s.bal_now!=null)? nowLocal() : (dataAsOf||nowLocal())); }
+  function sessionMetrics(s){ const tokens=(s.bal_now!=null)?Math.max(0,Number(s.bal_now)-Number(s.bal_start||0)):(sessTok[s.id]||0); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=sessEnd(s); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
 
   const monthSessions=(ym)=>sessions.filter(s=>monthOf(s.session_date)===ym);
   const monthExpenses=(ym)=>expenses.filter(e=>monthOf(e.txn_date)===ym);
 
-  function renderAll(){ renderTokStatus(); renderPeriods(); renderDash(); renderSessions(); renderExpenses(); renderSettings(); }
+  function renderAll(){ renderTokStatus(); renderPeriods(); renderDash(); renderSessions(); renderLiveCard(); renderExpenses(); renderSettings(); }
   function shiftMonth(dir){ const p=curMonth.split("-"); const d=new Date(+p[0], (+p[1])-1+dir, 1); curMonth=d.getFullYear()+"-"+pad2n(d.getMonth()+1); renderDash(); renderExpenses(); }
 
   function periodList(earliest){ const out=[]; const t=new Date(); let y=t.getFullYear(), mo=t.getMonth(), half=(t.getDate()<=15?1:2); const floor=earliest||(y+"-"+pad2n(mo+1)+"-"+pad2n(t.getDate())); for(let k=0;k<400;k++){ const last=new Date(y,mo+1,0).getDate(), ml=MONTHS[mo].slice(0,3), mm=pad2n(mo+1); const p= half===2 ? {label:ml+" 16 – "+ml+" "+last+", "+y, start:y+"-"+mm+"-16", end:y+"-"+mm+"-"+pad2n(last)} : {label:ml+" 01 – "+ml+" 15, "+y, start:y+"-"+mm+"-01", end:y+"-"+mm+"-15"}; out.push(p); if(p.start<=floor) break; if(half===2){ half=1; } else { half=2; mo--; if(mo<0){ mo=11; y--; } } } return out; }
@@ -812,18 +831,32 @@
         return out;
       }
       const s=it.s, m=sessionMetrics(s);
-      if(editingRow===s.id){ const sv=to12((s.start_ts||"").slice(11,16)), ev=s.end_ts?to12(s.end_ts.slice(11,16)):"", tv=(s.manual_tokens!=null)?s.manual_tokens:"";
+      if(editingRow===s.id){ const sv=to12((s.start_ts||"").slice(11,16)), ev=s.end_ts?to12(s.end_ts.slice(11,16)):"";
         return '<tr class="lg-liverow"><td>'+isoToDisp(s.session_date)+'</td>'+
           '<td><div class="lg-rowedit"><input class="lg-time lg-rowinp" id="rowstart_'+s.id+'" value="'+sv+'"><span class="lg-dash">–</span><div class="lg-timewrap"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div></td>'+
-          '<td class="num" style="color:var(--muted-2)">—</td><td style="color:var(--muted-2)">—</td>'+
-          '<td class="num"><input class="lg-rowinp" id="rowtok_'+s.id+'" placeholder="auto" value="'+tv+'" style="width:88px;text-align:right"></td>'+
-          '<td class="num" colspan="4" style="color:var(--muted-2)">blank = auto from import</td>'+
+          '<td class="num" colspan="7" style="color:var(--muted-2)">editing times…</td>'+
           '<td class="num"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></td></tr>';
       }
-      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+(s.manual_tokens!=null?' <span class="lg-manual" title="manually set">&#9679;</span>':'')+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
+      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
     }).join("");
   }
 
+  function renderLiveCard(){
+    const live=sessions.find(s=>!s.end_ts), card=$("lgLiveCard");
+    if(!live){ card.style.display="none"; liveCardId=null; return; }
+    card.style.display=""; liveCardId=live.id; const m=sessionMetrics(live);
+    $("lgLiveWhen").textContent=fmtClock(live.start_ts)+" · "+fmtDur(m.mins)+" live";
+    if(document.activeElement!==$("lg_bal_start")) $("lg_bal_start").value=(live.bal_start!=null?live.bal_start:"");
+    if(document.activeElement!==$("lg_bal_now")) $("lg_bal_now").value=(live.bal_now!=null?live.bal_now:"");
+    $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
+  }
+  function onBalInput(){
+    const live=sessions.find(s=>s.id===liveCardId); if(!live) return;
+    const bs=$("lg_bal_start").value.trim(), bn=$("lg_bal_now").value.trim();
+    live.bal_start = bs===""?null:(parseInt(bs,10)||0); live.bal_now = bn===""?null:(parseInt(bn,10)||0);
+    renderLiveCard(); renderSessions();
+    clearTimeout(balSaveTimer); balSaveTimer=setTimeout(()=>{ sb.from("work_sessions").update({bal_start:live.bal_start,bal_now:live.bal_now}).eq("id",live.id); }, 600);
+  }
   function renderExpenses(){
     const cats=[...new Set(expenses.map(e=>e.category).filter(Boolean))].sort(); $("lg_e_catlist").innerHTML=cats.map(c=>'<option value="'+esc(c)+'">').join("");
     const me2=monthExpenses(curMonth); let tot=0; const bycat={}; me2.forEach(e=>{ tot+=Number(e.amount); const c=e.category||"—"; bycat[c]=(bycat[c]||0)+Number(e.amount); });
@@ -844,7 +877,7 @@
     cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt}; m.className="msg ok"; m.textContent="Saved."; renderAll();
   }
 
-  let editingSession=null, editingRow=null, offDetail=null, offEvents={};
+  let editingSession=null, editingRow=null, offDetail=null, offEvents={}, liveCardId=null, balSaveTimer=null;
   function resetSessionForm(){ editingSession=null; $("lg_s_start").value="";$("lg_s_end").value=""; $("lg_s_add").textContent="Add session"; $("lg_s_cancel").style.display="none"; }
   function editSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; editingSession=id; $("lg_s_date").value=isoToDisp(s.session_date); $("lg_s_start").value=to12((s.start_ts||"").slice(11,16)); $("lg_s_end").value=s.end_ts?to12(s.end_ts.slice(11,16)):""; $("lg_s_platform").value=s.platform||"Chaturbate"; $("lg_s_add").textContent="Update session"; $("lg_s_cancel").style.display=""; const m=$("lg_s_msg"); m.className="msg info"; m.textContent="Editing this session — change the times and Update."; window.scrollTo({top:$("lgSess").offsetTop-20,behavior:"smooth"}); }
   async function addSession(){
@@ -869,8 +902,7 @@
     if(rawEnd&&!en){ alert("End time not understood — try 10:50 PM, or clear it to stay live."); return; }
     const dateIso=s.session_date; let start=dateIso+"T"+st+":00", end=null;
     if(en){ end=dateIso+"T"+en+":00"; if(new Date(end)<=new Date(start)){ const d=new Date(dateIso+"T00:00:00"); d.setDate(d.getDate()+1); end=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+en+":00"; } }
-    const mtRaw=($("rowtok_"+id).value||"").trim(); const manual_tokens = mtRaw===""? null : (parseInt(mtRaw.replace(/[^0-9]/g,""),10)||0);
-    const { error }=await sb.from("work_sessions").update({start_ts:start,end_ts:end,manual_tokens}).eq("id",id);
+    const { error }=await sb.from("work_sessions").update({start_ts:start,end_ts:end}).eq("id",id);
     if(error){ alert(error.message); return; }
     editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll();
   }
@@ -929,6 +961,8 @@
     $("lg_exp_btn").addEventListener("click",()=>$("lg_exp_file").click());
     $("lg_exp_file").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) importExpenses(f); });
     $("lg_s_cancel").addEventListener("click",resetSessionForm);
+    $("lg_bal_start").addEventListener("input",onBalInput);
+    $("lg_bal_now").addEventListener("input",onBalInput);
     ["lg_s_start","lg_s_end"].forEach(id=>$(id).addEventListener("blur",()=>{ const v=parseTime($(id).value); if(v) $(id).value=to12(v); }));
     $("lg_s_endclear").addEventListener("click",()=>{ $("lg_s_end").value=""; $("lg_s_end").focus(); });
     $("lg_s_body").addEventListener("click",e=>{
@@ -940,7 +974,7 @@
       const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); });
     });
     $("lg_e_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ await fetchExpenses(); renderAll(); }); });
-    setInterval(()=>{ if(!editingRow && sessions.some(s=>!s.end_ts)){ renderSessions(); if(lgTab==="dash") renderDash(); } }, 30000);
+    setInterval(()=>{ if(sessions.some(s=>!s.end_ts)){ renderLiveCard(); if(!editingRow) renderSessions(); if(lgTab==="dash") renderDash(); } }, 30000);
   }
 
   /* ---------- CLIENT ---------- */
