@@ -406,20 +406,23 @@
   .lg-customdates input{width:120px}
   .lg-ovsel{width:auto;padding:7px 10px;font-size:13px}
   .lg-chart{width:100%;height:auto;display:block;margin-top:6px}
-  .lg-axt{fill:var(--muted-2);font-size:9px;font-family:var(--fm)}
-  .lg-ovgrid{align-items:stretch}
+  .lg-axt{fill:var(--muted);font-size:13px;font-family:var(--fm)}
+  .lg-ovgrid{align-items:stretch;grid-template-columns:1.7fr 1fr!important}
   @media (max-width:760px){.lg-ovgrid{grid-template-columns:1fr}}
-  .lg-donutwrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:6px}
-  .lg-donut{width:132px;height:132px;flex:none}
-  .lg-dctr{fill:var(--text);font-family:var(--fd);font-weight:800;font-size:13px}
-  .lg-dsub{fill:var(--muted-2);font-size:8px;text-transform:uppercase;letter-spacing:.1em}
-  .lg-legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:150px}
+  .lg-donutwrap{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:6px}
+  .lg-donut{width:148px;height:148px;flex:none}
+  .lg-dctr{fill:var(--text);font-family:var(--fd);font-weight:800;font-size:17px}
+  .lg-dsub{fill:var(--muted-2);font-size:10px;text-transform:uppercase;letter-spacing:.1em}
+  .lg-legend{display:flex;flex-direction:column;gap:9px;width:100%;min-width:0}
   .lg-seg{cursor:pointer;transition:stroke-width .15s ease, opacity .15s ease}
   .lg-leg{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;transition:opacity .15s ease;border-radius:7px;padding:3px 5px;margin:-3px -5px}
   .lg-leg.hot{background:rgba(255,255,255,.05)}
   .lg-legdot{width:11px;height:11px;border-radius:3px;flex:none}
   .lg-leglbl{flex:1;color:var(--text)}
-  .lg-legval{color:var(--muted);font-family:var(--fm);font-size:12px}
+  .lg-legval{color:var(--muted);font-family:var(--fm);font-size:13px}
+  .lg-leglbl{flex:1;color:var(--text);font-size:13.5px}
+  .lg-stackleg{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px}
+  .lg-sli{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
   .lg-subtabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line-soft)}
   .lg-subtab{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--fd);font-weight:600;font-size:13px;padding:9px 14px;cursor:pointer;margin-bottom:-1px}
   .lg-subtab:hover{color:var(--text)}
@@ -655,6 +658,17 @@
 
     <!-- ===== SESSIONS ===== -->
     <div id="lgSess" style="display:none">
+      <div class="lg-ovfilter lg-rrfilter">
+        <div class="lg-presets">
+          <button class="lg-preset" data-rr="30d">30D</button>
+          <button class="lg-preset" data-rr="3m">3M</button>
+          <button class="lg-preset" data-rr="ytd">YTD</button>
+          <button class="lg-preset" data-rr="12m">12M</button>
+          <button class="lg-preset" data-rr="all">All</button>
+        </div>
+        <div class="lg-customdates"><input type="text" class="lg-rrstart" placeholder="mm/dd/yyyy" autocomplete="off"><span>&ndash;</span><input type="text" class="lg-rrend" placeholder="mm/dd/yyyy" autocomplete="off"></div>
+      </div>
+      <div class="summary" id="lg_cb_kpis"></div>
       <div class="lg-sess-top">
         <div class="lg-sess-col">
           <div class="card lg-import" style="margin:0">
@@ -689,6 +703,16 @@
 
     <!-- ===== REVENUE SOURCE (manual) ===== -->
     <div id="lgRevSrc" style="display:none">
+      <div class="lg-ovfilter lg-rrfilter">
+        <div class="lg-presets">
+          <button class="lg-preset" data-rr="30d">30D</button>
+          <button class="lg-preset" data-rr="3m">3M</button>
+          <button class="lg-preset" data-rr="ytd">YTD</button>
+          <button class="lg-preset" data-rr="12m">12M</button>
+          <button class="lg-preset" data-rr="all">All</button>
+        </div>
+        <div class="lg-customdates"><input type="text" class="lg-rrstart" placeholder="mm/dd/yyyy" autocomplete="off"><span>&ndash;</span><input type="text" class="lg-rrend" placeholder="mm/dd/yyyy" autocomplete="off"></div>
+      </div>
       <div class="summary" id="lg_r_kpis"></div>
       <div class="card lg-form">
         <div class="ch" id="lg_r_title">Add revenue</div>
@@ -866,13 +890,13 @@
   function parseTime(s){ s=(s||"").trim().toLowerCase(); if(!s) return null; const ap=/p/.test(s)?"pm":(/a/.test(s)?"am":null); const dig=s.replace(/[^0-9:]/g,""); if(!dig) return null; let h,m; if(dig.includes(":")){ const parts=dig.split(":"); h=parseInt(parts[0],10); m=parseInt(parts[1]||"0",10); } else if(dig.length<=2){ h=parseInt(dig,10); m=0; } else { m=parseInt(dig.slice(-2),10); h=parseInt(dig.slice(0,-2),10); } if(isNaN(h)||isNaN(m)) return null; if(ap==="pm"&&h<12) h+=12; if(ap==="am"&&h===12) h=0; if(h<0||h>23||m<0||m>59) return null; return pad2n(h)+":"+pad2n(m); }
   function to12(hhmm){ if(!hhmm) return ""; const p=hhmm.split(":"); let H=+p[0]; const M=+p[1]; const ap=H>=12?"PM":"AM"; H=H%12||12; return H+":"+pad2n(M)+" "+ap; }
 
-  function ledgerShow(which){ lgTab=which; const rev=which==="rev"; show($("lgDash"),which==="dash"); show($("lgRevTabs"),rev); show($("lgRevOv"),rev&&revSrc==="overview"); show($("lgSess"),rev&&revSrc==="chaturbate"); show($("lgRevSrc"),rev&&revSrc!=="overview"&&revSrc!=="chaturbate"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); if(rev){ renderRevTabs(); if(revSrc==="overview") renderRevOv(); else if(revSrc==="chaturbate") renderLiveCard(); else renderRevSrc(); } window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
+  function ledgerShow(which){ lgTab=which; const rev=which==="rev"; show($("lgDash"),which==="dash"); show($("lgRevTabs"),rev); show($("lgRevOv"),rev&&revSrc==="overview"); show($("lgSess"),rev&&revSrc==="chaturbate"); show($("lgRevSrc"),rev&&revSrc!=="overview"&&revSrc!=="chaturbate"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); if(rev){ renderRevTabs(); syncRrFilters(); if(revSrc==="overview") renderRevOv(); else if(revSrc==="chaturbate"){ renderLiveCard(); renderCbSummary(); renderSessions(); } else renderRevSrc(); } window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
   function revShow(src){ revSrc=src; ledgerShow("rev"); }
   function renderRevTabs(){ document.querySelectorAll("[data-rev]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rev")===revSrc)); }
   function revRows(){ return expenses.filter(e=>(e.kind||"expense")==="income" && (e.source||"")===revSrc); }
   async function addRev(){ const rec={ txn_date:dispToIso($("lg_r_date").value)||today, amount:parseFloat($("lg_r_amt").value)||0, notes:$("lg_r_notes").value.trim()||null, kind:"income", source:revSrc, account:null, category:null, brand:null }; const m=$("lg_r_msg"); if(!rec.amount){ m.className="msg err"; m.textContent="Enter an amount."; return; } $("lg_r_add").disabled=true; m.className="msg info"; m.textContent="Saving\u2026"; const { error }=await sb.from("expenses").insert(rec); $("lg_r_add").disabled=false; if(error){ m.className="msg err"; m.textContent=error.message; return; } $("lg_r_amt").value="";$("lg_r_notes").value=""; m.className="msg ok"; m.textContent=revSrc+" revenue added."; await fetchExpenses(); renderAll(); }
   async function saveRev(id){ const rec={ txn_date:dispToIso($("erv_date_"+id).value)||today, notes:($("erv_notes_"+id).value||"").trim()||null, amount:parseFloat($("erv_amt_"+id).value)||0 }; const { error }=await sb.from("expenses").update(rec).eq("id",id); if(error){ alert(error.message); return; } editingRev=null; await fetchExpenses(); renderAll(); }
-  function renderRevSrc(){ if(revSrc==="chaturbate"||revSrc==="overview"||!$("lg_r_title")) return; $("lg_r_title").textContent="Add "+revSrc+" revenue"; const rowsAll=revRows(); const mrows=rowsAll.filter(e=>monthOf(e.txn_date)===curMonth); const tot=mrows.reduce((a,b)=>a+Number(b.amount),0), allTime=rowsAll.reduce((a,b)=>a+Number(b.amount),0); $("lg_r_kpis").innerHTML=kpi("This month",lgUSD(tot),monthLabel(curMonth),"grad")+kpi("Entries",String(mrows.length),"")+kpi("All-time",lgUSD(allTime),""); const col=revSort.col; const rows=rowsAll.slice().sort((a,b)=>{ let va,vb; if(col==="amount"){ va=Number(a.amount);vb=Number(b.amount);} else { const fld=col==="date"?"txn_date":col; va=(a[fld]||"").toString().toLowerCase(); vb=(b[fld]||"").toString().toLowerCase(); } if(va<vb) return revSort.dir==="asc"?-1:1; if(va>vb) return revSort.dir==="asc"?1:-1; return 0; }); updateSortArrows("lg_r_table",revSort,"data-rsort"); if(!rows.length){ $("lg_r_body").innerHTML='<tr><td colspan="4" class="lg-empty">No '+revSrc+' entries yet.</td></tr>'; return; } $("lg_r_body").innerHTML=rows.map(e=>{ if(editingRev===e.id){ return '<tr class="lg-liverow"><td><input class="lg-rowinp" id="erv_date_'+e.id+'" value="'+isoToDisp(e.txn_date)+'" placeholder="mm/dd/yyyy" style="width:110px"></td><td><input class="lg-rowinp" id="erv_notes_'+e.id+'" value="'+esc(e.notes)+'" style="width:100%"></td><td class="num"><input class="lg-rowinp" id="erv_amt_'+e.id+'" type="number" step="0.01" value="'+Number(e.amount)+'" style="width:90px;text-align:right"></td><td class="num"><button class="lg-edit" data-ervsave="'+e.id+'">Save</button> <button class="lg-del" data-ervcancel="'+e.id+'">Cancel</button></td></tr>'; } return '<tr><td>'+isoToDisp(e.txn_date)+'</td><td class="lg-notes">'+esc(e.notes)+'</td><td class="num">'+lgUSD(e.amount)+'</td><td class="num"><button class="lg-edit" data-ervedit="'+e.id+'">Edit</button> <button class="lg-del" data-lgdel-rev="'+e.id+'">Delete</button></td></tr>'; }).join(""); }
+  function renderRevSrc(){ if(revSrc==="chaturbate"||revSrc==="overview"||!$("lg_r_title")) return; $("lg_r_title").textContent="Add "+revSrc+" revenue"; const rowsAll=revRows(); const bnd=dateBounds(revRange,revAllStart()),_rs=bnd[0],_re=bnd[1]; const inR=rowsAll.filter(e=>e.txn_date>=_rs&&e.txn_date<=_re); const tot=inR.reduce((a,b)=>a+Number(b.amount),0), allTime=rowsAll.reduce((a,b)=>a+Number(b.amount),0); const _lbl=revRange.preset==="all"?"All time":(isoToDisp(_rs)+" \u2013 "+isoToDisp(_re)); $("lg_r_kpis").innerHTML=kpi("Revenue",lgUSD(tot),_lbl,"grad")+kpi("Taxes",lgUSD(tot*cfg.tax_rate),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("All-time",lgUSD(allTime),""); const col=revSort.col; const rows=inR.slice().sort((a,b)=>{ let va,vb; if(col==="amount"){ va=Number(a.amount);vb=Number(b.amount);} else { const fld=col==="date"?"txn_date":col; va=(a[fld]||"").toString().toLowerCase(); vb=(b[fld]||"").toString().toLowerCase(); } if(va<vb) return revSort.dir==="asc"?-1:1; if(va>vb) return revSort.dir==="asc"?1:-1; return 0; }); updateSortArrows("lg_r_table",revSort,"data-rsort"); if(!rows.length){ $("lg_r_body").innerHTML='<tr><td colspan="4" class="lg-empty">No '+revSrc+' entries in this range.</td></tr>'; return; } $("lg_r_body").innerHTML=rows.map(e=>{ if(editingRev===e.id){ return '<tr class="lg-liverow"><td><input class="lg-rowinp" id="erv_date_'+e.id+'" value="'+isoToDisp(e.txn_date)+'" placeholder="mm/dd/yyyy" style="width:110px"></td><td><input class="lg-rowinp" id="erv_notes_'+e.id+'" value="'+esc(e.notes)+'" style="width:100%"></td><td class="num"><input class="lg-rowinp" id="erv_amt_'+e.id+'" type="number" step="0.01" value="'+Number(e.amount)+'" style="width:90px;text-align:right"></td><td class="num"><button class="lg-edit" data-ervsave="'+e.id+'">Save</button> <button class="lg-del" data-ervcancel="'+e.id+'">Cancel</button></td></tr>'; } return '<tr><td>'+isoToDisp(e.txn_date)+'</td><td class="lg-notes">'+esc(e.notes)+'</td><td class="num">'+lgUSD(e.amount)+'</td><td class="num"><button class="lg-edit" data-ervedit="'+e.id+'">Edit</button> <button class="lg-del" data-lgdel-rev="'+e.id+'">Delete</button></td></tr>'; }).join(""); }
 
   async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens, goal_revenue_daily:(data.goal_revenue_daily!=null?+data.goal_revenue_daily:0)}; } else { await sb.from("ledger_config").insert({}); } }
   async function fetchSessions(){ const { data }=await sb.from("work_sessions").select("*").order("start_ts",{ascending:false}); sessions=data||[]; }
@@ -899,7 +923,7 @@
   const monthSessions=(ym)=>sessions.filter(s=>monthOf(s.session_date)===ym);
   const monthExpenses=(ym)=>expenses.filter(e=>monthOf(e.txn_date)===ym);
 
-  function renderAll(){ renderTokStatus(); renderPeriods(); renderDash(); renderSessions(); renderLiveCard(); renderExpenses(); renderSettings(); if($("lgRevTabs")){ renderRevTabs(); renderRevSrc(); if($("lg_ov_line")&&lgTab==="rev"&&revSrc==="overview") renderRevOv(); } }
+  function renderAll(){ renderTokStatus(); renderPeriods(); renderDash(); renderSessions(); renderLiveCard(); renderExpenses(); renderSettings(); if($("lgRevTabs")){ renderRevTabs(); syncRrFilters(); renderCbSummary(); renderRevSrc(); if($("lg_ov_line")&&lgTab==="rev"&&revSrc==="overview") renderRevOv(); } }
   function shiftMonth(dir){ const p=curMonth.split("-"); const d=new Date(+p[0], (+p[1])-1+dir, 1); curMonth=d.getFullYear()+"-"+pad2n(d.getMonth()+1); renderDash(); renderExpenses(); }
 
   function periodList(earliest){ const out=[]; const t=new Date(); let y=t.getFullYear(), mo=t.getMonth(), half=(t.getDate()<=15?1:2); const floor=earliest||(y+"-"+pad2n(mo+1)+"-"+pad2n(t.getDate())); for(let k=0;k<400;k++){ const last=new Date(y,mo+1,0).getDate(), ml=MONTHS[mo].slice(0,3), mm=pad2n(mo+1); const p= half===2 ? {label:ml+" 16 – "+ml+" "+last+", "+y, start:y+"-"+mm+"-16", end:y+"-"+mm+"-"+pad2n(last)} : {label:ml+" 01 – "+ml+" 15, "+y, start:y+"-"+mm+"-01", end:y+"-"+mm+"-15"}; out.push(p); if(p.start<=floor) break; if(half===2){ half=1; } else { half=2; mo--; if(mo<0){ mo=11; y--; } } } return out; }
@@ -940,8 +964,9 @@
   }
 
   function renderSessions(){
-    const items=sessions.map(s=>({off:false,s:s}));
+    let items=sessions.map(s=>({off:false,s:s}));
     offDaily.forEach(r=>{ const tk=Number(r.tokens)||0; if(tk>0) items.push({off:true,d:r.d,tokens:tk,st:r.last_lts||(r.d+"T23:59:59")}); });
+    { var _sb=dateBounds(revRange,revAllStart()),_srs=_sb[0],_sre=_sb[1]; items=items.filter(it=> it.off ? (it.d>=_srs&&it.d<=_sre) : ((it.s.session_date>=_srs&&it.s.session_date<=_sre)|| !it.s.end_ts)); }
     if(sessSort){ items.sort((a,b)=>{ const va=sessSortVal(a,sessSort.col), vb=sessSortVal(b,sessSort.col); if(va<vb) return sessSort.dir==="asc"?-1:1; if(va>vb) return sessSort.dir==="asc"?1:-1; return 0; }); } else { items.sort((a,b)=>{ const da=a.off?a.d:a.s.session_date, db=b.off?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; const ta=a.off?a.st:a.s.start_ts, tb=b.off?b.st:b.s.start_ts; return ta<tb?1:-1; }); }
     updateSortArrows("lg_s_table",sessSort,"data-ssort");
     if(!items.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
@@ -986,25 +1011,39 @@
   function ovColor(s){ return OVCOLORS[s]||"#6E8BFF"; }
   function ymd(dt){ return dt.getFullYear()+"-"+pad2n(dt.getMonth()+1)+"-"+pad2n(dt.getDate()); }
   function svgLine(pts){
-    const W=560,H=196,pl=48,pr=12,ptp=10,pb=24,pw=W-pl-pr,ph=H-ptp-pb;
+    const W=560,H=196,pl=60,pr=12,ptp=10,pb=24,pw=W-pl-pr,ph=H-ptp-pb;
     const xs=pts.map(p=>p.t),ys=pts.map(p=>p.y);
     let minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs); if(minX===maxX){ minX-=86400000; maxX+=86400000; }
     const maxY=Math.max(Math.max.apply(null,ys),1)*1.1;
     const X=t=>pl+(t-minX)/(maxX-minX)*pw, Y=v=>ptp+ph-(v/maxY)*ph;
-    let grid=""; for(let i=0;i<=2;i++){ const v=maxY*i/2,y=Y(v); grid+="<line x1='"+pl+"' y1='"+y.toFixed(1)+"' x2='"+(W-pr)+"' y2='"+y.toFixed(1)+"' stroke='rgba(255,255,255,.05)' stroke-width='1'/><text x='"+(pl-7)+"' y='"+(y+3).toFixed(1)+"' text-anchor='end' class='lg-axt'>"+lgUSD(v)+"</text>"; }
+    let grid=""; for(let i=0;i<=2;i++){ const v=maxY*i/2,y=Y(v); grid+="<line x1='"+pl+"' y1='"+y.toFixed(1)+"' x2='"+(W-pr)+"' y2='"+y.toFixed(1)+"' stroke='rgba(255,255,255,.05)'/><text x='"+(pl-8)+"' y='"+(y+4).toFixed(1)+"' text-anchor='end' class='lg-axt'>"+lgUSD(v)+"</text>"; }
     const fmtD=ms=>{ const d=new Date(ms); return (d.getMonth()+1)+"/"+d.getDate(); };
-    let xlab=""; [0,1].forEach(fx=>{ const t=minX+(maxX-minX)*fx,x=X(t); xlab+="<text x='"+x.toFixed(1)+"' y='"+(H-8)+"' text-anchor='"+(fx===0?"start":"end")+"' class='lg-axt'>"+fmtD(t)+"</text>"; });
+    let xlab=""; [0,1].forEach(fx=>{ const t=minX+(maxX-minX)*fx,x=X(t); xlab+="<text x='"+x.toFixed(1)+"' y='"+(H-7)+"' text-anchor='"+(fx===0?"start":"end")+"' class='lg-axt'>"+fmtD(t)+"</text>"; });
     const path=pts.map((p,i)=>(i?"L":"M")+X(p.t).toFixed(1)+" "+Y(p.y).toFixed(1)).join(" ");
     const area=path+" L "+X(pts[pts.length-1].t).toFixed(1)+" "+Y(0).toFixed(1)+" L "+X(pts[0].t).toFixed(1)+" "+Y(0).toFixed(1)+" Z";
-    return "<svg viewBox='0 0 "+W+" "+H+"' class='lg-chart' preserveAspectRatio='xMidYMid meet'><defs><linearGradient id='lgArea' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#6E8BFF' stop-opacity='0.18'/><stop offset='1' stop-color='#6E8BFF' stop-opacity='0'/></linearGradient></defs>"+grid+"<path d='"+area+"' fill='url(#lgArea)'/><path d='"+path+"' fill='none' stroke='#6E8BFF' stroke-width='1.75' stroke-linejoin='round' stroke-linecap='round'/>"+xlab+"</svg>";
+    return "<svg viewBox='0 0 "+W+" "+H+"' class='lg-chart' preserveAspectRatio='xMidYMid meet'><defs><linearGradient id='lgArea' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#6E8BFF' stop-opacity='0.18'/><stop offset='1' stop-color='#6E8BFF' stop-opacity='0'/></linearGradient></defs>"+grid+"<path d='"+area+"' fill='url(#lgArea)'/><path d='"+path+"' fill='none' stroke='#6E8BFF' stroke-width='1.9' stroke-linejoin='round' stroke-linecap='round'/>"+xlab+"</svg>";
+  }
+  function svgStack(dateTs,series){
+    const W=560,H=196,pl=60,pr=12,ptp=10,pb=24,pw=W-pl-pr,ph=H-ptp-pb;
+    let minX=dateTs[0],maxX=dateTs[dateTs.length-1]; if(minX===maxX){ minX-=86400000; maxX+=86400000; }
+    const totals=dateTs.map((_,i)=>series.reduce((a,s)=>a+s.cum[i],0));
+    const maxY=Math.max(Math.max.apply(null,totals),1)*1.1;
+    const X=t=>pl+(t-minX)/(maxX-minX)*pw, Y=v=>ptp+ph-(v/maxY)*ph;
+    let grid=""; for(let i=0;i<=2;i++){ const v=maxY*i/2,y=Y(v); grid+="<line x1='"+pl+"' y1='"+y.toFixed(1)+"' x2='"+(W-pr)+"' y2='"+y.toFixed(1)+"' stroke='rgba(255,255,255,.05)'/><text x='"+(pl-8)+"' y='"+(y+4).toFixed(1)+"' text-anchor='end' class='lg-axt'>"+lgUSD(v)+"</text>"; }
+    const fmtD=ms=>{ const d=new Date(ms); return (d.getMonth()+1)+"/"+d.getDate(); };
+    let xlab=""; [0,1].forEach(fx=>{ const t=minX+(maxX-minX)*fx,x=X(t); xlab+="<text x='"+x.toFixed(1)+"' y='"+(H-7)+"' text-anchor='"+(fx===0?"start":"end")+"' class='lg-axt'>"+fmtD(t)+"</text>"; });
+    let base=dateTs.map(()=>0),bands="";
+    series.forEach(s=>{ const top=base.map((b,i)=>b+s.cum[i]); const up=dateTs.map((t,i)=>X(t).toFixed(1)+" "+Y(top[i]).toFixed(1)); const dn=dateTs.map((t,i)=>X(t).toFixed(1)+" "+Y(base[i]).toFixed(1)).reverse(); bands+="<path d='M"+up.join(" L ")+" L "+dn.join(" L ")+" Z' fill='"+s.color+"' fill-opacity='0.82'/>"; base=top; });
+    return "<svg viewBox='0 0 "+W+" "+H+"' class='lg-chart' preserveAspectRatio='xMidYMid meet'>"+grid+bands+xlab+"</svg>";
   }
   function svgDonut(segs){
     const total=segs.reduce((a,b)=>a+b.value,0);
-    if(total<=0) return "<div class='lg-muted' style='padding:36px;text-align:center'>No revenue in this range.</div>";
-    const r=52,cx=70,cy=70,C=2*Math.PI*r,sw=17; let off=0,arcs="";
+    if(total<=0){ ovSegs=[]; return "<div class='lg-muted' style='padding:36px;text-align:center'>No revenue in this range.</div>"; }
+    const r=52,cx=70,cy=70,C=2*Math.PI*r,sw=17; let off=0,acc=0,arcs=""; ovSegs=[];
     segs.forEach(s=>{ const frac=s.value/total, len=frac*C, fm=(off/C)+(frac/2), th=fm*2*Math.PI, tx=(Math.sin(th)*7).toFixed(1), ty=(-Math.cos(th)*7).toFixed(1);
+      ovSegs.push({label:s.label,color:s.color,s0:acc,s1:acc+frac}); acc+=frac;
       arcs+="<circle class='lg-seg' data-src='"+esc(s.label)+"' data-tx='"+tx+"' data-ty='"+ty+"' cx='"+cx+"' cy='"+cy+"' r='"+r+"' fill='none' stroke='"+s.color+"' stroke-width='"+sw+"' stroke-dasharray='"+len.toFixed(2)+" "+(C-len).toFixed(2)+"' stroke-dashoffset='"+(-off).toFixed(2)+"' transform='rotate(-90 "+cx+" "+cy+")'/>"; off+=len; });
-    const svg="<svg viewBox='0 0 140 140' class='lg-donut'>"+arcs+"<text x='"+cx+"' y='"+(cy-1)+"' text-anchor='middle' class='lg-dctr'>"+lgUSD(total)+"</text><text x='"+cx+"' y='"+(cy+13)+"' text-anchor='middle' class='lg-dsub'>total</text></svg>";
+    const svg="<svg viewBox='0 0 140 140' class='lg-donut'>"+arcs+"<text x='"+cx+"' y='"+(cy-1)+"' text-anchor='middle' class='lg-dctr'>"+lgUSD(total)+"</text><text x='"+cx+"' y='"+(cy+14)+"' text-anchor='middle' class='lg-dsub'>total</text></svg>";
     const legend="<div class='lg-legend'>"+segs.map(s=>"<div class='lg-leg' data-src='"+esc(s.label)+"'><span class='lg-legdot' style='background:"+s.color+"'></span><span class='lg-leglbl'>"+esc(s.label)+"</span><span class='lg-legval'>"+lgUSD(s.value)+" \u00b7 "+Math.round(s.value/total*100)+"%</span></div>").join("")+"</div>";
     return "<div class='lg-donutwrap'>"+svg+legend+"</div>";
   }
@@ -1013,6 +1052,7 @@
     box.querySelectorAll(".lg-seg").forEach(c=>{ const on=src&&c.getAttribute("data-src")===src; c.style.strokeWidth=on?"23":"17"; c.style.opacity=(src&&!on)?"0.32":"1"; c.setAttribute("transform",(on?("translate("+c.getAttribute("data-tx")+" "+c.getAttribute("data-ty")+") "):"")+"rotate(-90 70 70)"); });
     box.querySelectorAll(".lg-leg").forEach(l=>{ const on=src&&l.getAttribute("data-src")===src; l.classList.toggle("hot",!!on); l.style.opacity=(src&&!on)?"0.5":"1"; });
   }
+  function ovSegAt(clientX,clientY,svg){ const rect=svg.getBoundingClientRect(); if(!rect.width) return null; const mx=(clientX-rect.left)/rect.width*140, my=(clientY-rect.top)/rect.height*140; const dx=mx-70,dy=my-70,dist=Math.sqrt(dx*dx+dy*dy); if(dist<38||dist>70) return null; let ang=Math.atan2(dx,-dy); if(ang<0) ang+=2*Math.PI; const fr=ang/(2*Math.PI); for(var k=0;k<ovSegs.length;k++){ if(fr>=ovSegs[k].s0 && fr<ovSegs[k].s1) return ovSegs[k].label; } return null; }
   function renderRevOv(){
     if(!$("lg_ov_line")) return;
     const bySrcDay={};
@@ -1036,14 +1076,26 @@
     const daysSet={}; Object.keys(bySrcDay).forEach(s=>Object.keys(bySrcDay[s]).forEach(d=>{ if(inRange(d)) daysSet[d]=1; })); const nDays=Object.keys(daysSet).length;
     const srcKeys=Object.keys(totalBySrc).sort((a,b)=>totalBySrc[b]-totalBySrc[a]); const topSrc=srcKeys[0]||"\u2014";
     $("lg_ov_kpis").innerHTML=kpi("Total revenue",lgUSD(grand),"","grad")+kpi("Avg / day",nDays?lgUSD(grand/nDays):"\u2014",nDays+" active days")+kpi("Top source",topSrc,totalBySrc[topSrc]?lgUSD(totalBySrc[topSrc]):"")+kpi("Sources",String(srcKeys.length),"");
-    let dayMap={};
-    if(ovType==="all"){ Object.keys(bySrcDay).forEach(s=>Object.keys(bySrcDay[s]).forEach(d=>{ if(inRange(d)) dayMap[d]=(dayMap[d]||0)+bySrcDay[s][d]; })); }
-    else if(bySrcDay[ovType]){ Object.keys(bySrcDay[ovType]).forEach(d=>{ if(inRange(d)) dayMap[d]=(dayMap[d]||0)+bySrcDay[ovType][d]; }); }
-    const sortedDays=Object.keys(dayMap).sort();
-    if(!sortedDays.length){ $("lg_ov_line").innerHTML="<div class='lg-muted' style='padding:40px;text-align:center'>No "+(ovType==="all"?"":esc(ovType)+" ")+"revenue in this range.</div>"; }
-    else { let cum=0; const pts=[{t:new Date(rs+"T00:00:00").getTime(),y:0}]; sortedDays.forEach(d=>{ cum+=dayMap[d]; pts.push({t:new Date(d+"T00:00:00").getTime(),y:cum}); }); pts.push({t:new Date(re+"T00:00:00").getTime(),y:cum}); $("lg_ov_line").innerHTML=svgLine(pts); }
+    if(ovType==="all"){
+      const srcList=srcKeys; let dateSet={}; srcList.forEach(s=>Object.keys(bySrcDay[s]).forEach(d=>{ if(inRange(d)) dateSet[d]=1; })); const days=Object.keys(dateSet).sort();
+      if(!days.length){ $("lg_ov_line").innerHTML="<div class='lg-muted' style='padding:40px;text-align:center'>No revenue in this range.</div>"; }
+      else { const series=srcList.map(s=>{ let c=0; const cum=days.map(d=>{ if(inRange(d)&&bySrcDay[s][d]) c+=bySrcDay[s][d]; return c; }); return {label:s,color:ovColor(s),cum:[0].concat(cum).concat([cum[cum.length-1]])}; });
+        const dateTs=[new Date(rs+"T00:00:00").getTime()].concat(days.map(d=>new Date(d+"T00:00:00").getTime())).concat([new Date(re+"T00:00:00").getTime()]);
+        const leg="<div class='lg-stackleg'>"+srcList.map(s=>"<span class='lg-sli'><span class='lg-legdot' style='background:"+ovColor(s)+"'></span>"+esc(s)+"</span>").join("")+"</div>";
+        $("lg_ov_line").innerHTML=svgStack(dateTs,series)+leg; }
+    } else {
+      let dayMap={}; if(bySrcDay[ovType]){ Object.keys(bySrcDay[ovType]).forEach(d=>{ if(inRange(d)) dayMap[d]=(dayMap[d]||0)+bySrcDay[ovType][d]; }); }
+      const sortedDays=Object.keys(dayMap).sort();
+      if(!sortedDays.length){ $("lg_ov_line").innerHTML="<div class='lg-muted' style='padding:40px;text-align:center'>No "+esc(ovType)+" revenue in this range.</div>"; }
+      else { let cum=0; const pts=[{t:new Date(rs+"T00:00:00").getTime(),y:0}]; sortedDays.forEach(d=>{ cum+=dayMap[d]; pts.push({t:new Date(d+"T00:00:00").getTime(),y:cum}); }); pts.push({t:new Date(re+"T00:00:00").getTime(),y:cum}); $("lg_ov_line").innerHTML=svgLine(pts); }
+    }
     $("lg_ov_donut").innerHTML=svgDonut(srcKeys.map(s=>({label:s,value:totalBySrc[s],color:ovColor(s)})));
   }
+  function dateBounds(range,allStart){ const end=(range.preset==="custom"&&range.end)?range.end:today; let start; const base=new Date(today+"T00:00:00"); if(range.preset==="30d"){ base.setDate(base.getDate()-29); start=ymd(base); } else if(range.preset==="3m"){ base.setDate(base.getDate()-89); start=ymd(base); } else if(range.preset==="12m"){ base.setDate(base.getDate()-364); start=ymd(base); } else if(range.preset==="ytd"){ start=today.slice(0,4)+"-01-01"; } else if(range.preset==="custom"){ start=range.start||allStart; } else { start=allStart; } return [start,end]; }
+  function revAllStart(){ let ds=[]; dailyTok.forEach(r=>ds.push(r.d)); expenses.filter(e=>(e.kind||"expense")==="income").forEach(e=>ds.push(e.txn_date)); sessions.forEach(s=>{ if(s.session_date) ds.push(s.session_date); }); return ds.length?ds.sort()[0]:today; }
+  function syncRrFilters(){ const bnd=dateBounds(revRange,revAllStart()),rs=bnd[0],re=bnd[1]; document.querySelectorAll(".lg-rrfilter").forEach(bar=>{ bar.querySelectorAll("[data-rr]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rr")===revRange.preset)); const s=bar.querySelector(".lg-rrstart"), en=bar.querySelector(".lg-rrend"); if(s&&document.activeElement!==s) s.value=(revRange.preset==="custom")?(revRange.start?isoToDisp(revRange.start):""):isoToDisp(rs); if(en&&document.activeElement!==en) en.value=(revRange.preset==="custom")?(revRange.end?isoToDisp(revRange.end):""):isoToDisp(re); }); }
+  function renderCbSummary(){ if(!$("lg_cb_kpis")) return; const bnd=dateBounds(revRange,revAllStart()),rs=bnd[0],re=bnd[1]; let rangeTok=0,allTok=0; dailyTok.forEach(r=>{ const t=Number(r.tokens||0); allTok+=t; if(r.d>=rs&&r.d<=re) rangeTok+=t; }); const rev=rangeTok*cfg.token_rate, tax=rev*cfg.tax_rate, allRev=allTok*cfg.token_rate; const lbl=revRange.preset==="all"?"All time":(isoToDisp(rs)+" \u2013 "+isoToDisp(re)); $("lg_cb_kpis").innerHTML=kpi("Revenue",lgUSD(rev),lbl,"grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Tokens",lgN(rangeTok),"")+kpi("All-time",lgUSD(allRev),""); }
+  function renderRevViews(){ syncRrFilters(); renderCbSummary(); renderSessions(); renderRevSrc(); }
   function txnRows(){ return expenses.filter(e=>(e.kind||"expense")===txnKind); }
   function renderCatMgr(){ const list=(cats[txnKind]||[]); $("lg_cat_list").innerHTML=list.length?list.map(c=>'<span class="lg-catchip">'+esc(c)+'<button data-catdel="'+esc(c)+'" title="Remove">&times;</button></span>').join(""):'<span class="lg-muted">No categories yet \u2014 add one below.</span>'; }
   async function addCategory(){ const name=$("lg_cat_new").value.trim(); if(!name) return; const { error }=await sb.from("ledger_categories").insert({ user_id:me.id, kind:txnKind, name }); if(error && !/duplicate|unique/i.test(error.message||"")){ alert(error.message); return; } $("lg_cat_new").value=""; await fetchCats(); renderExpenses(); }
@@ -1085,7 +1137,7 @@
 
   let editingSession=null, editingRow=null, offDetail=null, offEvents={}, liveCardId=null, balSaveTimer=null, liveBal={};
   let txnKind="expense", txnSort={col:"date",dir:"desc"}, sessSort=null, editingTxn=null, cats={expense:[],income:[]};
-  let revSrc="overview", revSort={col:"date",dir:"desc"}, editingRev=null, ovType="all", ovRange={preset:"all",start:null,end:null};
+  let revSrc="overview", revSort={col:"date",dir:"desc"}, editingRev=null, ovType="all", ovRange={preset:"all",start:null,end:null}, revRange={preset:"all",start:null,end:null}, ovSegs=[];
   function resetSessionForm(){ editingSession=null; $("lg_s_start").value="";$("lg_s_end").value=""; $("lg_s_add").textContent="Add session"; $("lg_s_cancel").style.display="none"; }
   function editSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; editingSession=id; $("lg_s_date").value=isoToDisp(s.session_date); $("lg_s_start").value=to12((s.start_ts||"").slice(11,16)); $("lg_s_end").value=s.end_ts?to12(s.end_ts.slice(11,16)):""; $("lg_s_platform").value=s.platform||"Chaturbate"; $("lg_s_add").textContent="Update session"; $("lg_s_cancel").style.display=""; const m=$("lg_s_msg"); m.className="msg info"; m.textContent="Editing this session — change the times and Update."; window.scrollTo({top:$("lgSess").offsetTop-20,behavior:"smooth"}); }
   async function addSession(){
@@ -1163,13 +1215,17 @@
     $("lgRevTabs").addEventListener("click",e=>{ const b=e.target.closest("[data-rev]"); if(b) revShow(b.getAttribute("data-rev")); });
     $("lg_ov_type").addEventListener("change",()=>{ ovType=$("lg_ov_type").value; renderRevOv(); });
     (function(){ const box=$("lg_ov_donut"); if(!box) return;
-      box.addEventListener("mouseover",e=>{ const el=e.target.closest("[data-src]"); ovHighlight(el?el.getAttribute("data-src"):null); });
+      const tabs={Chaturbate:"chaturbate",Venmo:"Venmo",CashApp:"CashApp","Apple Pay":"Apple Pay",Gifts:"Gifts"};
+      box.addEventListener("mousemove",e=>{ const svg=box.querySelector(".lg-donut"); if(!svg) return; if(e.target!==svg && !svg.contains(e.target)) return; ovHighlight(ovSegAt(e.clientX,e.clientY,svg)); });
+      box.addEventListener("mouseover",e=>{ const leg=e.target.closest(".lg-leg"); if(leg) ovHighlight(leg.getAttribute("data-src")); });
       box.addEventListener("mouseleave",()=>ovHighlight(null));
-      box.addEventListener("click",e=>{ const el=e.target.closest("[data-src]"); if(!el) return; const src=el.getAttribute("data-src"); const tabs={Chaturbate:"chaturbate",Venmo:"Venmo",CashApp:"CashApp","Apple Pay":"Apple Pay",Gifts:"Gifts"}; if(tabs[src]) revShow(tabs[src]); });
+      box.addEventListener("click",e=>{ let src=null; const leg=e.target.closest(".lg-leg"); if(leg) src=leg.getAttribute("data-src"); else { const svg=box.querySelector(".lg-donut"); if(svg) src=ovSegAt(e.clientX,e.clientY,svg); } if(src&&tabs[src]) revShow(tabs[src]); });
     })();
     $("lg_ov_presets").addEventListener("click",e=>{ const b=e.target.closest("[data-ovr]"); if(!b) return; ovRange={preset:b.getAttribute("data-ovr"),start:null,end:null}; renderRevOv(); });
     $("lg_ov_start").addEventListener("change",()=>{ const v=dispToIso($("lg_ov_start").value); if(v){ ovRange.preset="custom"; ovRange.start=v; renderRevOv(); } });
     $("lg_ov_end").addEventListener("change",()=>{ const v=dispToIso($("lg_ov_end").value); if(v){ ovRange.preset="custom"; ovRange.end=v; renderRevOv(); } });
+    $("specialView").addEventListener("click",e=>{ const b=e.target.closest(".lg-rrfilter [data-rr]"); if(b){ revRange={preset:b.getAttribute("data-rr"),start:null,end:null}; renderRevViews(); } });
+    $("specialView").addEventListener("change",e=>{ if(e.target.classList&&e.target.classList.contains("lg-rrstart")){ const v=dispToIso(e.target.value); if(v){ revRange.preset="custom"; revRange.start=v; renderRevViews(); } } else if(e.target.classList&&e.target.classList.contains("lg-rrend")){ const v=dispToIso(e.target.value); if(v){ revRange.preset="custom"; revRange.end=v; renderRevViews(); } } });
     $("lg_r_add").addEventListener("click",addRev);
     $("lg_r_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-rsort]"); if(!th) return; const col=th.getAttribute("data-rsort"); if(revSort.col===col){ revSort.dir=revSort.dir==="asc"?"desc":"asc"; } else { revSort={col,dir:"desc"}; } renderRevSrc(); });
     $("lg_r_body").addEventListener("click",e=>{
