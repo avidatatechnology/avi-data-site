@@ -387,7 +387,14 @@
   .lg-imp-sub{font-size:12.5px;color:var(--muted);margin-top:3px}
   .lg-imp-r{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .lg-cardhd{font-family:var(--fd);font-weight:700;font-size:14px;padding:16px 16px 0}
-  .lg-grid-s{grid-template-columns:150px 130px 130px 1fr}
+  .lg-grid-s{grid-template-columns:1fr 1fr}
+  .lg-sess-top{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start}
+  .lg-sess-col{display:flex;flex-direction:column;gap:14px}
+  .lg-rowedit{display:flex;align-items:center;gap:8px}
+  .lg-rowinp{width:104px;padding:7px 9px!important;font-size:13px}
+  .lg-rowedit .lg-timewrap{width:auto}
+  .lg-dash{color:var(--muted-2)}
+  @media (max-width:900px){.lg-sess-top{grid-template-columns:1fr}}
   .lg-grid-e{grid-template-columns:150px 130px 1fr 130px 130px}
   .lg-grid-set{grid-template-columns:1fr 1fr}
   input[type=time]{width:100%}
@@ -405,6 +412,12 @@
   .lg-edit{background:none;border:none;color:var(--muted-2);font-size:12px;cursor:pointer;padding:4px 8px;border-radius:7px;transition:.14s;font-family:var(--fb)}
   .lg-edit:hover{color:var(--brand-2);background:rgba(110,139,255,.1)}
   .lg-live{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 9px;border-radius:20px;background:rgba(52,216,160,.16);color:var(--mint)}
+  .lg-timewrap{position:relative}
+  .lg-time{width:100%}
+  .lg-timewrap .lg-time{padding-right:34px}
+  .lg-timeclear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:7px;border:none;background:var(--raised);color:var(--muted);font-size:16px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
+  .lg-timeclear:hover{color:var(--rose);background:rgba(242,96,125,.12)}
+  .lg-optlbl{font-family:var(--fb);font-size:10px;text-transform:none;letter-spacing:0;color:var(--muted-2);font-weight:500;margin-left:4px}
   table.lgt tr.lg-liverow td{background:rgba(52,216,160,.045)}
   @media (max-width:760px){.lg-two{grid-template-columns:1fr}.lg-grid-s,.lg-grid-e,.lg-grid-set{grid-template-columns:1fr 1fr}}
 </style>
@@ -532,26 +545,26 @@
 
     <!-- ===== SESSIONS ===== -->
     <div id="lgSess" style="display:none">
-      <div class="card lg-import">
-        <div class="lg-imp-l"><div class="ch">Token import</div><div class="lg-imp-sub" id="lg_tok_status">No tokens imported yet.</div></div>
-        <div class="lg-imp-r"><input type="file" id="lg_tok_file" accept=".csv" multiple hidden><button class="btn" id="lg_tok_btn" style="width:auto">Upload export(s)</button><span class="msg" id="lg_tok_msg"></span></div>
-      </div>
-      <div class="card">
-        <div class="ch">Export periods</div>
-        <div class="lg-imp-sub">Chaturbate exports in half-month periods. Upload each file &mdash; imported periods get checked off. Re-uploading is safe (duplicates are skipped).</div>
-        <div class="lg-periods" id="lg_periods"></div>
-      </div>
-      <div class="card lg-form">
-        <div class="ch">Log a Chaturbate session</div>
-        <div class="csub">Tokens come from the import automatically &mdash; anything received between your start and end counts. <b>Still streaming? Leave End blank</b> and the session stays open, counting up to now.</div>
-        <div class="lg-grid lg-grid-s" style="margin-top:8px">
-          <div><label>Date</label><div class="dp"><input type="text" class="dpi" id="lg_s_date" placeholder="mm/dd/yyyy" autocomplete="off"><button type="button" class="dpbtn" tabindex="-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button></div></div>
-          <div><label>Start</label><input type="time" id="lg_s_start"></div>
-          <div><label>End</label><input type="time" id="lg_s_end"></div>
-          <div><label>Platform</label><input type="text" id="lg_s_platform" value="Chaturbate"></div>
+      <div class="lg-sess-top">
+        <div class="lg-sess-col">
+          <div class="card lg-import" style="margin:0">
+            <div class="lg-imp-l"><div class="ch">Token import</div><div class="lg-imp-sub" id="lg_tok_status">No tokens imported yet.</div></div>
+            <div class="lg-imp-r"><input type="file" id="lg_tok_file" accept=".csv" multiple hidden><button class="btn" id="lg_tok_btn" style="width:auto">Upload export(s)</button><span class="msg" id="lg_tok_msg"></span></div>
+          </div>
+          <div class="card"><div class="ch">Export periods</div><div class="lg-periods" id="lg_periods"></div></div>
         </div>
-        <label style="margin-top:12px">Notes</label><input type="text" id="lg_s_notes" placeholder="optional">
-        <div class="lg-actions"><button class="btn" id="lg_s_add" style="width:auto">Add session</button><button class="btn-ghost" id="lg_s_cancel" style="width:auto;display:none">Cancel</button><span class="msg" id="lg_s_msg"></span></div>
+        <div class="lg-sess-col">
+          <div class="card lg-form" style="margin:0">
+            <div class="ch">Log a Chaturbate session</div>
+            <div class="lg-grid lg-grid-s" style="margin-top:12px">
+              <div><label>Date</label><div class="dp"><input type="text" class="dpi" id="lg_s_date" placeholder="mm/dd/yyyy" autocomplete="off"><button type="button" class="dpbtn" tabindex="-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button></div></div>
+              <div><label>Platform</label><input type="text" id="lg_s_platform" value="Chaturbate"></div>
+              <div><label>Start</label><input type="text" class="lg-time" id="lg_s_start" placeholder="9:57 AM" autocomplete="off"></div>
+              <div><label>End <span class="lg-optlbl">blank = live</span></label><div class="lg-timewrap"><input type="text" class="lg-time" id="lg_s_end" placeholder="still live" autocomplete="off"><button type="button" class="lg-timeclear" id="lg_s_endclear" title="Clear — keep session live">&times;</button></div></div>
+            </div>
+            <div class="lg-actions"><button class="btn" id="lg_s_add" style="width:auto">Add session</button><button class="btn-ghost" id="lg_s_cancel" style="width:auto;display:none">Cancel</button><span class="msg" id="lg_s_msg"></span></div>
+          </div>
+        </div>
       </div>
       <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt"><thead><tr><th>Date</th><th>Time</th><th class="num">Dur</th><th>Platform</th><th class="num">Tokens</th><th class="num">Revenue</th><th class="num">Tax</th><th class="num">Net</th><th class="num">$/hr</th><th></th></tr></thead><tbody id="lg_s_body"></tbody></table></div></div>
     </div>
@@ -719,6 +732,8 @@
   function fmtDur(mins){ const h=Math.floor(mins/60), m=Math.round(mins%60); return h+":"+pad2n(m); }
   function fmtClock(ts){ const d=new Date(ts); let h=d.getHours(), m=d.getMinutes(); const ap=h>=12?"PM":"AM"; h=h%12||12; return h+":"+pad2n(m)+" "+ap; }
   function nowLocal(){ const d=new Date(); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+pad2n(d.getHours())+":"+pad2n(d.getMinutes())+":"+pad2n(d.getSeconds()); }
+  function parseTime(s){ s=(s||"").trim().toLowerCase(); if(!s) return null; const ap=/p/.test(s)?"pm":(/a/.test(s)?"am":null); const dig=s.replace(/[^0-9:]/g,""); if(!dig) return null; let h,m; if(dig.includes(":")){ const parts=dig.split(":"); h=parseInt(parts[0],10); m=parseInt(parts[1]||"0",10); } else if(dig.length<=2){ h=parseInt(dig,10); m=0; } else { m=parseInt(dig.slice(-2),10); h=parseInt(dig.slice(0,-2),10); } if(isNaN(h)||isNaN(m)) return null; if(ap==="pm"&&h<12) h+=12; if(ap==="am"&&h===12) h=0; if(h<0||h>23||m<0||m>59) return null; return pad2n(h)+":"+pad2n(m); }
+  function to12(hhmm){ if(!hhmm) return ""; const p=hhmm.split(":"); let H=+p[0]; const M=+p[1]; const ap=H>=12?"PM":"AM"; H=H%12||12; return H+":"+pad2n(M)+" "+ap; }
 
   function ledgerShow(which){ lgTab=which; show($("lgDash"),which==="dash"); show($("lgSess"),which==="sess"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
@@ -774,8 +789,13 @@
   }
 
   function renderSessions(){
-    if(!sessions.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet. Add one above, then import your token export.</td></tr>'; return; }
-    $("lg_s_body").innerHTML=sessions.map(s=>{ const m=sessionMetrics(s); return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>'; }).join("");
+    if(!sessions.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
+    $("lg_s_body").innerHTML=sessions.map(s=>{ const m=sessionMetrics(s);
+      if(editingRow===s.id){ const sv=to12((s.start_ts||"").slice(11,16)), ev=s.end_ts?to12(s.end_ts.slice(11,16)):"";
+        return '<tr class="lg-liverow"><td>'+isoToDisp(s.session_date)+'</td><td><div class="lg-rowedit"><input class="lg-time lg-rowinp" id="rowstart_'+s.id+'" value="'+sv+'"><span class="lg-dash">–</span><div class="lg-timewrap"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div></td><td class="num" colspan="7" style="color:var(--muted-2)">editing times…</td><td class="num"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></td></tr>';
+      }
+      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num">'+lgUSD(m.rev)+'</td><td class="num">'+lgUSD(m.tax)+'</td><td class="num">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
+    }).join("");
   }
 
   function renderExpenses(){
@@ -798,15 +818,16 @@
     cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt}; m.className="msg ok"; m.textContent="Saved."; renderAll();
   }
 
-  let editingSession=null;
-  function resetSessionForm(){ editingSession=null; $("lg_s_start").value="";$("lg_s_end").value="";$("lg_s_notes").value=""; $("lg_s_add").textContent="Add session"; $("lg_s_cancel").style.display="none"; }
-  function editSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; editingSession=id; $("lg_s_date").value=isoToDisp(s.session_date); $("lg_s_start").value=(s.start_ts||"").slice(11,16); $("lg_s_end").value=(s.end_ts||"").slice(11,16); $("lg_s_platform").value=s.platform||"Chaturbate"; $("lg_s_notes").value=s.notes||""; $("lg_s_add").textContent="Update session"; $("lg_s_cancel").style.display=""; const m=$("lg_s_msg"); m.className="msg info"; m.textContent="Editing this session — change the times and Update."; window.scrollTo({top:$("lgSess").offsetTop-20,behavior:"smooth"}); }
+  let editingSession=null, editingRow=null;
+  function resetSessionForm(){ editingSession=null; $("lg_s_start").value="";$("lg_s_end").value=""; $("lg_s_add").textContent="Add session"; $("lg_s_cancel").style.display="none"; }
+  function editSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; editingSession=id; $("lg_s_date").value=isoToDisp(s.session_date); $("lg_s_start").value=to12((s.start_ts||"").slice(11,16)); $("lg_s_end").value=s.end_ts?to12(s.end_ts.slice(11,16)):""; $("lg_s_platform").value=s.platform||"Chaturbate"; $("lg_s_add").textContent="Update session"; $("lg_s_cancel").style.display=""; const m=$("lg_s_msg"); m.className="msg info"; m.textContent="Editing this session — change the times and Update."; window.scrollTo({top:$("lgSess").offsetTop-20,behavior:"smooth"}); }
   async function addSession(){
-    const dateIso=dispToIso($("lg_s_date").value)||today, st=$("lg_s_start").value, en=$("lg_s_end").value, m=$("lg_s_msg");
-    if(!st){ m.className="msg err"; m.textContent="Enter at least a start time."; return; }
+    const dateIso=dispToIso($("lg_s_date").value)||today, rawEnd=$("lg_s_end").value.trim(), st=parseTime($("lg_s_start").value), en=parseTime(rawEnd), m=$("lg_s_msg");
+    if(!st){ m.className="msg err"; m.textContent="Enter a valid start time, like 9:57 AM."; return; }
+    if(rawEnd && !en){ m.className="msg err"; m.textContent="End time not understood — try 10:50 PM, or clear it to stay live."; return; }
     let start=dateIso+"T"+st+":00", end=null;
     if(en){ end=dateIso+"T"+en+":00"; if(new Date(end)<=new Date(start)){ const d=new Date(dateIso+"T00:00:00"); d.setDate(d.getDate()+1); end=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+en+":00"; } }
-    const rec={ session_date:dateIso, start_ts:start, end_ts:end, platform:$("lg_s_platform").value.trim()||"Chaturbate", notes:$("lg_s_notes").value.trim()||null };
+    const rec={ session_date:dateIso, start_ts:start, end_ts:end, platform:$("lg_s_platform").value.trim()||"Chaturbate", notes:null };
     const wasEdit=!!editingSession;
     $("lg_s_add").disabled=true; m.className="msg info"; m.textContent="Saving…";
     const { error }= wasEdit ? await sb.from("work_sessions").update(rec).eq("id",editingSession) : await sb.from("work_sessions").insert(rec);
@@ -814,6 +835,17 @@
     if(error){ m.className="msg err"; m.textContent=error.message; return; }
     resetSessionForm(); m.className="msg ok"; m.textContent= wasEdit? "Session updated." : "Session added.";
     await Promise.all([fetchSessions(),fetchAgg()]); curMonth=monthOf(dateIso); renderAll();
+  }
+  async function saveRow(id){
+    const s=sessions.find(x=>x.id===id); if(!s) return;
+    const st=parseTime($("rowstart_"+id).value), rawEnd=($("rowend_"+id).value||"").trim(), en=parseTime(rawEnd);
+    if(!st){ alert("Enter a valid start time, like 9:57 AM."); return; }
+    if(rawEnd&&!en){ alert("End time not understood — try 10:50 PM, or clear it to stay live."); return; }
+    const dateIso=s.session_date; let start=dateIso+"T"+st+":00", end=null;
+    if(en){ end=dateIso+"T"+en+":00"; if(new Date(end)<=new Date(start)){ const d=new Date(dateIso+"T00:00:00"); d.setDate(d.getDate()+1); end=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+en+":00"; } }
+    const { error }=await sb.from("work_sessions").update({start_ts:start,end_ts:end}).eq("id",id);
+    if(error){ alert(error.message); return; }
+    editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll();
   }
 
   async function addExpense(){
@@ -869,7 +901,15 @@
     $("lg_exp_btn").addEventListener("click",()=>$("lg_exp_file").click());
     $("lg_exp_file").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) importExpenses(f); });
     $("lg_s_cancel").addEventListener("click",resetSessionForm);
-    $("lg_s_body").addEventListener("click",e=>{ const ed=e.target.closest("[data-lgedit-sess]"); if(ed){ editSession(ed.getAttribute("data-lgedit-sess")); return; } const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ if(editingSession===b.getAttribute("data-lgdel-sess")) resetSessionForm(); await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }); });
+    ["lg_s_start","lg_s_end"].forEach(id=>$(id).addEventListener("blur",()=>{ const v=parseTime($(id).value); if(v) $(id).value=to12(v); }));
+    $("lg_s_endclear").addEventListener("click",()=>{ $("lg_s_end").value=""; $("lg_s_end").focus(); });
+    $("lg_s_body").addEventListener("click",e=>{
+      const ed=e.target.closest("[data-lgedit-sess]"); if(ed){ editingRow=ed.getAttribute("data-lgedit-sess"); renderSessions(); return; }
+      const cl=e.target.closest("[data-lgclearend]"); if(cl){ const inp=$("rowend_"+cl.getAttribute("data-lgclearend")); if(inp){ inp.value=""; inp.focus(); } return; }
+      const sv=e.target.closest("[data-lgsave-sess]"); if(sv){ saveRow(sv.getAttribute("data-lgsave-sess")); return; }
+      const cn=e.target.closest("[data-lgcancel-sess]"); if(cn){ editingRow=null; renderSessions(); return; }
+      const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); });
+    });
     $("lg_e_body").addEventListener("click",e=>{ const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ await fetchExpenses(); renderAll(); }); });
   }
 
