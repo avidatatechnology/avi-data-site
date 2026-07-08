@@ -395,6 +395,9 @@
   .lg-rowedit .lg-timewrap{width:auto}
   .lg-dash{color:var(--muted-2)}
   .lg-manual{color:var(--brand-2);font-size:13px}
+  .lg-offrow td{color:var(--muted)!important;background:rgba(255,255,255,.015)}
+  .lg-offlbl{font-style:italic;color:var(--muted-2)}
+  .lg-auto{font-size:11px;color:var(--muted-2);font-family:var(--fm)}
   @media (max-width:900px){.lg-sess-top{grid-template-columns:1fr}}
   .lg-grid-e{grid-template-columns:150px 130px 1fr 130px 130px}
   .lg-grid-set{grid-template-columns:1fr 1fr}
@@ -792,8 +795,17 @@
   }
 
   function renderSessions(){
-    if(!sessions.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
-    $("lg_s_body").innerHTML=sessions.map(s=>{ const m=sessionMetrics(s);
+    const activeByDay={}; sessions.forEach(s=>{ if(s.session_date) activeByDay[s.session_date]=(activeByDay[s.session_date]||0)+(sessTok[s.id]||0); });
+    const dayTotal={}; dailyTok.forEach(r=>{ dayTotal[r.d]=(dayTotal[r.d]||0)+Number(r.tokens||0); });
+    const items=sessions.map(s=>({off:false,s:s}));
+    Object.keys(dayTotal).forEach(d=>{ const o=dayTotal[d]-(activeByDay[d]||0); if(o>0) items.push({off:true,d:d,tokens:o}); });
+    items.sort((a,b)=>{ const da=a.off?a.d:a.s.session_date, db=b.off?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; if(a.off!==b.off) return a.off?1:-1; if(!a.off&&!b.off) return (a.s.start_ts<b.s.start_ts)?1:-1; return 0; });
+    if(!items.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
+    $("lg_s_body").innerHTML=items.map(it=>{
+      if(it.off){ const rev=it.tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax;
+        return '<tr class="lg-offrow"><td>'+isoToDisp(it.d)+'</td><td><span class="lg-offlbl">Not active</span></td><td class="num">—</td><td>—</td><td class="num">'+lgN(it.tokens)+'</td><td class="num">'+lgUSD(rev)+'</td><td class="num">'+lgUSD(tax)+'</td><td class="num">'+lgUSD(net)+'</td><td class="num">—</td><td class="num"><span class="lg-auto">auto</span></td></tr>';
+      }
+      const s=it.s, m=sessionMetrics(s);
       if(editingRow===s.id){ const sv=to12((s.start_ts||"").slice(11,16)), ev=s.end_ts?to12(s.end_ts.slice(11,16)):"", tv=(s.manual_tokens!=null)?s.manual_tokens:"";
         return '<tr class="lg-liverow"><td>'+isoToDisp(s.session_date)+'</td>'+
           '<td><div class="lg-rowedit"><input class="lg-time lg-rowinp" id="rowstart_'+s.id+'" value="'+sv+'"><span class="lg-dash">–</span><div class="lg-timewrap"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div></td>'+
