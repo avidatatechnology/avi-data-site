@@ -478,6 +478,7 @@
   .pnl-net{border-bottom:none;margin-top:12px;padding-top:14px;border-top:2px solid var(--line)}
   .pnl-net span{font-family:var(--fd);font-weight:800;font-size:17px}.pnl-net span:first-child{color:var(--text)}
   .pnl-net .pos{color:var(--mint)}.pnl-net .neg{color:var(--rose)}
+  .pnl-taxamt{color:var(--rose)!important}
   .lg-offrow td{color:var(--muted)!important;background:rgba(255,255,255,.015)}
   .lg-offlbl{font-style:italic;color:var(--muted-2)}
   .lg-auto{font-size:11px;color:var(--muted-2);font-family:var(--fm)}
@@ -650,7 +651,6 @@
         <div class="card"><div class="ch">Goals vs actual</div><div id="lg_d_goals"></div></div>
         <div class="card"><div class="ch">Daily averages</div><div id="lg_d_avg"></div></div>
       </div>
-      <div class="card lg-tablecard"><div class="lg-cardhd">Daily breakdown</div><div class="lg-scroll"><table class="lgt"><thead><tr><th>Date</th><th class="num">Hours</th><th class="num">Tokens</th><th class="num">Revenue</th><th class="num">Tax</th><th class="num">Net</th><th class="num">$/hr</th></tr></thead><tbody id="lg_d_daily"></tbody></table></div></div>
       <div class="card lg-pnl"><div class="ch">Profit &amp; Loss &middot; <span id="lg_pnl_month" style="color:var(--muted);font-weight:400"></span></div><div id="lg_d_pnl"></div></div>
     </div>
 
@@ -967,24 +967,24 @@
     $("lg_month_lbl").textContent=monthLabel(curMonth); const ym=curMonth;
     const dmap={}; dailyTok.forEach(r=>{ if(monthOf(r.d)===ym) dmap[r.d]=(dmap[r.d]||0)+Number(r.tokens||0); });
     const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(sessEnd(s))-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
-    let tokens=0; for(const k in dmap) tokens+=dmap[k]; const rev=tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; let mins=0; for(const k in smin) mins+=smin[k];
-    $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(rev),"","grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(net),"","mint")+kpi("Tokens",lgN(tokens),"");
-    const days=Object.keys(dmap).length;
-    const goalTok=cfg.token_rate>0?cfg.goal_revenue/cfg.token_rate:0; const gRev=cfg.goal_revenue?rev/cfg.goal_revenue*100:0, gTok=goalTok?tokens/goalTok*100:0;
-    const avgDayRev=days?rev/days:0; const gDay=cfg.goal_revenue_daily?avgDayRev/cfg.goal_revenue_daily*100:0;
-    $("lg_d_goals").innerHTML=goalRow("Revenue (month)",lgUSD(rev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"\u2014",gRev)+goalRow("Tokens (month)",lgN(tokens),goalTok?lgN(goalTok):"\u2014",gTok)+goalRow("Revenue / day (avg)",lgUSD(avgDayRev),cfg.goal_revenue_daily?lgUSD(cfg.goal_revenue_daily):"\u2014",gDay);
-    $("lg_d_avg").innerHTML=avgRow("Revenue / day",days?lgUSD(rev/days):"\u2014")+avgRow("Net / day",days?lgUSD(net/days):"\u2014")+avgRow("Tokens / day",days?lgN(tokens/days):"\u2014")+avgRow("Hours / day",days?(mins/60/days).toFixed(1)+"h":"\u2014")+avgRow("Days worked",String(days));
+    let tokens=0; for(const k in dmap) tokens+=dmap[k]; const tokRev=tokens*cfg.token_rate; let mins=0; for(const k in smin) mins+=smin[k];
     const monthTx=expenses.filter(e=>monthOf(e.txn_date)===ym);
     const incRows=monthTx.filter(e=>(e.kind||"expense")==="income"); const otherIncome=incRows.reduce((a,b)=>a+Number(b.amount),0); const incBySource={}; incRows.forEach(e=>{ const s=e.source||"Other"; incBySource[s]=(incBySource[s]||0)+Number(e.amount); });
     const expCat={}; let expTot=0; monthTx.filter(e=>(e.kind||"expense")==="expense").forEach(e=>{ const c=e.category||"Uncategorized"; expCat[c]=(expCat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
-    const totalRev=rev+otherIncome, netInc=totalRev-expTot;
-    const dates=[...new Set([...Object.keys(dmap),...Object.keys(smin)])].sort().reverse();
-    $("lg_d_daily").innerHTML=dates.length?dates.map(d=>{ const tk=dmap[d]||0, dmins=smin[d]||0, drev=tk*cfg.token_rate, dtax=drev*cfg.tax_rate, dnet=drev-dtax, hrs=dmins/60; return '<tr><td>'+isoToDisp(d)+'</td><td class="num">'+(dmins?fmtDur(dmins):"\u2014")+'</td><td class="num">'+lgN(tk)+'</td><td class="num">'+lgUSD(drev)+'</td><td class="num">'+lgUSD(dtax)+'</td><td class="num lg-netc">'+lgUSD(dnet)+'</td><td class="num">'+(hrs>0?lgUSD(dnet/hrs):"\u2014")+'</td></tr>'; }).join(""):'<tr><td colspan="7" class="lg-empty">No activity in '+monthLabel(ym)+'.</td></tr>';
+    const totalRev=tokRev+otherIncome, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, netInc=totalRev-taxes-expTot;
+    $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(totalRev),"","grad")+kpi("Taxes",lgUSD(taxes),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(netAfterTax),"","mint")+kpi("Tokens",lgN(tokens),"");
+    const workDays=Object.keys(dmap).length;
+    const revDaysSet={}; Object.keys(dmap).forEach(d=>revDaysSet[d]=1); incRows.forEach(e=>revDaysSet[e.txn_date]=1); const revDays=Object.keys(revDaysSet).length;
+    const gRev=cfg.goal_revenue?totalRev/cfg.goal_revenue*100:0;
+    const avgDayRev=revDays?totalRev/revDays:0; const gDay=cfg.goal_revenue_daily?avgDayRev/cfg.goal_revenue_daily*100:0;
+    $("lg_d_goals").innerHTML=goalRow("Revenue (month)",lgUSD(totalRev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"\u2014",gRev)+goalRow("Revenue / day (avg)",lgUSD(avgDayRev),cfg.goal_revenue_daily?lgUSD(cfg.goal_revenue_daily):"\u2014",gDay);
+    $("lg_d_avg").innerHTML=avgRow("Revenue / day",revDays?lgUSD(totalRev/revDays):"\u2014")+avgRow("Net / day",revDays?lgUSD(netAfterTax/revDays):"\u2014")+avgRow("Tokens / day",workDays?lgN(tokens/workDays):"\u2014")+avgRow("Hours / day",workDays?(mins/60/workDays).toFixed(1)+"h":"\u2014")+avgRow("Days worked",String(workDays));
     if($("lg_pnl_month")) $("lg_pnl_month").textContent=monthLabel(ym);
     const catKeys=Object.keys(expCat).sort();
-    let pnl='<div class="pnl-sec">Revenue</div><div class="pnl-row"><span>Chaturbate (tokens)</span><span>'+lgUSD(rev)+'</span></div>';
+    let pnl='<div class="pnl-sec">Revenue</div><div class="pnl-row"><span>Chaturbate (tokens)</span><span>'+lgUSD(tokRev)+'</span></div>';
     Object.keys(incBySource).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+'</span><span>'+lgUSD(incBySource[s])+'</span></div>'; });
     pnl+='<div class="pnl-row pnl-sub"><span>Total revenue</span><span>'+lgUSD(totalRev)+'</span></div>';
+    pnl+='<div class="pnl-sec">Taxes</div><div class="pnl-row"><span>Estimated set-aside ('+Math.round(cfg.tax_rate*100)+'%)</span><span class="pnl-taxamt">\u2212'+lgUSD(taxes)+'</span></div>';
     pnl+='<div class="pnl-sec">Expenses</div>'+(catKeys.length?catKeys.map(c=>'<div class="pnl-row"><span>'+esc(c)+'</span><span>'+lgUSD(expCat[c])+'</span></div>').join(""):'<div class="pnl-row"><span class="lg-muted">No expenses</span><span>'+lgUSD(0)+'</span></div>');
     pnl+='<div class="pnl-row pnl-sub"><span>Total expenses</span><span>'+lgUSD(expTot)+'</span></div>';
     pnl+='<div class="pnl-row pnl-net"><span>Net income</span><span class="'+(netInc>=0?"pos":"neg")+'">'+lgUSD(netInc)+'</span></div>';
