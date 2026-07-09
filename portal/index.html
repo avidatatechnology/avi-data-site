@@ -397,7 +397,12 @@
   .lg-manual{color:var(--brand-2);font-size:13px}
   .lg-netc{color:var(--mint)}
   .kpi .v.mint{color:var(--mint)}
-  .lg-sesshd{display:flex;justify-content:flex-end;margin-bottom:12px}
+  .lg-sesshd{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+  .lg-statbar{display:flex;gap:22px;flex-wrap:wrap}
+  .lg-stat{display:flex;flex-direction:column;gap:1px}
+  .lg-statv{font-family:var(--fd);font-weight:700;font-size:15px;color:var(--text);white-space:nowrap}
+  .lg-statv.mint{color:var(--mint)}
+  .lg-statl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2)}
   .lg-dayrow td{font-weight:600}
   .lg-live-btn{cursor:pointer}
   .lg-live-btn:hover{filter:brightness(1.18);text-decoration:underline;text-underline-offset:2px}
@@ -711,7 +716,7 @@
           <div class="lg-livestats" id="lgLiveStats"></div>
         </div>
       </div>
-      <div class="lg-sesshd"><div class="lg-seg" id="sessViewSeg"><button class="lg-segbtn on" data-sessview="sessions">Sessions</button><button class="lg-segbtn" data-sessview="daily">Daily</button></div></div>
+      <div class="lg-sesshd"><div class="lg-statbar" id="lg_s_stats"></div><div class="lg-seg" id="sessViewSeg"><button class="lg-segbtn on" data-sessview="sessions">Sessions</button><button class="lg-segbtn" data-sessview="daily">Daily</button></div></div>
       <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt" id="lg_s_table"><thead><tr><th class="lg-sortable" data-ssort="date">Date</th><th class="lg-sortable" data-ssort="time">Time</th><th class="num lg-sortable" data-ssort="dur">Dur</th><th class="lg-sortable" data-ssort="platform">Platform</th><th class="num lg-sortable" data-ssort="tokens">Tokens</th><th class="num lg-sortable" data-ssort="revenue">Revenue</th><th class="num lg-sortable" data-ssort="tax">Tax</th><th class="num lg-sortable" data-ssort="net">Net</th><th class="num lg-sortable" data-ssort="hourly">$/hr</th><th></th></tr></thead><tbody id="lg_s_body"></tbody></table></div></div>
     </div>
 
@@ -978,7 +983,7 @@
 
   function renderSessions(){
     let items=[];
-    if(sessView==="daily"){ const byDay={}; sessions.forEach(s=>{ const m=sessionMetrics(s); const o=byDay[s.session_date]||(byDay[s.session_date]={tokens:0,rev:0,tax:0,net:0,mins:0,count:0}); o.tokens+=m.tokens; o.rev+=m.rev; o.tax+=m.tax; o.net+=m.net; o.mins+=m.mins; o.count++; }); Object.keys(byDay).forEach(d=>{ const o=byDay[d]; items.push({day:true,d:d,st:d+"T23:59:59",tokens:o.tokens,rev:o.rev,tax:o.tax,net:o.net,mins:o.mins,count:o.count}); }); }
+    if(sessView==="daily"){ const byDay={}; sessions.forEach(s=>{ const m=sessionMetrics(s); const o=byDay[s.session_date]||(byDay[s.session_date]={tokens:0,rev:0,tax:0,net:0,mins:0,count:0,fs:null,le:null}); o.tokens+=m.tokens; o.rev+=m.rev; o.tax+=m.tax; o.net+=m.net; o.mins+=m.mins; o.count++; if(!o.fs||s.start_ts<o.fs) o.fs=s.start_ts; const _e=sessEnd(s); if(!o.le||_e>o.le) o.le=_e; }); Object.keys(byDay).forEach(d=>{ const o=byDay[d]; let st=d+"T12:00:00"; if(o.fs&&o.le){ const md=new Date((new Date(o.fs).getTime()+new Date(o.le).getTime())/2); st=ymd(md)+"T"+pad2n(md.getHours())+":"+pad2n(md.getMinutes())+":"+pad2n(md.getSeconds()); } items.push({day:true,d:d,st:st,tokens:o.tokens,rev:o.rev,tax:o.tax,net:o.net,mins:o.mins,count:o.count}); }); }
     else { items=sessions.map(s=>({off:false,s:s})); }
     (function(){ const evByDay={}; offEventsAll.forEach(e=>{ const d=(e.lts||"").slice(0,10); if(!d) return; (evByDay[d]=evByDay[d]||[]).push(e); });
       Object.keys(evByDay).forEach(d=>{ const evs=evByDay[d].slice().sort((a,b)=>a.lts<b.lts?-1:(a.lts>b.lts?1:0)); const wins=sessions.filter(s=>s.session_date===d).map(s=>({start:s.start_ts,end:sessEnd(s)})).sort((a,b)=>a.start<b.start?-1:1); const clusters={}; evs.forEach(e=>{ let gi=0; for(let w=0;w<wins.length;w++){ if(e.lts>=wins[w].end) gi++; else break; } (clusters[gi]=clusters[gi]||[]).push(e); }); Object.keys(clusters).forEach(gi=>{ const cl=clusters[gi]; const tok=cl.reduce((a,b)=>a+(Number(b.tokens)||0),0); if(tok>0) items.push({off:true,d:d,tokens:tok,st:cl[0].lts,evs:cl,key:d+"_"+gi}); }); });
@@ -986,6 +991,7 @@
     { var _sb=pfBounds(),_srs=_sb[0],_sre=_sb[1]; items=items.filter(it=> (it.off||it.day) ? (it.d>=_srs&&it.d<=_sre) : ((it.s.session_date>=_srs&&it.s.session_date<=_sre)|| !it.s.end_ts)); }
     if(sessSort){ items.sort((a,b)=>{ const va=sessSortVal(a,sessSort.col), vb=sessSortVal(b,sessSort.col); if(va<vb) return sessSort.dir==="asc"?-1:1; if(va>vb) return sessSort.dir==="asc"?1:-1; return 0; }); } else { items.sort((a,b)=>{ const da=(a.off||a.day)?a.d:a.s.session_date, db=(b.off||b.day)?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; const ta=(a.off||a.day)?a.st:a.s.start_ts, tb=(b.off||b.day)?b.st:b.s.start_ts; return ta<tb?1:-1; }); }
     updateSortArrows("lg_s_table",sessSort,"data-ssort");
+    (function(){ if(!$("lg_s_stats")) return; const rws=items.filter(it=>!it.off); let cnt=rws.length,tN=0,tR=0,tM=0; rws.forEach(it=>{ if(it.day){ tN+=it.net; tR+=it.rev; tM+=it.mins; } else { const m=sessionMetrics(it.s); tN+=m.net; tR+=m.rev; tM+=m.mins; } }); const hrs=tM/60, unit=sessView==="daily"?"day":"session"; const sp=(v,l,c)=>"<div class='lg-stat'><span class='lg-statv"+(c?(" "+c):"")+"'>"+v+"</span><span class='lg-statl'>"+l+"</span></div>"; $("lg_s_stats").innerHTML = cnt? (sp(cnt+" "+unit+(cnt!==1?"s":""),"count")+sp(hrs>0?lgUSD(tN/hrs)+"/hr":"\u2014","avg rate")+sp(lgUSD(cnt?tR/cnt:0),"avg revenue")+sp(lgUSD(cnt?tN/cnt:0),"avg net","mint")+sp(fmtDur(tM),"total time")) : ""; })();
     if(!items.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
     $("lg_s_body").innerHTML=items.map(it=>{
       if(it.off){ const rev=it.tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; const exp=offDetail===it.key;
