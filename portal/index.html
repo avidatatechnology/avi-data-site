@@ -780,6 +780,7 @@
           <div><label>Monthly revenue goal ($)</label><input type="number" step="1" min="0" id="lg_cfg_goalrev"></div>
           <div><label>Daily revenue goal ($)</label><input type="number" step="1" min="0" id="lg_cfg_goalday"></div>
           <div><label>Monthly token goal</label><input type="text" id="lg_cfg_goaltok" readonly><div class="lg-hint">Auto-calculated from revenue goal &divide; token value.</div></div>
+          <div><label>Daily token goal</label><input type="text" id="lg_cfg_goaltokday" readonly><div class="lg-hint">Auto-calculated from daily goal &divide; token value.</div></div>
         </div>
         <div class="lg-actions"><button class="btn" id="lg_cfg_save" style="width:auto">Save settings</button><span class="msg" id="lg_cfg_msg"></span></div>
       </div>
@@ -1177,7 +1178,7 @@
   }
 
   function renderSettings(){ $("lg_cfg_rate").value=cfg.token_rate; $("lg_cfg_tax").value=Math.round(cfg.tax_rate*100); $("lg_cfg_goalrev").value=cfg.goal_revenue||""; $("lg_cfg_goalday").value=cfg.goal_revenue_daily||""; recalcTokenGoal(); }
-  function recalcTokenGoal(){ const rate=parseFloat($("lg_cfg_rate").value)||0, gr=parseFloat($("lg_cfg_goalrev").value)||0; $("lg_cfg_goaltok").value=(rate>0&&gr>0)?Math.round(gr/rate).toLocaleString("en-US"):""; }
+  function recalcTokenGoal(){ const rate=parseFloat($("lg_cfg_rate").value)||0, gr=parseFloat($("lg_cfg_goalrev").value)||0, gd=parseFloat($("lg_cfg_goalday").value)||0; $("lg_cfg_goaltok").value=(rate>0&&gr>0)?Math.round(gr/rate).toLocaleString("en-US"):""; if($("lg_cfg_goaltokday")) $("lg_cfg_goaltokday").value=(rate>0&&gd>0)?Math.round(gd/rate).toLocaleString("en-US"):""; }
 
   async function saveCfg(){
     const rate=parseFloat($("lg_cfg_rate").value)||0, tax=(parseFloat($("lg_cfg_tax").value)||0)/100, gr=parseFloat($("lg_cfg_goalrev").value)||0, gd=parseFloat($("lg_cfg_goalday").value)||0; const gt=rate>0?Math.round(gr/rate):0;
@@ -1286,7 +1287,7 @@
       const b=e.target.closest("[data-lgdel-rev]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-rev"),async()=>{ editingRev=null; await fetchExpenses(); renderAll(); });
     });
     $("lg_cfg_save").addEventListener("click",saveCfg);
-    ["lg_cfg_rate","lg_cfg_goalrev"].forEach(id=>$(id).addEventListener("input",recalcTokenGoal));
+    ["lg_cfg_rate","lg_cfg_goalrev","lg_cfg_goalday"].forEach(id=>$(id).addEventListener("input",recalcTokenGoal));
     $("lg_tok_btn").addEventListener("click",()=>$("lg_tok_file").click());
     $("lg_tok_file").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length) importTokenFiles(fs); });
     $("lg_periods").addEventListener("click",e=>{ if(e.target.closest('[data-per="upload"]')) $("lg_tok_file").click(); });
