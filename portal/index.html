@@ -490,6 +490,7 @@
   .pnl-net{border-bottom:none;margin-top:12px;padding-top:14px;border-top:2px solid var(--line)}
   .pnl-net span{font-family:var(--fd);font-weight:800;font-size:17px}.pnl-net span:first-child{color:var(--text)}
   .pnl-net .pos{color:var(--mint)}.pnl-net .neg{color:var(--rose)}
+  .pnl-note{font-size:11px;color:var(--muted-2);margin-top:9px;font-style:italic;line-height:1.45}
   .pnl-taxamt{color:var(--rose)!important}
   .pnl-mid{border-bottom:none;margin-top:6px}
   .pnl-mid span{font-weight:700}
@@ -991,13 +992,16 @@
     const dmap={}; dailyTok.forEach(r=>{ if(monthOf(r.d)===ym) dmap[r.d]=(dmap[r.d]||0)+Number(r.tokens||0); });
     const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(sessEnd(s))-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
     let tokens=0; for(const k in dmap) tokens+=dmap[k]; const tokRev=tokens*cfg.token_rate; let mins=0; for(const k in smin) mins+=smin[k];
+    const NONCASH={Gifts:1};
     const monthTx=expenses.filter(e=>monthOf(e.txn_date)===ym);
-    const incRows=monthTx.filter(e=>(e.kind||"expense")==="income"); const otherIncome=incRows.reduce((a,b)=>a+Number(b.amount),0); const incBySource={}; incRows.forEach(e=>{ const s=e.source||"Other"; incBySource[s]=(incBySource[s]||0)+Number(e.amount); });
+    const incRows=monthTx.filter(e=>(e.kind||"expense")==="income");
+    const cashBySrc={}, giftBySrc={}; let cashInc=0, giftInc=0; const cashDays={};
+    incRows.forEach(e=>{ const s=e.source||"Other", amt=Number(e.amount); if(NONCASH[s]){ giftBySrc[s]=(giftBySrc[s]||0)+amt; giftInc+=amt; } else { cashBySrc[s]=(cashBySrc[s]||0)+amt; cashInc+=amt; cashDays[e.txn_date]=1; } });
     const expCat={}; let expTot=0; monthTx.filter(e=>(e.kind||"expense")==="expense").forEach(e=>{ const c=e.category||"Uncategorized"; expCat[c]=(expCat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
-    const totalRev=tokRev+otherIncome, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, netInc=totalRev-taxes-expTot;
+    const totalRev=tokRev+cashInc, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, netInc=totalRev-taxes-expTot;
     $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(totalRev),"","grad")+kpi("Taxes",lgUSD(taxes),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(netAfterTax),"","mint")+kpi("Tokens",lgN(tokens),"");
     const workDays=Object.keys(dmap).length;
-    const revDaysSet={}; Object.keys(dmap).forEach(d=>revDaysSet[d]=1); incRows.forEach(e=>revDaysSet[e.txn_date]=1); const revDays=Object.keys(revDaysSet).length;
+    const revDaysSet={}; Object.keys(dmap).forEach(d=>revDaysSet[d]=1); Object.keys(cashDays).forEach(d=>revDaysSet[d]=1); const revDays=Object.keys(revDaysSet).length;
     const gRev=cfg.goal_revenue?totalRev/cfg.goal_revenue*100:0;
     const avgDayRev=revDays?totalRev/revDays:0; const gDay=cfg.goal_revenue_daily?avgDayRev/cfg.goal_revenue_daily*100:0;
     $("lg_d_goals").innerHTML=goalRow("Revenue (month)",lgUSD(totalRev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"\u2014",gRev)+goalRow("Revenue / day (avg)",lgUSD(avgDayRev),cfg.goal_revenue_daily?lgUSD(cfg.goal_revenue_daily):"\u2014",gDay);
@@ -1005,13 +1009,14 @@
     if($("lg_pnl_month")) $("lg_pnl_month").textContent=monthLabel(ym);
     const catKeys=Object.keys(expCat).sort();
     let pnl='<div class="pnl-sec">Revenue</div><div class="pnl-row"><span>Chaturbate (tokens)</span><span>'+lgUSD(tokRev)+'</span></div>';
-    Object.keys(incBySource).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+'</span><span>'+lgUSD(incBySource[s])+'</span></div>'; });
+    Object.keys(cashBySrc).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+'</span><span>'+lgUSD(cashBySrc[s])+'</span></div>'; });
     pnl+='<div class="pnl-row pnl-sub"><span>Total revenue</span><span>'+lgUSD(totalRev)+'</span></div>';
     pnl+='<div class="pnl-sec">Expenses</div>'+(catKeys.length?catKeys.map(c=>'<div class="pnl-row"><span>'+esc(c)+'</span><span>'+lgUSD(expCat[c])+'</span></div>').join(""):'<div class="pnl-row"><span class="lg-muted">No expenses</span><span>'+lgUSD(0)+'</span></div>');
     pnl+='<div class="pnl-row pnl-sub"><span>Total expenses</span><span>'+lgUSD(expTot)+'</span></div>';
     pnl+='<div class="pnl-row pnl-mid"><span>Operating income</span><span>'+lgUSD(totalRev-expTot)+'</span></div>';
     pnl+='<div class="pnl-sec">Taxes</div><div class="pnl-row"><span>Est. set-aside ('+Math.round(cfg.tax_rate*100)+'% of revenue)</span><span class="pnl-taxamt">\u2212'+lgUSD(taxes)+'</span></div>';
     pnl+='<div class="pnl-row pnl-net"><span>Net income</span><span class="'+(netInc>=0?"pos":"neg")+'">'+lgUSD(netInc)+'</span></div>';
+    if(giftInc>0){ pnl+='<div class="pnl-sec">Non-cash &middot; gifts</div>'; Object.keys(giftBySrc).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+'</span><span>'+lgUSD(giftBySrc[s])+'</span></div>'; }); pnl+='<div class="pnl-note">Taxable income at fair market value, but not cash \u2014 set aside tax for these from your cash.</div>'; }
     $("lg_d_pnl").innerHTML=pnl;
   }
 
@@ -1173,7 +1178,7 @@
     document.querySelectorAll(".pf-bar").forEach(bar=>{ bar.querySelectorAll(".pf-cd").forEach(cd=>{ const w=cd.getAttribute("data-pf"), val=cd.querySelector(".pf-cd-val"), menu=cd.querySelector(".pf-cd-menu"); if(w==="gran"){ val.textContent=granLbl; menu.innerHTML=optHtml(PFGRAN,pf.gran); } else if(w==="start"){ val.textContent=startLbl; menu.innerHTML=optHtml(perItems,pf.startKey); } else if(w==="end"){ val.textContent=endLbl; menu.innerHTML=optHtml(perItems,pf.endKey); } }); }); }
   function renderRevAll(){ renderPf(); renderRevOv(); renderCbSummary(); renderSessions(); renderRevSrc(); }
   function syncRrFilters(){ const bnd=dateBounds(revRange,revAllStart()),rs=bnd[0],re=bnd[1]; document.querySelectorAll(".lg-rrfilter").forEach(bar=>{ bar.querySelectorAll("[data-rr]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rr")===revRange.preset)); const s=bar.querySelector(".lg-rrstart"), en=bar.querySelector(".lg-rrend"); if(s&&document.activeElement!==s) s.value=(revRange.preset==="custom")?(revRange.start?isoToDisp(revRange.start):""):isoToDisp(rs); if(en&&document.activeElement!==en) en.value=(revRange.preset==="custom")?(revRange.end?isoToDisp(revRange.end):""):isoToDisp(re); }); }
-  function renderCbSummary(){ if(!$("lg_cb_kpis")) return; const bnd=pfBounds(),rs=bnd[0],re=bnd[1]; let rangeTok=0,allTok=0; dailyTok.forEach(r=>{ const t=Number(r.tokens||0); allTok+=t; if(r.d>=rs&&r.d<=re) rangeTok+=t; }); const rev=rangeTok*cfg.token_rate, tax=rev*cfg.tax_rate, allRev=allTok*cfg.token_rate; const lbl=pfRangeLabel(); $("lg_cb_kpis").innerHTML=kpi("Revenue",lgUSD(rev),lbl,"grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(rev-tax),"","mint")+kpi("Tokens",lgN(rangeTok),""); renderDayGoal(); }
+  function renderCbSummary(){ if(!$("lg_cb_kpis")) return; const bnd=pfBounds(),rs=bnd[0],re=bnd[1]; let rangeTok=0; sessions.filter(s=>s.session_date>=rs&&s.session_date<=re).forEach(s=>{ rangeTok+=sessionMetrics(s).tokens; }); offEventsAll.forEach(e=>{ const d=(e.lts||"").slice(0,10); if(d>=rs&&d<=re) rangeTok+=(e.tokens||0); }); const rev=rangeTok*cfg.token_rate, tax=rev*cfg.tax_rate; const lbl=pfRangeLabel(); $("lg_cb_kpis").innerHTML=kpi("Revenue",lgUSD(rev),lbl,"grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(rev-tax),"","mint")+kpi("Tokens",lgN(rangeTok),""); renderDayGoal(); }
   function renderRevViews(){ syncRrFilters(); renderCbSummary(); renderSessions(); renderRevSrc(); }
   function txnRows(){ return expenses.filter(e=>(e.kind||"expense")===txnKind); }
   function renderCatMgr(){ const list=(cats[txnKind]||[]); $("lg_cat_list").innerHTML=list.length?list.map(c=>'<span class="lg-catchip">'+esc(c)+'<button data-catdel="'+esc(c)+'" title="Remove">&times;</button></span>').join(""):'<span class="lg-muted">No categories yet \u2014 add one below.</span>'; }
