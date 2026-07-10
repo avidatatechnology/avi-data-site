@@ -444,9 +444,12 @@
   .lg-stackleg{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px}
   .lg-sli{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
   .pf-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
-  .pf-bar select{width:auto;min-width:112px;background:var(--panel-2);border:1px solid var(--line-soft);color:var(--text);font-family:var(--fd);font-weight:600;font-size:13px;padding:8px 30px 8px 12px;border-radius:9px;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M1 1l4 4 4-4" stroke="%238793AE" fill="none" stroke-width="1.4"/></svg>');background-repeat:no-repeat;background-position:right 11px center}
-  .pf-bar select:hover{border-color:var(--line);color:var(--text)}
-  .pf-gran{color:var(--brand-2)!important;border-color:rgba(110,139,255,.45)!important;min-width:124px}
+  .pf-bar select{width:auto;min-width:118px;background:var(--panel-2);border:1px solid var(--line-soft);color:var(--text);font-family:var(--fd);font-weight:600;font-size:13px;padding:9px 34px 9px 13px;border-radius:10px;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M1 1l4 4 4-4" stroke="%238AA2FF" fill="none" stroke-width="1.5"/></svg>');background-repeat:no-repeat;background-position:right 13px center;transition:border-color .15s ease, box-shadow .15s ease}
+  .pf-bar select:hover{border-color:var(--brand-2);color:var(--text)}
+  .pf-bar select:focus{outline:none;border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(110,139,255,.16)}
+  .pf-bar select option{background:#131b2e;color:#e7ecf6;font-weight:500}
+  .pf-bar select option:checked{background:#1c2740;color:#fff}
+  .pf-gran{color:var(--brand-2)!important;border-color:rgba(110,139,255,.5)!important;background:rgba(110,139,255,.06)!important;min-width:130px}
   .pf-showing{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2)}
   .pf-arrow{color:var(--muted-2);font-size:15px}
   .lg-subtabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line-soft)}
