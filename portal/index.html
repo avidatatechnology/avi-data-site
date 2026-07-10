@@ -506,6 +506,7 @@
   .lg-livestat .v .u{font-size:12px;color:var(--muted);font-weight:400}
   .lg-livestat.hero .v{font-size:30px;background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent}
   .lg-goalwrap{margin-top:16px;border-top:1px solid rgba(255,255,255,.07);padding-top:14px}
+  .lg-daygoalcard{margin-bottom:14px}
   .lg-goalhd{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px}
   .lg-goalhd span:last-child{font-family:var(--fm);color:var(--text)}
   .lg-goaltrack{height:10px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden}
@@ -700,6 +701,7 @@
         <select class="pf-end"></select>
       </div>
       <div class="summary" id="lg_cb_kpis"></div>
+      <div class="card lg-daygoalcard" id="lgDayGoal" style="display:none"></div>
       <div class="lg-sess-top">
         <div class="lg-sess-col">
           <div class="card lg-import" style="margin:0">
@@ -728,7 +730,6 @@
           <div class="lg-livein"><label>Balance now</label><input type="number" inputmode="numeric" id="lg_bal_now" placeholder="your token balance"></div>
           <div class="lg-livestats" id="lgLiveStats"></div>
         </div>
-        <div class="lg-goalwrap" id="lgLiveGoal" style="display:none"></div>
       </div>
       <div class="lg-sesshd"><div class="lg-statbar" id="lg_s_stats"></div><div class="lg-seg" id="sessViewSeg"><button class="lg-segbtn on" data-sessview="sessions">Sessions</button><button class="lg-segbtn" data-sessview="daily">Daily</button></div></div>
       <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt" id="lg_s_table"><thead><tr><th class="lg-sortable" data-ssort="date">Date</th><th class="lg-sortable" data-ssort="time">Time</th><th class="num lg-sortable" data-ssort="dur">Dur</th><th class="lg-sortable" data-ssort="platform">Platform</th><th class="num lg-sortable" data-ssort="tokens">Tokens</th><th class="num lg-sortable" data-ssort="revenue">Revenue</th><th class="num lg-sortable" data-ssort="tax">Tax</th><th class="num lg-sortable" data-ssort="net">Net</th><th class="num lg-sortable" data-ssort="hourly">$/hr</th><th></th></tr></thead><tbody id="lg_s_body"></tbody></table></div></div>
@@ -1028,6 +1029,7 @@
     }).join("");
   }
 
+  function renderDayGoal(){ const gw=$("lgDayGoal"); if(!gw) return; const goalv=cfg.goal_revenue_daily||0; if(goalv<=0){ gw.style.display="none"; gw.innerHTML=""; return; } let todayRev=0; sessions.filter(s=>s.session_date===today).forEach(s=>{ todayRev+=sessionMetrics(s).rev; }); offEventsAll.filter(e=>(e.lts||"").slice(0,10)===today).forEach(e=>{ todayRev+=(e.tokens||0)*cfg.token_rate; }); const pct=todayRev/goalv*100, fillw=Math.min(100,pct); gw.style.display=""; gw.innerHTML="<div class='lg-goalhd'><span>Daily goal &middot; today</span><span>"+lgUSD(todayRev)+" / "+lgUSD(goalv)+"</span></div><div class='lg-goaltrack'><div class='lg-goalfill"+(pct>=100?" done":"")+"' style='width:"+fillw.toFixed(1)+"%'></div></div><div class='lg-goalsub"+(pct>=100?" done":"")+"'>"+(pct>=100?(Math.round(pct)+"% &middot; "+lgUSD(todayRev-goalv)+" past goal"):(Math.round(pct)+"% &middot; "+lgUSD(goalv-todayRev)+" to go"))+"</div>"; }
   function renderLiveCard(){
     const live=sessions.find(s=>!s.end_ts), card=$("lgLiveCard");
     if(!live){ card.style.display="none"; liveCardId=null; return; }
@@ -1039,9 +1041,6 @@
     if(document.activeElement!==$("lg_bal_start")) $("lg_bal_start").value=(live.bal_start!=null?live.bal_start:0);
     if(document.activeElement!==$("lg_bal_now")) $("lg_bal_now").value=(live.bal_now!=null?live.bal_now:"");
     $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Live for</div><div class="v">'+fmtDur(m.mins)+'</div></div><div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
-    let todayRev=0; sessions.filter(s=>s.session_date===today).forEach(s=>{ todayRev+=sessionMetrics(s).rev; }); offEventsAll.filter(e=>(e.lts||"").slice(0,10)===today).forEach(e=>{ todayRev+=(e.tokens||0)*cfg.token_rate; });
-    const goalv=cfg.goal_revenue_daily||0, gw=$("lgLiveGoal");
-    if(gw){ if(goalv>0){ const pct=todayRev/goalv*100, fillw=Math.min(100,pct); gw.style.display=""; gw.innerHTML="<div class='lg-goalhd'><span>Daily goal &middot; today</span><span>"+lgUSD(todayRev)+" / "+lgUSD(goalv)+"</span></div><div class='lg-goaltrack'><div class='lg-goalfill"+(pct>=100?" done":"")+"' style='width:"+fillw.toFixed(1)+"%'></div></div><div class='lg-goalsub"+(pct>=100?" done":"")+"'>"+(pct>=100?(Math.round(pct)+"% &middot; "+lgUSD(todayRev-goalv)+" past goal"):(Math.round(pct)+"% &middot; "+lgUSD(goalv-todayRev)+" to go"))+"</div>"; } else { gw.style.display="none"; gw.innerHTML=""; } }
   }
   async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; delete liveBal[live.id]; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
   function onBalInput(){
@@ -1154,7 +1153,7 @@
   function renderPf(){ const ps=pfPeriods(pf.gran); if(!pf.startKey||!ps.some(p=>p.key===pf.startKey)) pf.startKey=ps.length?ps[0].key:null; if(!pf.endKey||!ps.some(p=>p.key===pf.endKey)) pf.endKey=ps.length?ps[ps.length-1].key:null; const opts=ps.map(p=>"<option value='"+p.key+"'>"+esc(p.label)+"</option>").join(""); document.querySelectorAll(".pf-bar").forEach(bar=>{ const g=bar.querySelector(".pf-gran"), s=bar.querySelector(".pf-start"), en=bar.querySelector(".pf-end"); if(g) g.value=pf.gran; if(s){ s.innerHTML=opts; s.value=pf.startKey; } if(en){ en.innerHTML=opts; en.value=pf.endKey; } }); }
   function renderRevAll(){ renderPf(); renderRevOv(); renderCbSummary(); renderSessions(); renderRevSrc(); }
   function syncRrFilters(){ const bnd=dateBounds(revRange,revAllStart()),rs=bnd[0],re=bnd[1]; document.querySelectorAll(".lg-rrfilter").forEach(bar=>{ bar.querySelectorAll("[data-rr]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rr")===revRange.preset)); const s=bar.querySelector(".lg-rrstart"), en=bar.querySelector(".lg-rrend"); if(s&&document.activeElement!==s) s.value=(revRange.preset==="custom")?(revRange.start?isoToDisp(revRange.start):""):isoToDisp(rs); if(en&&document.activeElement!==en) en.value=(revRange.preset==="custom")?(revRange.end?isoToDisp(revRange.end):""):isoToDisp(re); }); }
-  function renderCbSummary(){ if(!$("lg_cb_kpis")) return; const bnd=pfBounds(),rs=bnd[0],re=bnd[1]; let rangeTok=0,allTok=0; dailyTok.forEach(r=>{ const t=Number(r.tokens||0); allTok+=t; if(r.d>=rs&&r.d<=re) rangeTok+=t; }); const rev=rangeTok*cfg.token_rate, tax=rev*cfg.tax_rate, allRev=allTok*cfg.token_rate; const lbl=pfRangeLabel(); $("lg_cb_kpis").innerHTML=kpi("Revenue",lgUSD(rev),lbl,"grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(rev-tax),"","mint")+kpi("Tokens",lgN(rangeTok),""); }
+  function renderCbSummary(){ if(!$("lg_cb_kpis")) return; const bnd=pfBounds(),rs=bnd[0],re=bnd[1]; let rangeTok=0,allTok=0; dailyTok.forEach(r=>{ const t=Number(r.tokens||0); allTok+=t; if(r.d>=rs&&r.d<=re) rangeTok+=t; }); const rev=rangeTok*cfg.token_rate, tax=rev*cfg.tax_rate, allRev=allTok*cfg.token_rate; const lbl=pfRangeLabel(); $("lg_cb_kpis").innerHTML=kpi("Revenue",lgUSD(rev),lbl,"grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(rev-tax),"","mint")+kpi("Tokens",lgN(rangeTok),""); renderDayGoal(); }
   function renderRevViews(){ syncRrFilters(); renderCbSummary(); renderSessions(); renderRevSrc(); }
   function txnRows(){ return expenses.filter(e=>(e.kind||"expense")===txnKind); }
   function renderCatMgr(){ const list=(cats[txnKind]||[]); $("lg_cat_list").innerHTML=list.length?list.map(c=>'<span class="lg-catchip">'+esc(c)+'<button data-catdel="'+esc(c)+'" title="Remove">&times;</button></span>').join(""):'<span class="lg-muted">No categories yet \u2014 add one below.</span>'; }
@@ -1321,7 +1320,7 @@
       const cn=e.target.closest("[data-etxcancel]"); if(cn){ editingTxn=null; renderExpenses(); return; }
       const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ editingTxn=null; await fetchExpenses(); renderAll(); });
     });
-    setInterval(()=>{ if(sessions.some(s=>!s.end_ts)){ renderLiveCard(); if(!editingRow) renderSessions(); if(lgTab==="dash") renderDash(); } }, 30000);
+    setInterval(()=>{ if(sessions.some(s=>!s.end_ts)){ renderLiveCard(); renderDayGoal(); if(!editingRow) renderSessions(); if(lgTab==="dash") renderDash(); } }, 30000);
   }
 
   /* ---------- CLIENT ---------- */
