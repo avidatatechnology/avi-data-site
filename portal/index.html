@@ -786,8 +786,8 @@
           <div><label>Tax rate (%)</label><input type="number" step="1" min="0" max="100" id="lg_cfg_tax"></div>
           <div><label>Monthly revenue goal ($)</label><input type="number" step="1" min="0" id="lg_cfg_goalrev"></div>
           <div><label>Daily revenue goal ($)</label><input type="number" step="1" min="0" id="lg_cfg_goalday"></div>
-          <div><label>Monthly token goal</label><input type="text" id="lg_cfg_goaltok" readonly><div class="lg-hint">Auto-calculated from revenue goal &divide; token value.</div></div>
-          <div><label>Daily token goal</label><input type="text" id="lg_cfg_goaltokday" readonly><div class="lg-hint">Auto-calculated from daily goal &divide; token value.</div></div>
+          <div><label>Monthly token goal</label><input type="text" id="lg_cfg_goaltok" inputmode="numeric"><div class="lg-hint">Auto-calculated from revenue goal &divide; token value.</div></div>
+          <div><label>Daily token goal</label><input type="text" id="lg_cfg_goaltokday" inputmode="numeric"><div class="lg-hint">Auto-calculated from daily goal &divide; token value.</div></div>
         </div>
         <div class="lg-actions"><button class="btn" id="lg_cfg_save" style="width:auto">Save settings</button><span class="msg" id="lg_cfg_msg"></span></div>
       </div>
@@ -1020,7 +1020,7 @@
       if(it.day){ const hrs=it.mins/60; return '<tr class="lg-dayrow"><td>'+isoToDisp(it.d)+'</td><td>'+it.count+' session'+(it.count>1?"s":"")+'</td><td class="num">'+fmtDur(it.mins)+'</td><td>Chaturbate</td><td class="num">'+lgN(it.tokens)+'</td><td class="num">'+lgUSD(it.rev)+'</td><td class="num">'+lgUSD(it.tax)+'</td><td class="num lg-netc">'+lgUSD(it.net)+'</td><td class="num">'+(hrs>0?lgUSD(it.net/hrs):"—")+'</td><td></td></tr>'; }
       const s=it.s, m=sessionMetrics(s);
       if(editingRow===s.id){ const sv=to12((s.start_ts||"").slice(11,16)), ev=s.end_ts?to12(s.end_ts.slice(11,16)):"";
-        return '<tr class="lg-liverow"><td>'+isoToDisp(s.session_date)+'</td>'+
+        return '<tr class="lg-liverow"><td><input class="lg-rowinp" id="rowdate_'+s.id+'" value="'+isoToDisp(s.session_date)+'" placeholder="mm/dd/yyyy" style="width:104px"></td>'+
           '<td><div class="lg-rowedit"><input class="lg-time lg-rowinp" id="rowstart_'+s.id+'" value="'+sv+'"><span class="lg-dash">–</span><div class="lg-timewrap"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div></td>'+
           '<td class="num" colspan="7" style="color:var(--muted-2)">editing times…</td>'+
           '<td class="num"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></td></tr>';
@@ -1185,6 +1185,20 @@
 
   function renderSettings(){ $("lg_cfg_rate").value=cfg.token_rate; $("lg_cfg_tax").value=Math.round(cfg.tax_rate*100); $("lg_cfg_goalrev").value=cfg.goal_revenue||""; $("lg_cfg_goalday").value=cfg.goal_revenue_daily||""; recalcTokenGoal(); }
   function recalcTokenGoal(){ const rate=parseFloat($("lg_cfg_rate").value)||0, gr=parseFloat($("lg_cfg_goalrev").value)||0, gd=parseFloat($("lg_cfg_goalday").value)||0; $("lg_cfg_goaltok").value=(rate>0&&gr>0)?Math.round(gr/rate).toLocaleString("en-US"):""; if($("lg_cfg_goaltokday")) $("lg_cfg_goaltokday").value=(rate>0&&gd>0)?Math.round(gd/rate).toLocaleString("en-US"):""; }
+  var WORKDAYS=20;
+  function syncGoals(src){ const rate=parseFloat($("lg_cfg_rate").value)||0; const num=id=>parseFloat(($(id).value||"").replace(/[^0-9.]/g,""))||0; let mr=0;
+    if(src==="mr") mr=num("lg_cfg_goalrev");
+    else if(src==="dr") mr=num("lg_cfg_goalday")*WORKDAYS;
+    else if(src==="mt"){ if(rate<=0) return; mr=num("lg_cfg_goaltok")*rate; }
+    else if(src==="dt"){ if(rate<=0) return; mr=num("lg_cfg_goaltokday")*rate*WORKDAYS; }
+    const dr=mr/WORKDAYS;
+    const setN=(id,v)=>{ if(document.activeElement!==$(id)) $(id).value = v>0? String(Math.round(v*100)/100) : ""; };
+    const setT=(id,v)=>{ if(document.activeElement!==$(id)) $(id).value = (rate>0&&v>0)? Math.round(v).toLocaleString("en-US") : ""; };
+    if(src!=="mr") setN("lg_cfg_goalrev",mr);
+    if(src!=="dr") setN("lg_cfg_goalday",dr);
+    if(src!=="mt") setT("lg_cfg_goaltok", rate>0? mr/rate : 0);
+    if(src!=="dt") setT("lg_cfg_goaltokday", rate>0? dr/rate : 0);
+  }
 
   async function saveCfg(){
     const rate=parseFloat($("lg_cfg_rate").value)||0, tax=(parseFloat($("lg_cfg_tax").value)||0)/100, gr=parseFloat($("lg_cfg_goalrev").value)||0, gd=parseFloat($("lg_cfg_goalday").value)||0; const gt=rate>0?Math.round(gr/rate):0;
@@ -1219,9 +1233,9 @@
     const st=parseTime($("rowstart_"+id).value), rawEnd=($("rowend_"+id).value||"").trim(), en=parseTime(rawEnd);
     if(!st){ alert("Enter a valid start time, like 9:57 AM."); return; }
     if(rawEnd&&!en){ alert("End time not understood — try 10:50 PM, or clear it to stay live."); return; }
-    const dateIso=s.session_date; let start=dateIso+"T"+st+":00", end=null;
+    const dateIso=dispToIso($("rowdate_"+id).value)||s.session_date; let start=dateIso+"T"+st+":00", end=null;
     if(en){ end=dateIso+"T"+en+":00"; if(new Date(end)<=new Date(start)){ const d=new Date(dateIso+"T00:00:00"); d.setDate(d.getDate()+1); end=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+en+":00"; } }
-    const { error }=await sb.from("work_sessions").update({start_ts:start,end_ts:end}).eq("id",id);
+    const { error }=await sb.from("work_sessions").update({session_date:dateIso,start_ts:start,end_ts:end}).eq("id",id);
     if(error){ alert(error.message); return; }
     editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll();
   }
@@ -1293,7 +1307,11 @@
       const b=e.target.closest("[data-lgdel-rev]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-rev"),async()=>{ editingRev=null; await fetchExpenses(); renderAll(); });
     });
     $("lg_cfg_save").addEventListener("click",saveCfg);
-    ["lg_cfg_rate","lg_cfg_goalrev","lg_cfg_goalday"].forEach(id=>$(id).addEventListener("input",recalcTokenGoal));
+    $("lg_cfg_rate").addEventListener("input",recalcTokenGoal);
+    $("lg_cfg_goalrev").addEventListener("input",()=>syncGoals("mr"));
+    $("lg_cfg_goalday").addEventListener("input",()=>syncGoals("dr"));
+    $("lg_cfg_goaltok").addEventListener("input",()=>syncGoals("mt"));
+    $("lg_cfg_goaltokday").addEventListener("input",()=>syncGoals("dt"));
     $("lg_tok_btn").addEventListener("click",()=>$("lg_tok_file").click());
     $("lg_tok_file").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length) importTokenFiles(fs); });
     $("lg_periods").addEventListener("click",e=>{ if(e.target.closest('[data-per="upload"]')) $("lg_tok_file").click(); });
