@@ -784,10 +784,14 @@
         <div class="lg-grid lg-grid-set" style="margin-top:14px">
           <div><label>Token value ($)</label><input type="number" step="0.001" min="0" id="lg_cfg_rate"></div>
           <div><label>Tax rate (%)</label><input type="number" step="1" min="0" max="100" id="lg_cfg_tax"></div>
-          <div><label>Monthly revenue goal ($)</label><input type="number" step="1" min="0" id="lg_cfg_goalrev"></div>
-          <div><label>Daily revenue goal ($)</label><input type="number" step="1" min="0" id="lg_cfg_goalday"></div>
-          <div><label>Monthly token goal</label><input type="text" id="lg_cfg_goaltok" inputmode="numeric"><div class="lg-hint">Auto-calculated from revenue goal &divide; token value.</div></div>
-          <div><label>Daily token goal</label><input type="text" id="lg_cfg_goaltokday" inputmode="numeric"><div class="lg-hint">Auto-calculated from daily goal &divide; token value.</div></div>
+          <div><label>Working days / month</label><input type="number" step="1" min="1" id="lg_cfg_workdays"></div>
+          <div></div>
+          <div><label>Monthly revenue goal ($)</label><input type="text" inputmode="decimal" id="lg_cfg_goalrev"></div>
+          <div><label>Daily revenue goal ($)</label><input type="text" inputmode="decimal" id="lg_cfg_goalday"></div>
+          <div><label>Monthly net goal ($)</label><input type="text" inputmode="decimal" id="lg_cfg_goalnet"><div class="lg-hint">Monthly revenue after tax.</div></div>
+          <div><label>Daily net goal ($)</label><input type="text" inputmode="decimal" id="lg_cfg_goalnetday"><div class="lg-hint">Daily revenue after tax.</div></div>
+          <div><label>Monthly token goal</label><input type="text" id="lg_cfg_goaltok" inputmode="numeric"><div class="lg-hint">Revenue goal &divide; token value.</div></div>
+          <div><label>Daily token goal</label><input type="text" id="lg_cfg_goaltokday" inputmode="numeric"><div class="lg-hint">Daily goal &divide; token value.</div></div>
         </div>
         <div class="lg-actions"><button class="btn" id="lg_cfg_save" style="width:auto">Save settings</button><span class="msg" id="lg_cfg_msg"></span></div>
       </div>
@@ -908,7 +912,7 @@
   function adminShow(which){ show($("adminView"),which==="dash"); show($("clientPage"),which==="client"); show($("projectPage"),which==="project"); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
   /* ---------- SPECIAL: private ledger (timesheet + P&L) ---------- */
-  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0,goal_revenue_daily:0}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[], dataAsOf=null, offDaily=[];
+  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0,goal_revenue_daily:0,goal_workdays:20}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[], dataAsOf=null, offDaily=[];
   const TZ_SHIFT=(function(){ try{ const d=new Date(); const la=new Date(d.toLocaleString("en-US",{timeZone:"America/Los_Angeles"})); const loc=new Date(d.toLocaleString("en-US")); return Math.round((loc-la)/3600000); }catch(e){ return 3; } })();
   const lgUSD=(n)=>Number(n||0).toLocaleString("en-US",{style:"currency",currency:"USD"});
   const lgN=(n)=>Math.round(Number(n||0)).toLocaleString("en-US");
@@ -931,7 +935,7 @@
   async function saveRev(id){ const rec={ txn_date:dispToIso($("erv_date_"+id).value)||today, notes:($("erv_notes_"+id).value||"").trim()||null, amount:parseFloat($("erv_amt_"+id).value)||0 }; const { error }=await sb.from("expenses").update(rec).eq("id",id); if(error){ alert(error.message); return; } editingRev=null; await fetchExpenses(); renderAll(); }
   function renderRevSrc(){ if(revSrc==="chaturbate"||revSrc==="overview"||!$("lg_r_title")) return; $("lg_r_title").textContent="Add "+revSrc+" revenue"; const rowsAll=revRows(); const bnd=pfBounds(),_rs=bnd[0],_re=bnd[1]; const inR=rowsAll.filter(e=>e.txn_date>=_rs&&e.txn_date<=_re); const tot=inR.reduce((a,b)=>a+Number(b.amount),0), allTime=rowsAll.reduce((a,b)=>a+Number(b.amount),0); const _lbl=pfRangeLabel(); $("lg_r_kpis").innerHTML=kpi("Revenue",lgUSD(tot),_lbl,"grad")+kpi("Taxes",lgUSD(tot*cfg.tax_rate),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(tot-tot*cfg.tax_rate),"","mint"); const col=revSort.col; const rows=inR.slice().sort((a,b)=>{ let va,vb; if(col==="amount"){ va=Number(a.amount);vb=Number(b.amount);} else { const fld=col==="date"?"txn_date":col; va=(a[fld]||"").toString().toLowerCase(); vb=(b[fld]||"").toString().toLowerCase(); } if(va<vb) return revSort.dir==="asc"?-1:1; if(va>vb) return revSort.dir==="asc"?1:-1; return 0; }); updateSortArrows("lg_r_table",revSort,"data-rsort"); if(!rows.length){ $("lg_r_body").innerHTML='<tr><td colspan="4" class="lg-empty">No '+revSrc+' entries in this range.</td></tr>'; return; } $("lg_r_body").innerHTML=rows.map(e=>{ if(editingRev===e.id){ return '<tr class="lg-liverow"><td><input class="lg-rowinp" id="erv_date_'+e.id+'" value="'+isoToDisp(e.txn_date)+'" placeholder="mm/dd/yyyy" style="width:110px"></td><td><input class="lg-rowinp" id="erv_notes_'+e.id+'" value="'+esc(e.notes)+'" style="width:100%"></td><td class="num"><input class="lg-rowinp" id="erv_amt_'+e.id+'" type="number" step="0.01" value="'+Number(e.amount)+'" style="width:90px;text-align:right"></td><td class="num"><button class="lg-edit" data-ervsave="'+e.id+'">Save</button> <button class="lg-del" data-ervcancel="'+e.id+'">Cancel</button></td></tr>'; } return '<tr><td>'+isoToDisp(e.txn_date)+'</td><td class="lg-notes">'+esc(e.notes)+'</td><td class="num">'+lgUSD(e.amount)+'</td><td class="num"><button class="lg-edit" data-ervedit="'+e.id+'">Edit</button> <button class="lg-del" data-lgdel-rev="'+e.id+'">Delete</button></td></tr>'; }).join(""); }
 
-  async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens, goal_revenue_daily:(data.goal_revenue_daily!=null?+data.goal_revenue_daily:0)}; } else { await sb.from("ledger_config").insert({}); } }
+  async function fetchCfg(){ const { data }=await sb.from("ledger_config").select("*").maybeSingle(); if(data){ cfg={token_rate:+data.token_rate, tax_rate:+data.tax_rate, goal_revenue:+data.goal_revenue, goal_tokens:+data.goal_tokens, goal_revenue_daily:(data.goal_revenue_daily!=null?+data.goal_revenue_daily:0), goal_workdays:(data.goal_workdays!=null?+data.goal_workdays:20)}; } else { await sb.from("ledger_config").insert({}); } }
   async function fetchSessions(){ const { data }=await sb.from("work_sessions").select("*").order("start_ts",{ascending:false}); sessions=data||[]; }
   async function fetchExpenses(){ const { data }=await sb.from("expenses").select("*").order("txn_date",{ascending:false}); expenses=data||[]; }
   async function fetchCats(){ try{ const { data }=await sb.from("ledger_categories").select("kind,name"); cats={expense:[],income:[]}; (data||[]).forEach(r=>{ (cats[r.kind]=cats[r.kind]||[]).push(r.name); }); (cats.expense||[]).sort(); (cats.income||[]).sort(); }catch(e){ cats={expense:[],income:[]}; } }
@@ -1183,29 +1187,38 @@
     }).join("");
   }
 
-  function renderSettings(){ $("lg_cfg_rate").value=cfg.token_rate; $("lg_cfg_tax").value=Math.round(cfg.tax_rate*100); $("lg_cfg_goalrev").value=cfg.goal_revenue||""; $("lg_cfg_goalday").value=cfg.goal_revenue_daily||""; recalcTokenGoal(); }
+  function renderSettings(){ $("lg_cfg_rate").value=cfg.token_rate; $("lg_cfg_tax").value=Math.round(cfg.tax_rate*100); $("lg_cfg_workdays").value=cfg.goal_workdays||20; $("lg_cfg_goalrev").value=cfg.goal_revenue?fmtMoney(cfg.goal_revenue):""; $("lg_cfg_goalday").value=cfg.goal_revenue_daily?fmtMoney(cfg.goal_revenue_daily):""; syncGoals("aux"); }
   function recalcTokenGoal(){ const rate=parseFloat($("lg_cfg_rate").value)||0, gr=parseFloat($("lg_cfg_goalrev").value)||0, gd=parseFloat($("lg_cfg_goalday").value)||0; $("lg_cfg_goaltok").value=(rate>0&&gr>0)?Math.round(gr/rate).toLocaleString("en-US"):""; if($("lg_cfg_goaltokday")) $("lg_cfg_goaltokday").value=(rate>0&&gd>0)?Math.round(gd/rate).toLocaleString("en-US"):""; }
-  var WORKDAYS=20;
-  function syncGoals(src){ const rate=parseFloat($("lg_cfg_rate").value)||0; const num=id=>parseFloat(($(id).value||"").replace(/[^0-9.]/g,""))||0; let mr=0;
+  function fmtMoney(v){ v=Math.round(v*100)/100; return "$"+v.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:2}); }
+  function fmtTok(v){ return Math.round(v).toLocaleString("en-US"); }
+  function syncGoals(src){
+    const rate=parseFloat($("lg_cfg_rate").value)||0, tax=(parseFloat($("lg_cfg_tax").value)||0)/100, wd=parseFloat($("lg_cfg_workdays").value)||20;
+    const num=id=>parseFloat(($(id).value||"").replace(/[^0-9.]/g,""))||0;
+    const setM=(id,v)=>{ if(document.activeElement!==$(id)) $(id).value = v>0? fmtMoney(v) : ""; };
+    const setT=(id,v)=>{ if(document.activeElement!==$(id)) $(id).value = (rate>0&&v>0)? fmtTok(v) : ""; };
+    if(src==="aux"){ const a=num("lg_cfg_goalrev"), b=num("lg_cfg_goalday"); setT("lg_cfg_goaltok", rate>0?a/rate:0); setT("lg_cfg_goaltokday", rate>0?b/rate:0); setM("lg_cfg_goalnet", a*(1-tax)); setM("lg_cfg_goalnetday", b*(1-tax)); return; }
+    let mr=0;
     if(src==="mr") mr=num("lg_cfg_goalrev");
-    else if(src==="dr") mr=num("lg_cfg_goalday")*WORKDAYS;
+    else if(src==="dr") mr=num("lg_cfg_goalday")*wd;
     else if(src==="mt"){ if(rate<=0) return; mr=num("lg_cfg_goaltok")*rate; }
-    else if(src==="dt"){ if(rate<=0) return; mr=num("lg_cfg_goaltokday")*rate*WORKDAYS; }
-    const dr=mr/WORKDAYS;
-    const setN=(id,v)=>{ if(document.activeElement!==$(id)) $(id).value = v>0? String(Math.round(v*100)/100) : ""; };
-    const setT=(id,v)=>{ if(document.activeElement!==$(id)) $(id).value = (rate>0&&v>0)? Math.round(v).toLocaleString("en-US") : ""; };
-    if(src!=="mr") setN("lg_cfg_goalrev",mr);
-    if(src!=="dr") setN("lg_cfg_goalday",dr);
-    if(src!=="mt") setT("lg_cfg_goaltok", rate>0? mr/rate : 0);
-    if(src!=="dt") setT("lg_cfg_goaltokday", rate>0? dr/rate : 0);
+    else if(src==="dt"){ if(rate<=0) return; mr=num("lg_cfg_goaltokday")*rate*wd; }
+    else if(src==="mn"){ if(tax>=1) return; mr=num("lg_cfg_goalnet")/(1-tax); }
+    else if(src==="dn"){ if(tax>=1) return; mr=num("lg_cfg_goalnetday")/(1-tax)*wd; }
+    const dr=mr/wd;
+    if(src!=="mr") setM("lg_cfg_goalrev",mr);
+    if(src!=="dr") setM("lg_cfg_goalday",dr);
+    if(src!=="mt") setT("lg_cfg_goaltok", rate>0?mr/rate:0);
+    if(src!=="dt") setT("lg_cfg_goaltokday", rate>0?dr/rate:0);
+    if(src!=="mn") setM("lg_cfg_goalnet", mr*(1-tax));
+    if(src!=="dn") setM("lg_cfg_goalnetday", dr*(1-tax));
   }
 
   async function saveCfg(){
-    const rate=parseFloat($("lg_cfg_rate").value)||0, tax=(parseFloat($("lg_cfg_tax").value)||0)/100, gr=parseFloat($("lg_cfg_goalrev").value)||0, gd=parseFloat($("lg_cfg_goalday").value)||0; const gt=rate>0?Math.round(gr/rate):0;
+    const rate=parseFloat($("lg_cfg_rate").value)||0, tax=(parseFloat($("lg_cfg_tax").value)||0)/100, gr=parseFloat(($("lg_cfg_goalrev").value||"").replace(/[^0-9.]/g,""))||0, gd=parseFloat(($("lg_cfg_goalday").value||"").replace(/[^0-9.]/g,""))||0, wd=parseFloat($("lg_cfg_workdays").value)||20; const gt=rate>0?Math.round(gr/rate):0;
     const m=$("lg_cfg_msg"); $("lg_cfg_save").disabled=true; m.className="msg info"; m.textContent="Saving…";
-    const { error }=await sb.from("ledger_config").upsert({ user_id:me.id, token_rate:rate, tax_rate:tax, goal_revenue:gr, goal_tokens:gt, goal_revenue_daily:gd },{ onConflict:"user_id" });
+    const { error }=await sb.from("ledger_config").upsert({ user_id:me.id, token_rate:rate, tax_rate:tax, goal_revenue:gr, goal_tokens:gt, goal_revenue_daily:gd, goal_workdays:wd },{ onConflict:"user_id" });
     $("lg_cfg_save").disabled=false; if(error){ m.className="msg err"; m.textContent=error.message; return; }
-    cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt,goal_revenue_daily:gd}; m.className="msg ok"; m.textContent="Saved."; renderAll();
+    cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt,goal_revenue_daily:gd,goal_workdays:wd}; m.className="msg ok"; m.textContent="Saved."; renderAll();
   }
 
   let editingSession=null, editingRow=null, offDetail=null, offEvents={}, offEventsAll=[], liveCardId=null, balSaveTimer=null, liveBal={};
@@ -1307,11 +1320,16 @@
       const b=e.target.closest("[data-lgdel-rev]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-rev"),async()=>{ editingRev=null; await fetchExpenses(); renderAll(); });
     });
     $("lg_cfg_save").addEventListener("click",saveCfg);
-    $("lg_cfg_rate").addEventListener("input",recalcTokenGoal);
+    $("lg_cfg_rate").addEventListener("input",()=>syncGoals("aux"));
+    $("lg_cfg_tax").addEventListener("input",()=>syncGoals("aux"));
+    $("lg_cfg_workdays").addEventListener("input",()=>syncGoals("mr"));
     $("lg_cfg_goalrev").addEventListener("input",()=>syncGoals("mr"));
     $("lg_cfg_goalday").addEventListener("input",()=>syncGoals("dr"));
     $("lg_cfg_goaltok").addEventListener("input",()=>syncGoals("mt"));
     $("lg_cfg_goaltokday").addEventListener("input",()=>syncGoals("dt"));
+    $("lg_cfg_goalnet").addEventListener("input",()=>syncGoals("mn"));
+    $("lg_cfg_goalnetday").addEventListener("input",()=>syncGoals("dn"));
+    ["lg_cfg_goalrev","lg_cfg_goalday","lg_cfg_goalnet","lg_cfg_goalnetday","lg_cfg_goaltok","lg_cfg_goaltokday"].forEach(id=>{ const el=$(id); if(!el) return; el.addEventListener("focus",()=>{ el.value=(el.value||"").replace(/[^0-9.]/g,""); }); el.addEventListener("blur",()=>{ const v=parseFloat((el.value||"").replace(/[^0-9.]/g,"")); const money=id.indexOf("tok")<0; el.value=(v>0)?(money?fmtMoney(v):fmtTok(v)):""; }); });
     $("lg_tok_btn").addEventListener("click",()=>$("lg_tok_file").click());
     $("lg_tok_file").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length) importTokenFiles(fs); });
     $("lg_periods").addEventListener("click",e=>{ if(e.target.closest('[data-per="upload"]')) $("lg_tok_file").click(); });
