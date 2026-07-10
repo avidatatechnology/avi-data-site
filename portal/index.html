@@ -948,7 +948,7 @@
   function parseTime(s){ s=(s||"").trim().toLowerCase(); if(!s) return null; const ap=/p/.test(s)?"pm":(/a/.test(s)?"am":null); const dig=s.replace(/[^0-9:]/g,""); if(!dig) return null; let h,m; if(dig.includes(":")){ const parts=dig.split(":"); h=parseInt(parts[0],10); m=parseInt(parts[1]||"0",10); } else if(dig.length<=2){ h=parseInt(dig,10); m=0; } else { m=parseInt(dig.slice(-2),10); h=parseInt(dig.slice(0,-2),10); } if(isNaN(h)||isNaN(m)) return null; if(ap==="pm"&&h<12) h+=12; if(ap==="am"&&h===12) h=0; if(h<0||h>23||m<0||m>59) return null; return pad2n(h)+":"+pad2n(m); }
   function to12(hhmm){ if(!hhmm) return ""; const p=hhmm.split(":"); let H=+p[0]; const M=+p[1]; const ap=H>=12?"PM":"AM"; H=H%12||12; return H+":"+pad2n(M)+" "+ap; }
 
-  function ledgerShow(which){ lgTab=which; const rev=which==="rev"; show($("lgDash"),which==="dash"); show($("lgRevTabs"),rev); show($("lgRevOv"),rev&&revSrc==="overview"); show($("lgSess"),rev&&revSrc==="chaturbate"); show($("lgRevSrc"),rev&&revSrc!=="overview"&&revSrc!=="chaturbate"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); if(rev){ renderRevTabs(); renderPf(); if(revSrc==="overview") renderRevOv(); else if(revSrc==="chaturbate"){ renderLiveCard(); renderCbSummary(); renderSessions(); } else renderRevSrc(); } window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
+  function ledgerShow(which){ lgTab=which; const rev=which==="rev"; if(which==="dash") renderDash(); show($("lgDash"),which==="dash"); show($("lgRevTabs"),rev); show($("lgRevOv"),rev&&revSrc==="overview"); show($("lgSess"),rev&&revSrc==="chaturbate"); show($("lgRevSrc"),rev&&revSrc!=="overview"&&revSrc!=="chaturbate"); show($("lgExp"),which==="exp"); show($("lgSet"),which==="set"); document.querySelectorAll(".lg-tab").forEach(b=>b.classList.toggle("active",b.getAttribute("data-lg")===which)); if(rev){ renderRevTabs(); renderPf(); if(revSrc==="overview") renderRevOv(); else if(revSrc==="chaturbate"){ renderLiveCard(); renderCbSummary(); renderSessions(); } else renderRevSrc(); } window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
   function revShow(src){ revSrc=src; ledgerShow("rev"); }
   function renderRevTabs(){ document.querySelectorAll("[data-rev]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rev")===revSrc)); }
   function revRows(){ return expenses.filter(e=>(e.kind||"expense")==="income" && (e.source||"")===revSrc); }
@@ -997,9 +997,10 @@
 
   function renderDash(){
     $("lg_month_lbl").textContent=monthLabel(curMonth); const ym=curMonth;
-    const dmap={}; dailyTok.forEach(r=>{ if(monthOf(r.d)===ym) dmap[r.d]=(dmap[r.d]||0)+Number(r.tokens||0); });
-    const smin={}; monthSessions(ym).forEach(s=>{ const mn=Math.max(0,(new Date(sessEnd(s))-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; });
-    let tokens=0; for(const k in dmap) tokens+=dmap[k]; const tokRev=tokens*cfg.token_rate; let mins=0; for(const k in smin) mins+=smin[k];
+    const smin={}, sessDaysSet={}; let tokens=0;
+    monthSessions(ym).forEach(s=>{ tokens+=sessionMetrics(s).tokens; const mn=Math.max(0,(new Date(sessEnd(s))-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; sessDaysSet[s.session_date]=1; });
+    offEventsAll.forEach(e=>{ const d=(e.lts||"").slice(0,10); if(monthOf(d)===ym) tokens+=(e.tokens||0); });
+    const tokRev=tokens*cfg.token_rate; let mins=0; for(const k in smin) mins+=smin[k];
     const NONCASH={Gifts:1};
     const monthTx=expenses.filter(e=>monthOf(e.txn_date)===ym);
     const incRows=monthTx.filter(e=>(e.kind||"expense")==="income");
@@ -1008,8 +1009,8 @@
     const expCat={}; let expTot=0; monthTx.filter(e=>(e.kind||"expense")==="expense").forEach(e=>{ const c=e.category||"Uncategorized"; expCat[c]=(expCat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
     const totalRev=tokRev+cashInc, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, netInc=totalRev-taxes-expTot;
     $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(totalRev),"","grad")+kpi("Taxes",lgUSD(taxes),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(netAfterTax),"","mint")+kpi("Tokens",lgN(tokens),"");
-    const workDays=Object.keys(dmap).length;
-    const revDaysSet={}; Object.keys(dmap).forEach(d=>revDaysSet[d]=1); Object.keys(cashDays).forEach(d=>revDaysSet[d]=1); const revDays=Object.keys(revDaysSet).length;
+    const workDays=Object.keys(sessDaysSet).length;
+    const revDaysSet={}; Object.keys(sessDaysSet).forEach(d=>revDaysSet[d]=1); Object.keys(cashDays).forEach(d=>revDaysSet[d]=1); const revDays=Object.keys(revDaysSet).length;
     const gRev=cfg.goal_revenue?totalRev/cfg.goal_revenue*100:0;
     const avgDayRev=revDays?totalRev/revDays:0; const gDay=cfg.goal_revenue_daily?avgDayRev/cfg.goal_revenue_daily*100:0;
     $("lg_d_goals").innerHTML=goalRow("Revenue (month)",lgUSD(totalRev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"\u2014",gRev)+goalRow("Revenue / day (avg)",lgUSD(avgDayRev),cfg.goal_revenue_daily?lgUSD(cfg.goal_revenue_daily):"\u2014",gDay);
@@ -1071,13 +1072,13 @@
     if(document.activeElement!==$("lg_bal_now")) $("lg_bal_now").value=(live.bal_now!=null?live.bal_now:"");
     $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Live for</div><div class="v">'+fmtDur(m.mins)+'</div></div><div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
   }
-  async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; delete liveBal[live.id]; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); renderCbSummary(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
+  async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; delete liveBal[live.id]; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); renderCbSummary(); renderDash(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
   function onBalInput(){
     const live=sessions.find(s=>s.id===liveCardId); if(!live) return;
     const bs=$("lg_bal_start").value.trim(), bn=$("lg_bal_now").value.trim();
     live.bal_start = bs===""?null:(parseInt(bs,10)||0); live.bal_now = bn===""?null:(parseInt(bn,10)||0);
     liveBal[live.id]={start:live.bal_start,now:live.bal_now};
-    renderLiveCard(); renderSessions(); renderCbSummary();
+    renderLiveCard(); renderSessions(); renderCbSummary(); renderDash();
     clearTimeout(balSaveTimer); balSaveTimer=setTimeout(()=>{ sb.from("work_sessions").update({bal_start:live.bal_start,bal_now:live.bal_now}).eq("id",live.id); }, 600);
   }
   var OVCOLORS={ "Chaturbate":"#6E8BFF", "Venmo":"#34D8A0", "CashApp":"#5BD6C0", "Apple Pay":"#C9A2FF", "Gifts":"#F2607D", "Other":"#8793AE" };
