@@ -444,12 +444,18 @@
   .lg-stackleg{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:10px}
   .lg-sli{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
   .pf-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
-  .pf-bar select{width:auto;min-width:118px;background:var(--panel-2);border:1px solid var(--line-soft);color:var(--text);font-family:var(--fd);font-weight:600;font-size:13px;padding:9px 34px 9px 13px;border-radius:10px;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M1 1l4 4 4-4" stroke="%238AA2FF" fill="none" stroke-width="1.5"/></svg>');background-repeat:no-repeat;background-position:right 13px center;transition:border-color .15s ease, box-shadow .15s ease}
-  .pf-bar select:hover{border-color:var(--brand-2);color:var(--text)}
-  .pf-bar select:focus{outline:none;border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(110,139,255,.16)}
-  .pf-bar select option{background:#131b2e;color:#e7ecf6;font-weight:500}
-  .pf-bar select option:checked{background:#1c2740;color:#fff}
-  .pf-gran{color:var(--brand-2)!important;border-color:rgba(110,139,255,.5)!important;background:rgba(110,139,255,.06)!important;min-width:130px}
+  .pf-cd{position:relative;display:inline-block}
+  .pf-cd-btn{display:flex;align-items:center;gap:12px;justify-content:space-between;background:var(--panel-2);border:1px solid var(--line-soft);color:var(--text);font-family:var(--fd);font-weight:600;font-size:13px;padding:9px 13px;border-radius:10px;cursor:pointer;min-width:120px;transition:border-color .15s ease, box-shadow .15s ease}
+  .pf-cd-btn:hover{border-color:var(--brand-2)}
+  .pf-cd.open .pf-cd-btn{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(110,139,255,.16)}
+  .pf-cd-car{color:var(--muted-2);transition:transform .18s ease;flex:none}
+  .pf-cd.open .pf-cd-car{transform:rotate(180deg)}
+  .pf-cd-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:100%;background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 14px 40px rgba(0,0,0,.55);z-index:60;display:none;max-height:280px;overflow-y:auto}
+  .pf-cd.open .pf-cd-menu{display:block}
+  .pf-cd-opt{display:block;width:100%;text-align:left;background:none;border:none;color:var(--muted);font-family:var(--fd);font-weight:600;font-size:13px;padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+  .pf-cd-opt:hover{background:rgba(255,255,255,.06);color:var(--text)}
+  .pf-cd-opt.sel{background:var(--brand);color:#fff}
+  .pf-gran .pf-cd-btn{color:var(--brand-2);border-color:rgba(110,139,255,.5);background:rgba(110,139,255,.06)}
   .pf-showing{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2)}
   .pf-arrow{color:var(--muted-2);font-size:15px}
   .lg-subtabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line-soft)}
@@ -681,11 +687,11 @@
     <!-- ===== REVENUE OVERVIEW ===== -->
     <div id="lgRevOv" style="display:none">
       <div class="pf-bar">
-        <select class="pf-gran"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option></select>
+        <div class='pf-cd pf-gran' data-pf='gran'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
         <span class="pf-showing">Showing</span>
-        <select class="pf-start"></select>
+        <div class='pf-cd pf-start' data-pf='start'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
         <span class="pf-arrow">&rarr;</span>
-        <select class="pf-end"></select>
+        <div class='pf-cd pf-end' data-pf='end'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
       </div>
       <div class="summary" id="lg_ov_kpis"></div>
       <div class="lg-two lg-ovgrid">
@@ -700,11 +706,11 @@
     <!-- ===== SESSIONS ===== -->
     <div id="lgSess" style="display:none">
       <div class="pf-bar">
-        <select class="pf-gran"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option></select>
+        <div class='pf-cd pf-gran' data-pf='gran'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
         <span class="pf-showing">Showing</span>
-        <select class="pf-start"></select>
+        <div class='pf-cd pf-start' data-pf='start'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
         <span class="pf-arrow">&rarr;</span>
-        <select class="pf-end"></select>
+        <div class='pf-cd pf-end' data-pf='end'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
       </div>
       <div class="summary" id="lg_cb_kpis"></div>
       <div class="card lg-daygoalcard" id="lgDayGoal" style="display:none"></div>
@@ -744,11 +750,11 @@
     <!-- ===== REVENUE SOURCE (manual) ===== -->
     <div id="lgRevSrc" style="display:none">
       <div class="pf-bar">
-        <select class="pf-gran"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option></select>
+        <div class='pf-cd pf-gran' data-pf='gran'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
         <span class="pf-showing">Showing</span>
-        <select class="pf-start"></select>
+        <div class='pf-cd pf-start' data-pf='start'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
         <span class="pf-arrow">&rarr;</span>
-        <select class="pf-end"></select>
+        <div class='pf-cd pf-end' data-pf='end'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
       </div>
       <div class="summary" id="lg_r_kpis"></div>
       <div class="card lg-form">
@@ -1160,7 +1166,11 @@
     return out; }
   function pfBounds(){ const ps=pfPeriods(pf.gran); if(!ps.length) return [today,today]; let si=ps.findIndex(p=>p.key===pf.startKey), ei=ps.findIndex(p=>p.key===pf.endKey); if(si<0) si=0; if(ei<0) ei=ps.length-1; if(ei<si){ const t=si; si=ei; ei=t; } return [ps[si].start, ps[ei].end]; }
   function pfRangeLabel(){ const ps=pfPeriods(pf.gran); const s=ps.find(p=>p.key===pf.startKey), e=ps.find(p=>p.key===pf.endKey); if(!s||!e) return "All"; return s.key===e.key? s.label : (s.label+" \u2013 "+e.label); }
-  function renderPf(){ const ps=pfPeriods(pf.gran); if(!pf.startKey||!ps.some(p=>p.key===pf.startKey)) pf.startKey=ps.length?ps[0].key:null; if(!pf.endKey||!ps.some(p=>p.key===pf.endKey)) pf.endKey=ps.length?ps[ps.length-1].key:null; const opts=ps.map(p=>"<option value='"+p.key+"'>"+esc(p.label)+"</option>").join(""); document.querySelectorAll(".pf-bar").forEach(bar=>{ const g=bar.querySelector(".pf-gran"), s=bar.querySelector(".pf-start"), en=bar.querySelector(".pf-end"); if(g) g.value=pf.gran; if(s){ s.innerHTML=opts; s.value=pf.startKey; } if(en){ en.innerHTML=opts; en.value=pf.endKey; } }); }
+  var PFGRAN=[["daily","Daily"],["weekly","Weekly"],["monthly","Monthly"],["quarterly","Quarterly"],["annual","Annual"]];
+  function renderPf(){ const ps=pfPeriods(pf.gran); if(!pf.startKey||!ps.some(p=>p.key===pf.startKey)) pf.startKey=ps.length?ps[0].key:null; if(!pf.endKey||!ps.some(p=>p.key===pf.endKey)) pf.endKey=ps.length?ps[ps.length-1].key:null;
+    const granLbl=(PFGRAN.find(g=>g[0]===pf.gran)||[,"Monthly"])[1]; const perItems=ps.map(p=>[p.key,p.label]); const startLbl=(ps.find(p=>p.key===pf.startKey)||{}).label||""; const endLbl=(ps.find(p=>p.key===pf.endKey)||{}).label||"";
+    const optHtml=(items,cur)=>items.map(it=>"<button type='button' class='pf-cd-opt"+(it[0]===cur?" sel":"")+"' data-val='"+esc(it[0])+"'>"+esc(it[1])+"</button>").join("");
+    document.querySelectorAll(".pf-bar").forEach(bar=>{ bar.querySelectorAll(".pf-cd").forEach(cd=>{ const w=cd.getAttribute("data-pf"), val=cd.querySelector(".pf-cd-val"), menu=cd.querySelector(".pf-cd-menu"); if(w==="gran"){ val.textContent=granLbl; menu.innerHTML=optHtml(PFGRAN,pf.gran); } else if(w==="start"){ val.textContent=startLbl; menu.innerHTML=optHtml(perItems,pf.startKey); } else if(w==="end"){ val.textContent=endLbl; menu.innerHTML=optHtml(perItems,pf.endKey); } }); }); }
   function renderRevAll(){ renderPf(); renderRevOv(); renderCbSummary(); renderSessions(); renderRevSrc(); }
   function syncRrFilters(){ const bnd=dateBounds(revRange,revAllStart()),rs=bnd[0],re=bnd[1]; document.querySelectorAll(".lg-rrfilter").forEach(bar=>{ bar.querySelectorAll("[data-rr]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rr")===revRange.preset)); const s=bar.querySelector(".lg-rrstart"), en=bar.querySelector(".lg-rrend"); if(s&&document.activeElement!==s) s.value=(revRange.preset==="custom")?(revRange.start?isoToDisp(revRange.start):""):isoToDisp(rs); if(en&&document.activeElement!==en) en.value=(revRange.preset==="custom")?(revRange.end?isoToDisp(revRange.end):""):isoToDisp(re); }); }
   function renderCbSummary(){ if(!$("lg_cb_kpis")) return; const bnd=pfBounds(),rs=bnd[0],re=bnd[1]; let rangeTok=0,allTok=0; dailyTok.forEach(r=>{ const t=Number(r.tokens||0); allTok+=t; if(r.d>=rs&&r.d<=re) rangeTok+=t; }); const rev=rangeTok*cfg.token_rate, tax=rev*cfg.tax_rate, allRev=allTok*cfg.token_rate; const lbl=pfRangeLabel(); $("lg_cb_kpis").innerHTML=kpi("Revenue",lgUSD(rev),lbl,"grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(rev-tax),"","mint")+kpi("Tokens",lgN(rangeTok),""); renderDayGoal(); }
@@ -1316,7 +1326,13 @@
     })();
     $("lg_ov_line").addEventListener("mousemove",ovChartMove);
     $("lg_ov_line").addEventListener("mouseleave",ovChartLeave);
-    $("specialView").addEventListener("change",e=>{ if(!e.target.classList) return; if(e.target.classList.contains("pf-gran")){ pf.gran=e.target.value; pf.startKey=null; pf.endKey=null; renderPf(); renderRevAll(); } else if(e.target.classList.contains("pf-start")){ pf.startKey=e.target.value; renderPf(); renderRevAll(); } else if(e.target.classList.contains("pf-end")){ pf.endKey=e.target.value; renderPf(); renderRevAll(); } });
+    $("specialView").addEventListener("click",e=>{
+      const opt=e.target.closest(".pf-cd-opt");
+      if(opt){ const cd=opt.closest(".pf-cd"), w=cd.getAttribute("data-pf"), v=opt.getAttribute("data-val"); if(w==="gran"){ pf.gran=v; pf.startKey=null; pf.endKey=null; } else if(w==="start"){ pf.startKey=v; } else if(w==="end"){ pf.endKey=v; } document.querySelectorAll(".pf-cd.open").forEach(x=>x.classList.remove("open")); renderPf(); renderRevAll(); return; }
+      const btn=e.target.closest(".pf-cd-btn");
+      if(btn){ const cd=btn.closest(".pf-cd"), was=cd.classList.contains("open"); document.querySelectorAll(".pf-cd.open").forEach(x=>x.classList.remove("open")); if(!was) cd.classList.add("open"); return; }
+      document.querySelectorAll(".pf-cd.open").forEach(x=>x.classList.remove("open"));
+    });
     $("lg_r_add").addEventListener("click",addRev);
     $("lg_r_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-rsort]"); if(!th) return; const col=th.getAttribute("data-rsort"); if(revSort.col===col){ revSort.dir=revSort.dir==="asc"?"desc":"asc"; } else { revSort={col,dir:"desc"}; } renderRevSrc(); });
     $("lg_r_body").addEventListener("click",e=>{
