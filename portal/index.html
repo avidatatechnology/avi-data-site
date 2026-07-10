@@ -527,6 +527,14 @@
   .lg-goalsub{font-size:11px;color:var(--muted-2);margin-top:7px;font-family:var(--fm);display:flex;justify-content:space-between;gap:12px}
   .lg-goalhrs{color:var(--muted)}
   .lg-goalsub.done{color:var(--mint)}
+  .lg-livebtns{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .lg-endbtn{background:linear-gradient(135deg,#F2607D,#df3f5e);border:none;color:#fff;font-family:var(--fd);font-weight:700;font-size:12.5px;padding:8px 15px;border-radius:9px;cursor:pointer;transition:filter .15s}
+  .lg-endbtn:hover{filter:brightness(1.1)}
+  .lg-modal{position:fixed;inset:0;background:rgba(4,8,18,.74);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+  .lg-modal-card{background:var(--raised);border:1px solid var(--line);border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:0 26px 72px rgba(0,0,0,.62)}
+  .lg-modal-title{font-family:var(--fd);font-weight:800;font-size:18px;color:var(--text);margin-bottom:9px}
+  .lg-modal-msg{font-size:13.5px;color:var(--muted);line-height:1.5;margin-bottom:22px}
+  .lg-modal-actions{display:flex;gap:10px;justify-content:flex-end}
   @media (max-width:760px){.lg-livebody{grid-template-columns:1fr 1fr}.lg-livestats{grid-column:1/-1;justify-content:flex-start;margin-top:6px}}
   @media (max-width:900px){.lg-sess-top{grid-template-columns:1fr}}
   .lg-grid-e{grid-template-columns:150px 130px 1fr 130px}
@@ -737,7 +745,7 @@
         </div>
       </div>
       <div class="card lg-livecard" id="lgLiveCard" style="display:none">
-        <div class="lg-livehd"><span class="lg-live">live</span><span class="lg-livewhen" id="lgLiveWhen">—</span><button class="lg-per-btn" id="lg_bal_clear" style="margin-left:auto">Clear</button></div>
+        <div class="lg-livehd"><span class="lg-live">live</span><span class="lg-livewhen" id="lgLiveWhen">—</span><div class="lg-livebtns"><button class="lg-per-btn" id="lg_bal_clear">Clear</button><button class="lg-endbtn" id="lg_end_btn">End session</button></div></div>
         <div class="lg-livebody">
           <div class="lg-livein"><label>Balance at start <span class="lg-optlbl">auto</span></label><input type="number" inputmode="numeric" id="lg_bal_start" placeholder="0"></div>
           <div class="lg-livein"><label>Balance now</label><input type="number" inputmode="numeric" id="lg_bal_now" placeholder="your token balance"></div>
@@ -1046,7 +1054,7 @@
           '<td class="num" colspan="7" style="color:var(--muted-2)">editing times…</td>'+
           '<td class="num"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></td></tr>';
       }
-      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live lg-live-btn" data-lgend="'+s.id+'" title="Click to end this session">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num lg-revc">'+lgUSD(m.rev)+'</td><td class="num lg-taxc">'+lgUSD(m.tax)+'</td><td class="num lg-netc">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
+      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num lg-revc">'+lgUSD(m.rev)+'</td><td class="num lg-taxc">'+lgUSD(m.tax)+'</td><td class="num lg-netc">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
     }).join("");
   }
 
@@ -1063,13 +1071,13 @@
     if(document.activeElement!==$("lg_bal_now")) $("lg_bal_now").value=(live.bal_now!=null?live.bal_now:"");
     $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Live for</div><div class="v">'+fmtDur(m.mins)+'</div></div><div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
   }
-  async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; delete liveBal[live.id]; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
+  async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; delete liveBal[live.id]; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); renderCbSummary(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
   function onBalInput(){
     const live=sessions.find(s=>s.id===liveCardId); if(!live) return;
     const bs=$("lg_bal_start").value.trim(), bn=$("lg_bal_now").value.trim();
     live.bal_start = bs===""?null:(parseInt(bs,10)||0); live.bal_now = bn===""?null:(parseInt(bn,10)||0);
     liveBal[live.id]={start:live.bal_start,now:live.bal_now};
-    renderLiveCard(); renderSessions();
+    renderLiveCard(); renderSessions(); renderCbSummary();
     clearTimeout(balSaveTimer); balSaveTimer=setTimeout(()=>{ sb.from("work_sessions").update({bal_start:live.bal_start,bal_now:live.bal_now}).eq("id",live.id); }, 600);
   }
   var OVCOLORS={ "Chaturbate":"#6E8BFF", "Venmo":"#34D8A0", "CashApp":"#5BD6C0", "Apple Pay":"#C9A2FF", "Gifts":"#F2607D", "Other":"#8793AE" };
@@ -1274,6 +1282,10 @@
     editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll();
   }
   async function endLive(id){ const s=sessions.find(x=>x.id===id); if(!s) return; if(!confirm("End this live session now? It'll be timestamped to the current time and switch to your imported token totals.")) return; const end=nowLocal(); delete liveBal[id]; const { error }=await sb.from("work_sessions").update({end_ts:end,bal_start:null,bal_now:null}).eq("id",id); if(error){ alert(error.message); return; } editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
+  let confirmCb=null;
+  function showConfirm(title,msg,okLabel,cb){ const m=$("lgConfirm"); if(!m) return; $("lgConfirmTitle").textContent=title; $("lgConfirmMsg").textContent=msg; $("lgConfirmOk").textContent=okLabel||"Confirm"; confirmCb=cb; m.style.display="flex"; }
+  function hideConfirm(){ const m=$("lgConfirm"); if(m) m.style.display="none"; confirmCb=null; }
+  async function endLiveKeep(id){ const s=sessions.find(x=>x.id===id); if(!s) return; const end=nowLocal(); const upd={end_ts:end}; const bnEl=$("lg_bal_now"); if(bnEl){ const bnRaw=(bnEl.value||"").trim(); if(bnRaw!==""){ const bsEl=$("lg_bal_start"); upd.bal_now=parseInt(bnRaw.replace(/[^0-9]/g,""),10)||0; upd.bal_start=bsEl?(parseInt((bsEl.value||"0").replace(/[^0-9]/g,""),10)||0):(s.bal_start||0); } } clearTimeout(balSaveTimer); const { error }=await sb.from("work_sessions").update(upd).eq("id",id); if(error){ alert(error.message); return; } delete liveBal[id]; editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
   async function fetchOffEvents(d){ try{ const { data }=await sb.rpc("ledger_offsession_events",{p_shift:TZ_SHIFT,p_day:d,p_now:nowLocal()}); offEvents[d]=data||[]; }catch(e){ offEvents[d]=[]; } if(offDetail===d) renderSessions(); }
 
   async function addExpense(){
@@ -1301,7 +1313,7 @@
     m.className="msg info"; m.textContent="Importing "+rows.length+"…"; let err=null;
     for(let i=0;i<rows.length;i+=500){ const { error }=await sb.from("cb_tokens").upsert(rows.slice(i,i+500),{ onConflict:"user_id,ts", ignoreDuplicates:true }); if(error){ err=error; break; } }
     if(err){ m.className="msg err"; m.textContent=err.message; return; }
-    for(let i=0;i<sessions.length;i++){ const s=sessions[i]; if(!s.end_ts && (s.bal_now!=null || liveBal[s.id])){ delete liveBal[s.id]; s.bal_start=null; s.bal_now=null; sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",s.id); } }
+    for(let i=0;i<sessions.length;i++){ const s=sessions[i]; if(s.bal_now!=null || liveBal[s.id]){ delete liveBal[s.id]; s.bal_start=null; s.bal_now=null; sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",s.id); } }
     await fetchAgg(); renderAll(); m.className="msg ok"; m.textContent=lgN(rows.length)+" rows processed from "+list.length+" file"+(list.length>1?"s":"")+".";
   }
 
@@ -1365,12 +1377,13 @@
     $("lg_bal_now").addEventListener("input",onBalInput);
     $("lg_bal_start").addEventListener("change",onBalInput);
     $("lg_bal_now").addEventListener("change",onBalInput);
+    if(!$("lgConfirm")){ const d=document.createElement("div"); d.id="lgConfirm"; d.className="lg-modal"; d.style.display="none"; d.innerHTML="<div class='lg-modal-card'><div class='lg-modal-title' id='lgConfirmTitle'></div><div class='lg-modal-msg' id='lgConfirmMsg'></div><div class='lg-modal-actions'><button class='btn-ghost' id='lgConfirmCancel' style='width:auto'>Cancel</button><button class='lg-endbtn' id='lgConfirmOk'>Confirm</button></div></div>"; document.body.appendChild(d); $("lgConfirmCancel").addEventListener("click",hideConfirm); $("lgConfirmOk").addEventListener("click",()=>{ const cb=confirmCb; hideConfirm(); if(cb) cb(); }); d.addEventListener("click",e=>{ if(e.target===d) hideConfirm(); }); }
+    $("lg_end_btn").addEventListener("click",()=>{ const live=sessions.find(s=>!s.end_ts); if(!live) return; const bnRaw=$("lg_bal_now")?($("lg_bal_now").value||"").trim():""; let msg; if(bnRaw!==""){ const bn=parseInt(bnRaw.replace(/[^0-9]/g,""),10)||0, bs=parseInt(($("lg_bal_start").value||"0").replace(/[^0-9]/g,""),10)||0; msg="Locking in "+Math.max(0,bn-bs).toLocaleString()+" tokens for this session. Upload a fresh export later to override it with the exact numbers."; } else { msg="This session will be timestamped now and use your imported token totals."; } showConfirm("End this session?",msg,"End session",()=>endLiveKeep(live.id)); });
     $("lg_bal_clear").addEventListener("click",clearBal);
     ["lg_s_start","lg_s_end"].forEach(id=>$(id).addEventListener("blur",()=>{ const v=parseTime($(id).value); if(v) $(id).value=to12(v); }));
     $("lg_s_endclear").addEventListener("click",()=>{ $("lg_s_end").value=""; $("lg_s_end").focus(); });
     $("lg_s_body").addEventListener("click",e=>{
       const off=e.target.closest("[data-lgoff]"); if(off){ const k=off.getAttribute("data-lgoff"); offDetail=(offDetail===k)?null:k; renderSessions(); return; }
-      const en=e.target.closest("[data-lgend]"); if(en){ endLive(en.getAttribute("data-lgend")); return; }
       const ed=e.target.closest("[data-lgedit-sess]"); if(ed){ editingRow=ed.getAttribute("data-lgedit-sess"); renderSessions(); return; }
       const cl=e.target.closest("[data-lgclearend]"); if(cl){ const inp=$("rowend_"+cl.getAttribute("data-lgclearend")); if(inp){ inp.value=""; inp.focus(); } return; }
       const sv=e.target.closest("[data-lgsave-sess]"); if(sv){ saveRow(sv.getAttribute("data-lgsave-sess")); return; }
@@ -1383,7 +1396,7 @@
       const cn=e.target.closest("[data-etxcancel]"); if(cn){ editingTxn=null; renderExpenses(); return; }
       const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ editingTxn=null; await fetchExpenses(); renderAll(); });
     });
-    setInterval(()=>{ if(sessions.some(s=>!s.end_ts)){ renderLiveCard(); renderDayGoal(); if(!editingRow) renderSessions(); if(lgTab==="dash") renderDash(); } }, 30000);
+    setInterval(()=>{ if(sessions.some(s=>!s.end_ts)){ renderLiveCard(); renderCbSummary(); if(!editingRow) renderSessions(); if(lgTab==="dash") renderDash(); } }, 30000);
   }
 
   /* ---------- CLIENT ---------- */
