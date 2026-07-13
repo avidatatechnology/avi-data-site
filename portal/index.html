@@ -748,7 +748,7 @@
         <div class="lg-livehd"><span class="lg-live">live</span><span class="lg-livewhen" id="lgLiveWhen">—</span><div class="lg-livebtns"><button class="lg-per-btn" id="lg_bal_clear">Clear</button><button class="lg-endbtn" id="lg_end_btn">End session</button></div></div>
         <div class="lg-livebody">
           <div class="lg-livein"><label>Balance at start <span class="lg-optlbl">auto</span></label><input type="number" inputmode="numeric" id="lg_bal_start" placeholder="0"></div>
-          <div class="lg-livein"><label>Balance now</label><input type="number" inputmode="numeric" id="lg_bal_now" placeholder="your token balance"></div>
+          <div class="lg-livein"><label>Balance now <span class="lg-optlbl" id="lg_bal_status"></span></label><input type="number" inputmode="numeric" id="lg_bal_now" placeholder="your token balance"></div>
           <div class="lg-livestats" id="lgLiveStats"></div>
         </div>
       </div>
@@ -1085,14 +1085,23 @@
     $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Live for</div><div class="v">'+fmtDur(m.mins)+'</div></div><div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
   }
   async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; delete liveBal[live.id]; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); renderCbSummary(); renderDash(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
+  function balStatus(txt,cls){ const el=$("lg_bal_status"); if(!el) return; el.textContent=txt||""; el.style.color = cls==="err" ? "#F2607D" : (cls==="ok" ? "#34D8A0" : ""); }
+  async function saveBal(id,start,now){
+    balStatus("saving…");
+    const { data, error }=await sb.from("work_sessions").update({bal_start:start,bal_now:now}).eq("id",id).select("id");
+    if(error){ balStatus("not saved — "+error.message,"err"); console.error("bal save error:",error); return; }
+    if(!data || !data.length){ balStatus("not saved — write blocked (no row updated)","err"); console.error("bal save: 0 rows updated (RLS?)"); return; }
+    balStatus("saved ✓","ok");
+  }
   function onBalInput(){
     const live=sessions.find(s=>s.id===liveCardId); if(!live) return;
     const bs=$("lg_bal_start").value.trim(), bn=$("lg_bal_now").value.trim();
     live.bal_start = bs===""?null:(parseInt(bs,10)||0); live.bal_now = bn===""?null:(parseInt(bn,10)||0);
     liveBal[live.id]={start:live.bal_start,now:live.bal_now};
     renderLiveCard(); renderSessions(); renderCbSummary(); renderDash();
-    clearTimeout(balSaveTimer); balSaveTimer=setTimeout(()=>{ sb.from("work_sessions").update({bal_start:live.bal_start,bal_now:live.bal_now}).eq("id",live.id); }, 600);
+    clearTimeout(balSaveTimer); const id=live.id, st=live.bal_start, nw=live.bal_now; balSaveTimer=setTimeout(()=>saveBal(id,st,nw), 600);
   }
+  function flushBal(){ const live=sessions.find(s=>s.id===liveCardId); if(!live) return; clearTimeout(balSaveTimer); saveBal(live.id, live.bal_start, live.bal_now); }
   var OVCOLORS={ "Chaturbate":"#6E8BFF", "Venmo":"#34D8A0", "CashApp":"#5BD6C0", "Apple Pay":"#C9A2FF", "Gifts":"#F2607D", "Other":"#8793AE" };
   function ovColor(s){ return OVCOLORS[s]||"#6E8BFF"; }
   function shade(hex,pct){ hex=(hex||"#6E8BFF").replace("#",""); let r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16); const f=pct/100; r=Math.round(pct>0?r+(255-r)*f:r*(1+f)); g=Math.round(pct>0?g+(255-g)*f:g*(1+f)); b=Math.round(pct>0?b+(255-b)*f:b*(1+f)); const hh=v=>("0"+Math.max(0,Math.min(255,v)).toString(16)).slice(-2); return "#"+hh(r)+hh(g)+hh(b); }
@@ -1390,6 +1399,8 @@
     $("lg_bal_now").addEventListener("input",onBalInput);
     $("lg_bal_start").addEventListener("change",onBalInput);
     $("lg_bal_now").addEventListener("change",onBalInput);
+    $("lg_bal_start").addEventListener("blur",flushBal);
+    $("lg_bal_now").addEventListener("blur",flushBal);
     if(!$("lgConfirm")){ const d=document.createElement("div"); d.id="lgConfirm"; d.className="lg-modal"; d.style.display="none"; d.innerHTML="<div class='lg-modal-card'><div class='lg-modal-title' id='lgConfirmTitle'></div><div class='lg-modal-msg' id='lgConfirmMsg'></div><div class='lg-modal-actions'><button class='btn-ghost' id='lgConfirmCancel' style='width:auto'>Cancel</button><button class='lg-endbtn' id='lgConfirmOk'>Confirm</button></div></div>"; document.body.appendChild(d); $("lgConfirmCancel").addEventListener("click",hideConfirm); $("lgConfirmOk").addEventListener("click",()=>{ const cb=confirmCb; hideConfirm(); if(cb) cb(); }); d.addEventListener("click",e=>{ if(e.target===d) hideConfirm(); }); }
     $("lg_end_btn").addEventListener("click",()=>{ const live=sessions.find(s=>!s.end_ts); if(!live) return; const bnRaw=$("lg_bal_now")?($("lg_bal_now").value||"").trim():""; let msg; if(bnRaw!==""){ const bn=parseInt(bnRaw.replace(/[^0-9]/g,""),10)||0, bs=parseInt(($("lg_bal_start").value||"0").replace(/[^0-9]/g,""),10)||0; msg="Locking in "+Math.max(0,bn-bs).toLocaleString()+" tokens for this session. Upload a fresh export later to override it with the exact numbers."; } else { msg="This session will be timestamped now and use your imported token totals."; } showConfirm("End this session?",msg,"End session",()=>endLiveKeep(live.id)); });
     $("lg_bal_clear").addEventListener("click",clearBal);
