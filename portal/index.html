@@ -973,8 +973,20 @@
     curMonth = months.length ? months[months.length-1] : today.slice(0,7);
     renderAll(); ledgerShow(lgTab); setupRealtime();
   }
-  let rtSet=false, rtTimer=null;
-  function setupRealtime(){ if(rtSet||!me||!me.id) return; rtSet=true; const reload=()=>{ clearTimeout(rtTimer); rtTimer=setTimeout(async()=>{ if(editingRow||editingTxn||editingRev){ rtTimer=setTimeout(reload,900); return; } try{ await Promise.all([fetchCfg(),fetchSessions(),fetchExpenses(),fetchAgg(),fetchCats()]); renderAll(); }catch(e){} }, 450); }; const flt="user_id=eq."+me.id; try{ sb.channel("ledger_rt").on("postgres_changes",{event:"*",schema:"public",table:"work_sessions",filter:flt},reload).on("postgres_changes",{event:"*",schema:"public",table:"cb_tokens",filter:flt},reload).on("postgres_changes",{event:"*",schema:"public",table:"expenses",filter:flt},reload).on("postgres_changes",{event:"*",schema:"public",table:"ledger_config",filter:flt},reload).on("postgres_changes",{event:"*",schema:"public",table:"ledger_categories",filter:flt},reload).subscribe(); }catch(e){} }
+  let rtSet=false, rtTimer=null, rtReSub=null, rtChan=null;
+  function setupRealtime(){
+    if(rtSet||!me||!me.id) return; rtSet=true;
+    const reload=()=>{ clearTimeout(rtTimer); rtTimer=setTimeout(async()=>{ if(editingRow||editingTxn||editingRev){ rtTimer=setTimeout(reload,900); return; } try{ await Promise.all([fetchCfg(),fetchSessions(),fetchExpenses(),fetchAgg(),fetchCats()]); renderAll(); }catch(e){} }, 450); };
+    const tables=["work_sessions","cb_tokens","expenses","ledger_config","ledger_categories"];
+    const sub=()=>{
+      try{ if(rtChan) sb.removeChannel(rtChan); }catch(e){}
+      const ch=sb.channel("ledger_rt_"+Date.now());
+      tables.forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},reload));
+      ch.subscribe((status)=>{ if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){ clearTimeout(rtReSub); rtReSub=setTimeout(sub,2000); } });
+      rtChan=ch;
+    };
+    sub();
+  }
 
   function sessEnd(s){ return s.end_ts || nowLocal(); }
   function sessSortVal(it,col){ if(it.off){ const rev=it.tokens*cfg.token_rate; switch(col){ case "date":return it.st||it.d; case "time":return it.st||it.d; case "dur":return -1; case "platform":return ""; case "tokens":return it.tokens; case "revenue":return rev; case "tax":return rev*cfg.tax_rate; case "net":return rev-rev*cfg.tax_rate; case "hourly":return -1; default:return it.d; } } if(it.day){ switch(col){ case "date":return it.st; case "time":return it.st; case "dur":return it.mins; case "platform":return "chaturbate"; case "tokens":return it.tokens; case "revenue":return it.rev; case "tax":return it.tax; case "net":return it.net; case "hourly":return it.mins>0?it.net/(it.mins/60):0; default:return it.d; } } const s=it.s, m=sessionMetrics(s); switch(col){ case "date":return s.start_ts||s.session_date; case "time":return s.start_ts||""; case "dur":return m.mins; case "platform":return (s.platform||"").toLowerCase(); case "tokens":return m.tokens; case "revenue":return m.rev; case "tax":return m.tax; case "net":return m.net; case "hourly":return m.hourly; default:return s.session_date; } }
