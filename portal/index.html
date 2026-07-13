@@ -394,6 +394,23 @@
   .lg-rowinp{width:104px;padding:7px 9px!important;font-size:13px}
   .lg-rowedit .lg-timewrap{width:auto}
   .lg-dash{color:var(--muted-2)}
+  .lg-inlineedit{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 18px}
+  .lg-ie-f{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .lg-ie-f>label{margin:0;font-family:var(--fm);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2)}
+  .lg-ie-opt{text-transform:none;letter-spacing:0;color:var(--muted-2);font-size:10px}
+  .lg-inlineedit .lg-ie-date{width:132px}
+  .lg-inlineedit .lg-ie-time,.lg-inlineedit .lg-timewrap.lg-ie-time{width:122px}
+  .lg-ie-actions{display:flex;gap:10px;align-items:center;margin-left:auto}
+  .lg-editing>td{padding-top:16px!important;padding-bottom:16px!important}
+  @media(max-width:640px){
+    .lg-inlineedit{gap:14px}
+    .lg-inlineedit input{font-size:16px}
+    .lg-ie-f{flex:1 1 100%}
+    .lg-inlineedit .lg-ie-date,.lg-inlineedit .lg-ie-time,.lg-inlineedit .lg-timewrap.lg-ie-time{width:100%}
+    .lg-ie-actions{margin-left:0;width:100%}
+    .lg-ie-actions .lg-edit,.lg-ie-actions .lg-del{flex:1;text-align:center;padding:12px 0!important;font-size:14px;border:1px solid var(--line);border-radius:9px}
+    .lg-ie-actions .lg-edit{color:var(--brand-2);background:rgba(110,139,255,.12);border-color:rgba(110,139,255,.4)}
+  }
   .lg-manual{color:var(--brand-2);font-size:13px}
   .lg-netc{color:var(--mint)}
   .lg-revc{color:var(--brand-2)}
@@ -1062,10 +1079,12 @@
       if(it.day){ const hrs=it.mins/60; return '<tr class="lg-dayrow"><td>'+isoToDisp(it.d)+'</td><td>'+it.count+' session'+(it.count>1?"s":"")+'</td><td class="num">'+fmtDur(it.mins)+'</td><td>Chaturbate</td><td class="num">'+lgN(it.tokens)+'</td><td class="num lg-revc">'+lgUSD(it.rev)+'</td><td class="num lg-taxc">'+lgUSD(it.tax)+'</td><td class="num lg-netc">'+lgUSD(it.net)+'</td><td class="num">'+(hrs>0?lgUSD(it.net/hrs):"—")+'</td><td></td></tr>'; }
       const s=it.s, m=sessionMetrics(s);
       if(editingRow===s.id){ const sv=to12((s.start_ts||"").slice(11,16)), ev=s.end_ts?to12(s.end_ts.slice(11,16)):"";
-        return '<tr class="lg-liverow"><td><input class="lg-rowinp" id="rowdate_'+s.id+'" value="'+isoToDisp(s.session_date)+'" placeholder="mm/dd/yyyy" style="width:104px"></td>'+
-          '<td><div class="lg-rowedit"><input class="lg-time lg-rowinp" id="rowstart_'+s.id+'" value="'+sv+'"><span class="lg-dash">–</span><div class="lg-timewrap"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div></td>'+
-          '<td class="num" colspan="7" style="color:var(--muted-2)">editing times…</td>'+
-          '<td class="num"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></td></tr>';
+        return '<tr class="lg-liverow lg-editing"><td colspan="10"><div class="lg-inlineedit">'+
+          '<div class="lg-ie-f"><label>Date</label><input class="lg-rowinp lg-ie-date" id="rowdate_'+s.id+'" value="'+isoToDisp(s.session_date)+'" placeholder="mm/dd/yyyy"></div>'+
+          '<div class="lg-ie-f"><label>Start</label><input class="lg-time lg-rowinp lg-ie-time" id="rowstart_'+s.id+'" value="'+sv+'"></div>'+
+          '<div class="lg-ie-f"><label>End <span class="lg-ie-opt">blank = live</span></label><div class="lg-timewrap lg-ie-time"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div>'+
+          '<div class="lg-ie-actions"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></div>'+
+          '</div></td></tr>';
       }
       return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num lg-revc">'+lgUSD(m.rev)+'</td><td class="num lg-taxc">'+lgUSD(m.tax)+'</td><td class="num lg-netc">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
     }).join("");
