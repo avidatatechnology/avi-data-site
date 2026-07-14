@@ -764,7 +764,7 @@
       <div class="card lg-livecard" id="lgLiveCard" style="display:none">
         <div class="lg-livehd"><span class="lg-live">live</span><span class="lg-livewhen" id="lgLiveWhen">—</span><div class="lg-livebtns"><button class="lg-per-btn" id="lg_bal_clear">Clear</button><button class="lg-endbtn" id="lg_end_btn">End session</button></div></div>
         <div class="lg-livebody">
-          <div class="lg-livein"><label>Balance at start <span class="lg-optlbl">optional</span></label><input type="number" inputmode="numeric" id="lg_bal_start" placeholder="0"></div>
+          <div class="lg-livein"><label>Balance at start <span class="lg-optlbl">auto</span></label><input type="number" inputmode="numeric" id="lg_bal_start" placeholder="0"></div>
           <div class="lg-livein"><label>Balance now <span class="lg-optlbl" id="lg_bal_status"></span></label><input type="number" inputmode="numeric" id="lg_bal_now" placeholder="your token balance"></div>
           <div class="lg-livestats" id="lgLiveStats"></div>
         </div>
@@ -1096,7 +1096,8 @@
     if(!live){ card.style.display="none"; liveCardId=null; return; }
     card.style.display=""; liveCardId=live.id;
     if(liveBal[live.id]){ live.bal_start=liveBal[live.id].start; live.bal_now=liveBal[live.id].now; }
-    // Balance at start is manual only — never auto-guess a value (a wrong guess gets baked in on End and corrupts the session's token count).
+    const balCleared=!!(liveBal[live.id]&&liveBal[live.id].cleared);
+    if(!balCleared && live.bal_start==null){ let a=0; sessions.forEach(s=>{ if(s.id!==live.id && s.session_date===today && (s.start_ts||"")<(live.start_ts||"")) a+=sessionMetrics(s).tokens; }); offEventsAll.forEach(e=>{ if((e.lts||"").slice(0,10)===today && (e.lts||"")<(live.start_ts||"")) a+=(e.tokens||0); }); live.bal_start=a; }
     const m=sessionMetrics(live);
     $("lgLiveWhen").textContent="started "+fmtClock(live.start_ts);
     if(document.activeElement!==$("lg_bal_start")) $("lg_bal_start").value=(live.bal_start!=null?live.bal_start:"");
