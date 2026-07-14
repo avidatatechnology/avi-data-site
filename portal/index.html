@@ -1096,14 +1096,14 @@
     if(!live){ card.style.display="none"; liveCardId=null; return; }
     card.style.display=""; liveCardId=live.id;
     if(liveBal[live.id]){ live.bal_start=liveBal[live.id].start; live.bal_now=liveBal[live.id].now; }
-    let autoStart=0; sessions.filter(s=>s.session_date===today && s.id!==live.id && (s.start_ts||"")<(live.start_ts||"")).forEach(s=>{ autoStart+=sessionMetrics(s).tokens; }); offEventsAll.filter(e=>(e.lts||"").slice(0,10)===today && (e.lts||"")<(live.start_ts||"")).forEach(e=>{ autoStart+=(e.tokens||0); }); if(live.bal_start==null) live.bal_start=autoStart;
+    const balCleared=!!(liveBal[live.id]&&liveBal[live.id].cleared); if(!balCleared && live.bal_start==null){ let autoStart=null; sessions.filter(s=>s.id!==live.id && s.bal_now!=null && (s.start_ts||"")<(live.start_ts||"")).sort((a,b)=>(a.start_ts||"").localeCompare(b.start_ts||"")).forEach(s=>{ autoStart=Number(s.bal_now); }); if(autoStart!=null) live.bal_start=autoStart; }
     const m=sessionMetrics(live);
     $("lgLiveWhen").textContent="started "+fmtClock(live.start_ts);
-    if(document.activeElement!==$("lg_bal_start")) $("lg_bal_start").value=(live.bal_start!=null?live.bal_start:0);
+    if(document.activeElement!==$("lg_bal_start")) $("lg_bal_start").value=(live.bal_start!=null?live.bal_start:"");
     if(document.activeElement!==$("lg_bal_now")) $("lg_bal_now").value=(live.bal_now!=null?live.bal_now:"");
     $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Live for</div><div class="v">'+fmtDur(m.mins)+'</div></div><div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
   }
-  async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; delete liveBal[live.id]; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); renderCbSummary(); renderDash(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
+  async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; liveBal[live.id]={start:null,now:null,cleared:true}; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); renderCbSummary(); renderDash(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
   function balStatus(txt,cls){ const el=$("lg_bal_status"); if(!el) return; el.textContent=txt||""; el.style.color = cls==="err" ? "#F2607D" : (cls==="ok" ? "#34D8A0" : ""); }
   async function saveBal(id,start,now){
     balStatus("saving…");
