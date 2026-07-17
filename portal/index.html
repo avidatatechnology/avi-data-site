@@ -412,9 +412,11 @@
     .lg-ie-actions .lg-edit{color:var(--brand-2);background:rgba(110,139,255,.12);border-color:rgba(110,139,255,.4)}
   }
   .lg-manual{color:var(--brand-2);font-size:13px}
-  .lg-netc{color:var(--mint)}
-  .lg-revc{color:var(--brand-2)}
-  .lg-taxc{color:var(--rose)}
+  table.lgt tbody td.lg-netc{color:var(--mint)}
+  table.lgt tbody td.lg-revc{color:var(--brand-2)}
+  table.lgt tbody td.lg-taxc{color:var(--rose)}
+  table.lgt tbody tr.lg-sessclick{cursor:pointer}
+  .lg-sesscaret{color:var(--muted-2);font-size:11px;margin-left:6px}
   .kpi .v.mint{color:var(--mint)}
   .lg-sesshd{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
   .lg-statbar{display:flex;gap:22px;flex-wrap:wrap}
@@ -770,7 +772,7 @@
         </div>
       </div>
       <div class="lg-sesshd"><div class="lg-statbar" id="lg_s_stats"></div><div class="lg-seg" id="sessViewSeg"><button class="lg-segbtn on" data-sessview="sessions">Sessions</button><button class="lg-segbtn" data-sessview="daily">Daily</button></div></div>
-      <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt" id="lg_s_table"><thead><tr><th class="lg-sortable" data-ssort="date">Date</th><th class="lg-sortable" data-ssort="time">Time</th><th class="num lg-sortable" data-ssort="dur">Dur</th><th class="lg-sortable" data-ssort="platform">Platform</th><th class="num lg-sortable" data-ssort="tokens">Tokens</th><th class="num lg-sortable" data-ssort="revenue">Revenue</th><th class="num lg-sortable" data-ssort="tax">Tax</th><th class="num lg-sortable" data-ssort="net">Net</th><th class="num lg-sortable" data-ssort="hourly">$/hr</th><th></th></tr></thead><tbody id="lg_s_body"></tbody></table></div></div>
+      <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt" id="lg_s_table"><thead><tr><th class="lg-sortable" data-ssort="date">Date</th><th class="lg-sortable" data-ssort="time">Time</th><th class="num lg-sortable" data-ssort="dur">Dur</th><th class="num lg-sortable" data-ssort="tokens">Tokens</th><th class="num lg-sortable" data-ssort="revenue">Revenue</th><th class="num lg-sortable" data-ssort="tax">Tax</th><th class="num lg-sortable" data-ssort="net">Net</th><th class="num lg-sortable" data-ssort="hourly">$/hr</th><th></th></tr></thead><tbody id="lg_s_body"></tbody></table></div></div>
     </div>
 
     <!-- ===== REVENUE SOURCE (manual) ===== -->
@@ -1008,6 +1010,9 @@
   }
 
   function sessEnd(s){ return s.end_ts || nowLocal(); }
+  function cbFromLocal(localTs){ const d=new Date(new Date(localTs).getTime()-TZ_SHIFT*3600000); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+pad2n(d.getHours())+":"+pad2n(d.getMinutes())+":"+pad2n(d.getSeconds()); }
+  function sessDetailHtml(id){ const d=sessTokDetail[id]; if(!d) return '<div class="lg-offlist"><span class="lg-offchip">Loading token times…</span></div>'; if(!d.count) return '<div class="lg-offlist"><span class="lg-offchip">No uploaded token events fall in this session — tokens came from the balance entry.</span></div>'; return '<div class="lg-offlist"><span class="lg-offchip">First token '+d.first+'</span><span class="lg-offchip">Last token '+d.last+'</span><span class="lg-offchip">'+lgN(d.count)+' token event'+(d.count!==1?"s":"")+'</span></div>'; }
+  async function loadSessDetail(id){ const s=sessions.find(x=>x.id===id); if(!s){ return; } const startCb=cbFromLocal(s.start_ts), endCb=cbFromLocal(sessEnd(s)); try{ const { data }=await sb.from("cb_tokens").select("ts,token_change").gte("ts",startCb).lte("ts",endCb).gt("token_change",0).order("ts",{ascending:true}); const rows=data||[]; if(!rows.length){ sessTokDetail[id]={count:0}; } else { sessTokDetail[id]={count:rows.length,first:fmtClock(shiftLocal(rows[0].ts)),last:fmtClock(shiftLocal(rows[rows.length-1].ts))}; } }catch(e){ sessTokDetail[id]={count:0}; } if(sessDetailOpen===id) renderSessions(); }
   function sessSortVal(it,col){ if(it.off){ const rev=it.tokens*cfg.token_rate; switch(col){ case "date":return it.st||it.d; case "time":return it.st||it.d; case "dur":return -1; case "platform":return ""; case "tokens":return it.tokens; case "revenue":return rev; case "tax":return rev*cfg.tax_rate; case "net":return rev-rev*cfg.tax_rate; case "hourly":return -1; default:return it.d; } } if(it.day){ switch(col){ case "date":return it.st; case "time":return it.st; case "dur":return it.mins; case "platform":return "chaturbate"; case "tokens":return it.tokens; case "revenue":return it.rev; case "tax":return it.tax; case "net":return it.net; case "hourly":return it.mins>0?it.net/(it.mins/60):0; default:return it.d; } } const s=it.s, m=sessionMetrics(s); switch(col){ case "date":return s.start_ts||s.session_date; case "time":return s.start_ts||""; case "dur":return m.mins; case "platform":return (s.platform||"").toLowerCase(); case "tokens":return m.tokens; case "revenue":return m.rev; case "tax":return m.tax; case "net":return m.net; case "hourly":return m.hourly; default:return s.session_date; } }
   function sessionMetrics(s){ const imp=sessTok[s.id]||0; const balTok=(s.bal_now!=null)?Math.max(0,Number(s.bal_now)-Number(s.bal_start||0)):null; const tokens=(!s.end_ts)?(balTok!=null?balTok:imp):(imp>0?imp:(balTok!=null?balTok:0)); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=sessEnd(s); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
 
@@ -1071,24 +1076,27 @@
     if(sessSort){ items.sort((a,b)=>{ const va=sessSortVal(a,sessSort.col), vb=sessSortVal(b,sessSort.col); if(va<vb) return sessSort.dir==="asc"?-1:1; if(va>vb) return sessSort.dir==="asc"?1:-1; return 0; }); } else { items.sort((a,b)=>{ const da=(a.off||a.day)?a.d:a.s.session_date, db=(b.off||b.day)?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; const ta=(a.off||a.day)?a.st:a.s.start_ts, tb=(b.off||b.day)?b.st:b.s.start_ts; return ta<tb?1:-1; }); }
     updateSortArrows("lg_s_table",sessSort,"data-ssort");
     (function(){ if(!$("lg_s_stats")) return; const rws=items.filter(it=>!it.off); let cnt=rws.length,tN=0,tR=0,tM=0; rws.forEach(it=>{ if(it.day){ tN+=it.net; tR+=it.rev; tM+=it.mins; } else { const m=sessionMetrics(it.s); tN+=m.net; tR+=m.rev; tM+=m.mins; } }); const hrs=tM/60, unit=sessView==="daily"?"day":"session"; const sp=(v,l,c)=>"<div class='lg-stat'><span class='lg-statv"+(c?(" "+c):"")+"'>"+v+"</span><span class='lg-statl'>"+l+"</span></div>"; $("lg_s_stats").innerHTML = cnt? (sp(cnt+" "+unit+(cnt!==1?"s":""),"count")+sp(hrs>0?lgUSD(tN/hrs)+"/hr":"\u2014","avg rate")+sp(lgUSD(cnt?tR/cnt:0),"avg revenue")+sp(lgUSD(cnt?tN/cnt:0),"avg net","mint")+sp(fmtDur(tM),"total time")) : ""; })();
-    if(!items.length){ $("lg_s_body").innerHTML='<tr><td colspan="10" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
+    if(!items.length){ $("lg_s_body").innerHTML='<tr><td colspan="9" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
     $("lg_s_body").innerHTML=items.map(it=>{
       if(it.off){ const rev=it.tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; const exp=offDetail===it.key;
-        let out='<tr class="lg-offrow lg-offclick" data-lgoff="'+it.key+'"><td>'+isoToDisp(it.d)+'</td><td><span class="lg-offlbl">Not active</span> <span class="lg-caret">'+(exp?"▾":"▸")+'</span></td><td class="num">—</td><td>—</td><td class="num">'+lgN(it.tokens)+'</td><td class="num">'+lgUSD(rev)+'</td><td class="num">'+lgUSD(tax)+'</td><td class="num">'+lgUSD(net)+'</td><td class="num">—</td><td class="num"><span class="lg-auto">auto</span></td></tr>';
-        if(exp){ out+='<tr class="lg-offdetail"><td colspan="10"><div class="lg-offlist">'+it.evs.map(e=>'<span class="lg-offchip">'+fmtClock(e.lts)+' · +'+lgN(e.tokens)+'</span>').join("")+'</div></td></tr>'; }
+        let out='<tr class="lg-offrow lg-offclick" data-lgoff="'+it.key+'"><td>'+isoToDisp(it.d)+'</td><td><span class="lg-offlbl">Not active</span> <span class="lg-caret">'+(exp?"▾":"▸")+'</span></td><td class="num">—</td><td class="num">'+lgN(it.tokens)+'</td><td class="num lg-revc">'+lgUSD(rev)+'</td><td class="num lg-taxc">'+lgUSD(tax)+'</td><td class="num lg-netc">'+lgUSD(net)+'</td><td class="num">—</td><td class="num"><span class="lg-auto">auto</span></td></tr>';
+        if(exp){ out+='<tr class="lg-offdetail"><td colspan="9"><div class="lg-offlist">'+it.evs.map(e=>'<span class="lg-offchip">'+fmtClock(e.lts)+' · +'+lgN(e.tokens)+'</span>').join("")+'</div></td></tr>'; }
         return out;
       }
-      if(it.day){ const hrs=it.mins/60; return '<tr class="lg-dayrow"><td>'+isoToDisp(it.d)+'</td><td>'+it.count+' session'+(it.count>1?"s":"")+'</td><td class="num">'+fmtDur(it.mins)+'</td><td>Chaturbate</td><td class="num">'+lgN(it.tokens)+'</td><td class="num lg-revc">'+lgUSD(it.rev)+'</td><td class="num lg-taxc">'+lgUSD(it.tax)+'</td><td class="num lg-netc">'+lgUSD(it.net)+'</td><td class="num">'+(hrs>0?lgUSD(it.net/hrs):"—")+'</td><td></td></tr>'; }
+      if(it.day){ const hrs=it.mins/60; return '<tr class="lg-dayrow"><td>'+isoToDisp(it.d)+'</td><td>'+it.count+' session'+(it.count>1?"s":"")+'</td><td class="num">'+fmtDur(it.mins)+'</td><td class="num">'+lgN(it.tokens)+'</td><td class="num lg-revc">'+lgUSD(it.rev)+'</td><td class="num lg-taxc">'+lgUSD(it.tax)+'</td><td class="num lg-netc">'+lgUSD(it.net)+'</td><td class="num">'+(hrs>0?lgUSD(it.net/hrs):"—")+'</td><td></td></tr>'; }
       const s=it.s, m=sessionMetrics(s);
       if(editingRow===s.id){ const sv=to12((s.start_ts||"").slice(11,16)), ev=s.end_ts?to12(s.end_ts.slice(11,16)):"";
-        return '<tr class="lg-liverow lg-editing"><td colspan="10"><div class="lg-inlineedit">'+
+        return '<tr class="lg-liverow lg-editing"><td colspan="9"><div class="lg-inlineedit">'+
           '<div class="lg-ie-f"><label>Date</label><input class="lg-rowinp lg-ie-date" id="rowdate_'+s.id+'" value="'+isoToDisp(s.session_date)+'" placeholder="mm/dd/yyyy"></div>'+
           '<div class="lg-ie-f"><label>Start</label><input class="lg-time lg-rowinp lg-ie-time" id="rowstart_'+s.id+'" value="'+sv+'"></div>'+
           '<div class="lg-ie-f"><label>End <span class="lg-ie-opt">blank = live</span></label><div class="lg-timewrap lg-ie-time"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div>'+
           '<div class="lg-ie-actions"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></div>'+
           '</div></td></tr>';
       }
-      return '<tr'+(m.live?' class="lg-liverow"':'')+'><td>'+isoToDisp(s.session_date)+'</td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td>'+esc(s.platform||"")+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num lg-revc">'+lgUSD(m.rev)+'</td><td class="num lg-taxc">'+lgUSD(m.tax)+'</td><td class="num lg-netc">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
+      const dOpen=sessDetailOpen===s.id;
+      let row='<tr class="lg-sessclick'+(m.live?' lg-liverow':'')+'" data-lgsessdetail="'+s.id+'"><td>'+isoToDisp(s.session_date)+'<span class="lg-sesscaret">'+(dOpen?"▾":"▸")+'</span></td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num lg-revc">'+lgUSD(m.rev)+'</td><td class="num lg-taxc">'+lgUSD(m.tax)+'</td><td class="num lg-netc">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
+      if(dOpen){ row+='<tr class="lg-offdetail"><td colspan="9">'+sessDetailHtml(s.id)+'</td></tr>'; }
+      return row;
     }).join("");
   }
 
@@ -1303,6 +1311,7 @@
   }
 
   let editingSession=null, editingRow=null, offDetail=null, offEvents={}, offEventsAll=[], liveCardId=null, balSaveTimer=null, liveBal={};
+  let sessDetailOpen=null, sessTokDetail={};
   let txnKind="expense", txnSort={col:"date",dir:"desc"}, sessSort=null, editingTxn=null, cats={expense:[],income:[]}, sessView="sessions";
   let revSrc="overview", revSort={col:"date",dir:"desc"}, editingRev=null, ovType="all", ovRange={preset:"all",start:null,end:null}, revRange={preset:"all",start:null,end:null}, ovSegs=[], ovChart=null, pf={gran:"monthly",startKey:null,endKey:null};
   function resetSessionForm(){ editingSession=null; $("lg_s_start").value="";$("lg_s_end").value=""; $("lg_s_add").textContent="Add session"; $("lg_s_cancel").style.display="none"; }
@@ -1438,11 +1447,12 @@
     $("lg_s_endclear").addEventListener("click",()=>{ $("lg_s_end").value=""; $("lg_s_end").focus(); });
     $("lg_s_body").addEventListener("click",e=>{
       const off=e.target.closest("[data-lgoff]"); if(off){ const k=off.getAttribute("data-lgoff"); offDetail=(offDetail===k)?null:k; renderSessions(); return; }
-      const ed=e.target.closest("[data-lgedit-sess]"); if(ed){ editingRow=ed.getAttribute("data-lgedit-sess"); renderSessions(); return; }
+      const ed=e.target.closest("[data-lgedit-sess]"); if(ed){ const eid=ed.getAttribute("data-lgedit-sess"); editingRow=eid; if(sessDetailOpen===eid) sessDetailOpen=null; delete sessTokDetail[eid]; renderSessions(); return; }
       const cl=e.target.closest("[data-lgclearend]"); if(cl){ const inp=$("rowend_"+cl.getAttribute("data-lgclearend")); if(inp){ inp.value=""; inp.focus(); } return; }
       const sv=e.target.closest("[data-lgsave-sess]"); if(sv){ saveRow(sv.getAttribute("data-lgsave-sess")); return; }
       const cn=e.target.closest("[data-lgcancel-sess]"); if(cn){ editingRow=null; renderSessions(); return; }
-      const b=e.target.closest("[data-lgdel-sess]"); if(b) delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); });
+      const b=e.target.closest("[data-lgdel-sess]"); if(b){ delLg("work_sessions",b.getAttribute("data-lgdel-sess"),async()=>{ await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }); return; }
+      const sd=e.target.closest("[data-lgsessdetail]"); if(sd){ const id=sd.getAttribute("data-lgsessdetail"); if(sessDetailOpen===id){ sessDetailOpen=null; } else { sessDetailOpen=id; if(!sessTokDetail[id]) loadSessDetail(id); } renderSessions(); return; }
     });
     $("lg_e_body").addEventListener("click",e=>{
       const ed=e.target.closest("[data-etxedit]"); if(ed){ editingTxn=ed.getAttribute("data-etxedit"); renderExpenses(); return; }
