@@ -762,7 +762,7 @@
         </div>
       </div>
       <div class="card lg-livecard" id="lgLiveCard" style="display:none">
-        <div class="lg-livehd"><span class="lg-live">live</span><span class="lg-livewhen" id="lgLiveWhen">—</span><div class="lg-livebtns"><button class="lg-per-btn" id="lg_bal_clear">Clear</button><button class="lg-endbtn" id="lg_end_btn">End session</button></div></div>
+        <div class="lg-livehd"><span class="lg-live">live</span><span class="lg-livewhen" id="lgLiveWhen">—</span><div class="lg-livebtns"><button class="lg-per-btn" id="lg_cancel_btn">Cancel</button><button class="lg-endbtn" id="lg_end_btn">End session</button></div></div>
         <div class="lg-livebody">
           <div class="lg-livein"><label>Balance at start <span class="lg-optlbl">auto</span></label><input type="number" inputmode="numeric" id="lg_bal_start" placeholder="0"></div>
           <div class="lg-livein"><label>Balance now <span class="lg-optlbl" id="lg_bal_status"></span></label><input type="number" inputmode="numeric" id="lg_bal_now" placeholder="your token balance"></div>
@@ -1106,7 +1106,7 @@
     if(document.activeElement!==$("lg_bal_now")) $("lg_bal_now").value=(live.bal_now!=null?live.bal_now:"");
     $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Live for</div><div class="v">'+fmtDur(m.mins)+'</div></div><div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
   }
-  async function clearBal(){ const live=sessions.find(s=>s.id===liveCardId)||sessions.find(s=>!s.end_ts); if(!live) return; liveBal[live.id]={start:null,now:null,cleared:true}; live.bal_start=null; live.bal_now=null; $("lg_bal_start").value=""; $("lg_bal_now").value=""; renderLiveCard(); renderSessions(); renderCbSummary(); renderDash(); await sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",live.id); }
+  async function cancelSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; clearTimeout(balSaveTimer); const { error }=await sb.from("work_sessions").delete().eq("id",id); if(error){ alert(error.message); return; } delete liveBal[id]; editingRow=null; if(liveCardId===id) liveCardId=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
   function balStatus(txt,cls){ const el=$("lg_bal_status"); if(!el) return; el.textContent=txt||""; el.style.color = cls==="err" ? "#F2607D" : (cls==="ok" ? "#34D8A0" : ""); }
   async function saveBal(id,start,now){
     balStatus("saving…");
@@ -1433,7 +1433,7 @@
     $("lg_bal_now").addEventListener("blur",flushBal);
     if(!$("lgConfirm")){ const d=document.createElement("div"); d.id="lgConfirm"; d.className="lg-modal"; d.style.display="none"; d.innerHTML="<div class='lg-modal-card'><div class='lg-modal-title' id='lgConfirmTitle'></div><div class='lg-modal-msg' id='lgConfirmMsg'></div><div class='lg-modal-actions'><button class='btn-ghost' id='lgConfirmCancel' style='width:auto'>Cancel</button><button class='lg-endbtn' id='lgConfirmOk'>Confirm</button></div></div>"; document.body.appendChild(d); $("lgConfirmCancel").addEventListener("click",hideConfirm); $("lgConfirmOk").addEventListener("click",()=>{ const cb=confirmCb; hideConfirm(); if(cb) cb(); }); d.addEventListener("click",e=>{ if(e.target===d) hideConfirm(); }); }
     $("lg_end_btn").addEventListener("click",()=>{ const live=sessions.find(s=>!s.end_ts); if(!live) return; const bnRaw=$("lg_bal_now")?($("lg_bal_now").value||"").trim():""; let msg; if(bnRaw!==""){ const bn=parseInt(bnRaw.replace(/[^0-9]/g,""),10)||0, bs=parseInt(($("lg_bal_start").value||"0").replace(/[^0-9]/g,""),10)||0; msg="Locking in "+Math.max(0,bn-bs).toLocaleString()+" tokens for this session. Upload a fresh export later to override it with the exact numbers."; } else { msg="This session will be timestamped now and use your imported token totals."; } showConfirm("End this session?",msg,"End session",()=>endLiveKeep(live.id)); });
-    $("lg_bal_clear").addEventListener("click",clearBal);
+    $("lg_cancel_btn").addEventListener("click",()=>{ const live=sessions.find(s=>!s.end_ts); if(!live) return; showConfirm("Cancel this session?","This live session will be deleted entirely — no time or tokens will be recorded. This can't be undone.","Cancel session",()=>cancelSession(live.id)); });
     ["lg_s_start","lg_s_end"].forEach(id=>$(id).addEventListener("blur",()=>{ const v=parseTime($(id).value); if(v) $(id).value=to12(v); }));
     $("lg_s_endclear").addEventListener("click",()=>{ $("lg_s_end").value=""; $("lg_s_end").focus(); });
     $("lg_s_body").addEventListener("click",e=>{
