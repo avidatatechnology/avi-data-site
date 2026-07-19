@@ -436,6 +436,8 @@
   .lg-plot{position:relative;width:100%;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:13px;padding:6px 4px 2px;min-height:320px}
   .lg-plot svg{display:block;width:100%}
   .lg-cttip{position:absolute;pointer-events:none;background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-family:var(--fm);font-size:11.5px;color:var(--text);line-height:1.65;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:3;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .lg-warn{background:rgba(242,180,92,.09);border:1px solid rgba(242,180,92,.32);border-radius:11px;padding:11px 14px;font-size:12.5px;line-height:1.55;color:var(--muted);margin:14px 0 4px}
+  .lg-warn b{color:var(--gold);font-weight:700}
   .lg-sec-l{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin:18px 0 9px}
   .lg-sesscaret{color:var(--muted-2);font-size:11px;margin-left:6px}
   .kpi .v.mint{color:var(--mint)}
@@ -1042,11 +1044,18 @@
     let rows=[];
     try{ const { data }=await sb.from("cb_tokens").select("ts,token_change").gte("ts",startCb).lte("ts",endCb).gt("token_change",0).order("ts",{ascending:true}); rows=data||[]; }catch(e){ rows=[]; }
     const t0=new Date(startLocal).getTime();
-    const durSec=Math.max(1,Math.round((new Date(endLocal).getTime()-t0)/1000));
     const evs=rows.map(r=>{ const lt=shiftLocal(r.ts); return { t:Math.max(0,Math.round((new Date(lt).getTime()-t0)/1000)), tok:Number(r.token_change)||0, lts:lt }; }).filter(e=>e.tok>0);
-    sessTokDetail[id]={ evs:evs, durSec:durSec, t0:t0, count:evs.length, tokens:evs.reduce((a,b)=>a+b.tok,0) };
+    const endMs=new Date(endLocal).getTime();
+    const covLocal=(dataAsOf && dataAsOf<endLocal)?dataAsOf:endLocal;
+    let covMs=new Date(covLocal).getTime();
+    const lastEvMs=evs.length?(t0+evs[evs.length-1].t*1000):t0;
+    if(covMs<lastEvMs) covMs=lastEvMs;
+    const partial=covMs<endMs-60000;
+    const durSec=Math.max(60,Math.round((covMs-t0)/1000));
+    sessTokDetail[id]={ evs:evs, durSec:durSec, t0:t0, count:evs.length, tokens:evs.reduce((a,b)=>a+b.tok,0), partial:partial, covLocal:shiftLocalStr(covMs), sessEndLocal:endLocal };
     if(sheetId===id) renderSheet();
   }
+  function shiftLocalStr(ms){ const d=new Date(ms); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+pad2n(d.getHours())+":"+pad2n(d.getMinutes())+":"+pad2n(d.getSeconds()); }
   function bucketize(d,bs){ const n=Math.max(1,Math.ceil(d.durSec/bs)); const tok=new Array(n).fill(0), cnt=new Array(n).fill(0); d.evs.forEach(e=>{ const i=Math.min(n-1,Math.floor(e.t/bs)); tok[i]+=e.tok; cnt[i]++; }); return tok.map((v,i)=>({ s:i*bs, tok:v, n:cnt[i] })); }
   function sheetClock(d,sec){ return fmtClock(new Date(d.t0+sec*1000)); }
   function busiestHour(d){ if(!d.evs.length) return null; const by={}; d.evs.forEach(e=>{ const h=new Date(d.t0+e.t*1000).getHours(); by[h]=(by[h]||0)+e.tok; }); let bh=null,bv=-1; Object.keys(by).forEach(h=>{ if(by[h]>bv){ bv=by[h]; bh=Number(h); } }); const dd=new Date(d.t0); dd.setHours(bh,0,0,0); return { label:fmtClock(dd), tok:bv }; }
@@ -1136,9 +1145,14 @@
       k+=kpi(sheetClock(d,d.evs[d.evs.length-1].t),"last tip","var(--rose)");
       k+=kpi(lgN(big.tok)+" tok","biggest tip","var(--gold)");
       k+=kpi(sheetClock(d,big.t),"at");
-      k+=kpi(lgN(d.count),"tips");
+      k+=kpi(lgN(d.count),d.partial?"tips charted":"tips");
+      if(d.partial) k+=kpi(lgN(d.tokens),"tok charted","var(--gold)");
       $("lg_sc_kpis").innerHTML=k;
-      let an='<div class="lg-offlist">';
+      let an='';
+      if(d.partial){ const miss=Math.max(0,Math.round(m.tokens-d.tokens));
+        an+='<div class="lg-warn"><b>Chart shows imported tips only, through '+fmtClock(d.covLocal)+'.</b> Your export stops there, so the last '+fmtDur(Math.max(0,(new Date(d.sessEndLocal)-new Date(d.covLocal))/60000))+' of this session isn\'t plotted'+(miss>0?' — about '+lgN(miss)+' tokens ('+lgUSD(miss*cfg.token_rate)+') counted from your balance entry are missing here':'')+'. Upload a fresh export to fill it in.</div>';
+      }
+      an+='<div class="lg-offlist">';
       an+='<span class="lg-offchip">Peak '+resLabel(bs)+' · '+lgN(peak.tok)+' tok at '+sheetClock(d,peak.s)+'</span>';
       if(bh) an+='<span class="lg-offchip">Busiest hour · '+bh.label+' · '+lgN(bh.tok)+' tok</span>';
       an+='<span class="lg-offchip">'+quiet+'% of the session was quiet</span>';
