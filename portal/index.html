@@ -438,6 +438,8 @@
   .lg-cttip{position:absolute;pointer-events:none;background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-family:var(--fm);font-size:11.5px;color:var(--text);line-height:1.65;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:3;box-shadow:0 10px 30px rgba(0,0,0,.5)}
   .lg-warn{background:rgba(242,180,92,.09);border:1px solid rgba(242,180,92,.32);border-radius:11px;padding:11px 14px;font-size:12.5px;line-height:1.55;color:var(--muted);margin:14px 0 4px}
   .lg-warn b{color:var(--gold);font-weight:700}
+  .lg-kpi-sm .lg-kpi-vs{font-family:var(--fm);font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;letter-spacing:-.01em}
+  .lg-kpi-ar{color:var(--muted-2);font-size:11px}
   .lg-sec-l{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin:18px 0 9px}
   .lg-sesscaret{color:var(--muted-2);font-size:11px;margin-left:6px}
   .kpi .v.mint{color:var(--mint)}
@@ -1058,11 +1060,6 @@
   function shiftLocalStr(ms){ const d=new Date(ms); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+pad2n(d.getHours())+":"+pad2n(d.getMinutes())+":"+pad2n(d.getSeconds()); }
   function bucketize(d,bs){ const n=Math.max(1,Math.ceil(d.durSec/bs)); const tok=new Array(n).fill(0), cnt=new Array(n).fill(0); d.evs.forEach(e=>{ const i=Math.min(n-1,Math.floor(e.t/bs)); tok[i]+=e.tok; cnt[i]++; }); return tok.map((v,i)=>({ s:i*bs, tok:v, n:cnt[i] })); }
   function sheetClock(d,sec){ return fmtClock(new Date(d.t0+sec*1000)); }
-  function busiestHour(d){ if(!d.evs.length) return null; const by={}; d.evs.forEach(e=>{ const h=new Date(d.t0+e.t*1000).getHours(); by[h]=(by[h]||0)+e.tok; }); let bh=null,bv=-1; Object.keys(by).forEach(h=>{ if(by[h]>bv){ bv=by[h]; bh=Number(h); } }); const dd=new Date(d.t0); dd.setHours(bh,0,0,0); return { label:fmtClock(dd), tok:bv }; }
-  function topSurges(b,bs,total){ if(!b.length||!total) return []; const mean=total/b.length, th=Math.max(mean*2.5,1); const out=[]; let run=null,gap=0;
-    b.forEach(p=>{ if(p.tok>=th){ if(!run) run={a:p.s,z:p.s,tok:0}; run.z=p.s; run.tok+=p.tok; gap=0; } else if(run){ if(p.tok>0&&gap<2){ run.tok+=p.tok; run.z=p.s; gap++; } else { out.push(run); run=null; gap=0; } } });
-    if(run) out.push(run);
-    return out.filter(r=>r.tok>=total*0.06).sort((x,y)=>y.tok-x.tok).slice(0,4).sort((x,y)=>x.a-y.a).map(r=>({ a:r.a, z:r.z+bs, tok:r.tok })); }
   function drawSessChart(){
     const wrap=$("lg_sc_plot"); if(!wrap) return;
     const d=sessTokDetail[sheetId];
@@ -1133,19 +1130,12 @@
     $("lg_sc_title").textContent=isoToDisp(s.session_date);
     $("lg_sc_eyebrow").textContent=fmtClock(s.start_ts)+" – "+(s.end_ts?fmtClock(s.end_ts):"live")+"  ·  "+fmtDur(m.mins);
     const kpi=(v,l,c)=>'<div class="lg-kpi"><span class="lg-kpi-v"'+(c?' style="color:'+c+'"':'')+'>'+v+'</span><span class="lg-kpi-l">'+l+'</span></div>';
-    let k=kpi(lgN(m.tokens),"tokens")+kpi(lgUSD(m.rev),"revenue","var(--brand-2)")+kpi(lgUSD(m.net),"net","var(--mint)")+kpi(m.hrs>0?lgUSD(m.hourly):"—","net $/hr");
+    let k=kpi(lgN(m.tokens),"tokens")+kpi(lgUSD(m.rev),"revenue","var(--brand-2)")+kpi(lgUSD(m.tax),"taxes","var(--rose)")+kpi(lgUSD(m.net),"net","var(--mint)")+kpi(m.hrs>0?lgUSD(m.hourly):"—","net $/hr");
     if(d&&d.count){
       const bs=sheetRes==="auto"?autoBucket(d.durSec):sheetRes;
       const b=bucketize(d,bs);
-      let peak=b[0]; b.forEach(p=>{ if(p.tok>peak.tok) peak=p; });
-      let big=d.evs[0]; d.evs.forEach(e=>{ if(e.tok>big.tok) big=e; });
-      const bh=busiestHour(d);
       const quiet=Math.round(b.filter(p=>p.tok===0).length/b.length*100);
-      k+=kpi(sheetClock(d,d.evs[0].t),"first tip","var(--mint)");
-      k+=kpi(sheetClock(d,d.evs[d.evs.length-1].t),"last tip","var(--rose)");
-      k+=kpi(lgN(big.tok)+" tok","biggest tip","var(--gold)");
-      k+=kpi(sheetClock(d,big.t),"at");
-      k+=kpi(lgN(d.count),d.partial?"tips charted":"tips");
+      k+='<div class="lg-kpi lg-kpi-sm"><span class="lg-kpi-vs"><span style="color:var(--mint)">'+sheetClock(d,d.evs[0].t)+'</span><span class="lg-kpi-ar">&rarr;</span><span style="color:var(--rose)">'+sheetClock(d,d.evs[d.evs.length-1].t)+'</span></span><span class="lg-kpi-l">first &rarr; last tip</span></div>';
       if(d.partial) k+=kpi(lgN(d.tokens),"tok charted","var(--gold)");
       $("lg_sc_kpis").innerHTML=k;
       let an='';
@@ -1153,15 +1143,9 @@
         an+='<div class="lg-warn"><b>Chart shows imported tips only, through '+fmtClock(d.covLocal)+'.</b> Your export stops there, so the last '+fmtDur(Math.max(0,(new Date(d.sessEndLocal)-new Date(d.covLocal))/60000))+' of this session isn\'t plotted'+(miss>0?' — about '+lgN(miss)+' tokens ('+lgUSD(miss*cfg.token_rate)+') counted from your balance entry are missing here':'')+'. Upload a fresh export to fill it in.</div>';
       }
       an+='<div class="lg-offlist">';
-      an+='<span class="lg-offchip">Peak '+resLabel(bs)+' · '+lgN(peak.tok)+' tok at '+sheetClock(d,peak.s)+'</span>';
-      if(bh) an+='<span class="lg-offchip">Busiest hour · '+bh.label+' · '+lgN(bh.tok)+' tok</span>';
-      an+='<span class="lg-offchip">'+quiet+'% of the session was quiet</span>';
       an+='<span class="lg-offchip">Avg '+lgN(Math.round(d.tokens/d.count))+' tok per tip</span>';
-      const warm=Math.round((d.evs[0].t)/60);
-      an+='<span class="lg-offchip">First tip '+warm+' min after start</span>';
+      an+='<span class="lg-offchip">'+quiet+'% of the session was quiet</span>';
       an+='</div>';
-      const sg=topSurges(b,bs,d.tokens);
-      if(sg.length){ an+='<div class="lg-sec-l">Surges</div><div class="lg-offlist">'+sg.map(r=>'<span class="lg-offchip" style="color:var(--gold)">'+sheetClock(d,r.a)+'–'+sheetClock(d,Math.min(r.z,d.durSec))+' · '+lgN(r.tok)+' tok · '+lgUSD(r.tok*cfg.token_rate)+'</span>').join("")+'</div>'; }
       $("lg_sc_analytics").innerHTML=an;
     } else {
       $("lg_sc_kpis").innerHTML=k;
