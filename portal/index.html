@@ -1052,7 +1052,7 @@
     if(covMs<lastEvMs) covMs=lastEvMs;
     const partial=covMs<endMs-60000;
     const durSec=Math.max(60,Math.round((covMs-t0)/1000));
-    sessTokDetail[id]={ evs:evs, durSec:durSec, t0:t0, count:evs.length, tokens:evs.reduce((a,b)=>a+b.tok,0), partial:partial, covLocal:shiftLocalStr(covMs), sessEndLocal:endLocal };
+    sessTokDetail[id]={ evs:evs, durSec:durSec, t0:t0, count:evs.length, tokens:evs.reduce((a,b)=>a+b.tok,0), partial:partial, covLocal:shiftLocalStr(covMs), sessEndLocal:endLocal, asOf:dataAsOf };
     if(sheetId===id) renderSheet();
   }
   function shiftLocalStr(ms){ const d=new Date(ms); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+pad2n(d.getHours())+":"+pad2n(d.getMinutes())+":"+pad2n(d.getSeconds()); }
@@ -1172,7 +1172,7 @@
     const rw=$("lg_sc_reswrap"); if(rw) rw.style.display=sheetMode==="cum"?"none":"";
     drawSessChart();
   }
-  function openSessSheet(id){ sheetId=id; sheetMode="pulse"; sheetRes="auto"; const el=$("lgSheet"); if(!el) return; el.style.display="flex"; renderSheet(); if(!sessTokDetail[id]) loadSessDetail(id); }
+  function openSessSheet(id){ sheetId=id; sheetMode="pulse"; sheetRes="auto"; const el=$("lgSheet"); if(!el) return; el.style.display="flex"; const c=sessTokDetail[id]; if(c&&c.asOf!==dataAsOf) delete sessTokDetail[id]; renderSheet(); if(!sessTokDetail[id]) loadSessDetail(id); }
   function closeSessSheet(){ sheetId=null; const el=$("lgSheet"); if(el) el.style.display="none"; }
   function sessSortVal(it,col){ if(it.off){ const rev=it.tokens*cfg.token_rate; switch(col){ case "date":return it.st||it.d; case "time":return it.st||it.d; case "dur":return -1; case "platform":return ""; case "tokens":return it.tokens; case "revenue":return rev; case "tax":return rev*cfg.tax_rate; case "net":return rev-rev*cfg.tax_rate; case "hourly":return -1; default:return it.d; } } if(it.day){ switch(col){ case "date":return it.st; case "time":return it.st; case "dur":return it.mins; case "platform":return "chaturbate"; case "tokens":return it.tokens; case "revenue":return it.rev; case "tax":return it.tax; case "net":return it.net; case "hourly":return it.mins>0?it.net/(it.mins/60):0; default:return it.d; } } const s=it.s, m=sessionMetrics(s); switch(col){ case "date":return s.start_ts||s.session_date; case "time":return s.start_ts||""; case "dur":return m.mins; case "platform":return (s.platform||"").toLowerCase(); case "tokens":return m.tokens; case "revenue":return m.rev; case "tax":return m.tax; case "net":return m.net; case "hourly":return m.hourly; default:return s.session_date; } }
   function sessionMetrics(s){ const imp=sessTok[s.id]||0; const balTok=(s.bal_now!=null)?Math.max(0,Number(s.bal_now)-Number(s.bal_start||0)):null; const tokens=(!s.end_ts)?(balTok!=null?balTok:imp):(imp>0?imp:(balTok!=null?balTok:0)); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=sessEnd(s); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
@@ -1202,9 +1202,9 @@
     const monthTx=expenses.filter(e=>monthOf(e.txn_date)===ym);
     const incRows=monthTx.filter(e=>(e.kind||"expense")==="income");
     const cashBySrc={}, giftBySrc={}; let cashInc=0, giftInc=0; const cashDays={};
-    incRows.forEach(e=>{ const s=e.source||"Other", amt=Number(e.amount); if(NONCASH[s]){ giftBySrc[s]=(giftBySrc[s]||0)+amt; giftInc+=amt; } else { cashBySrc[s]=(cashBySrc[s]||0)+amt; cashInc+=amt; cashDays[e.txn_date]=1; } });
+    incRows.forEach(e=>{ const s=e.source||"Other", amt=Number(e.amount); if(NONCASH[s]){ giftBySrc[s]=(giftBySrc[s]||0)+amt; giftInc+=amt; } else { cashBySrc[s]=(cashBySrc[s]||0)+amt; cashInc+=amt; } cashDays[e.txn_date]=1; });
     const expCat={}; let expTot=0; monthTx.filter(e=>(e.kind||"expense")==="expense").forEach(e=>{ const c=e.category||"Uncategorized"; expCat[c]=(expCat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
-    const totalRev=tokRev+cashInc, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, netInc=totalRev-taxes-expTot;
+    const totalRev=tokRev+cashInc+giftInc, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, netInc=totalRev-taxes-expTot;
     $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(totalRev),"","grad")+kpi("Taxes",lgUSD(taxes),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(netAfterTax),"","mint")+kpi("Tokens",lgN(tokens),"");
     const workDays=Object.keys(sessDaysSet).length;
     const revDaysSet={}; Object.keys(sessDaysSet).forEach(d=>revDaysSet[d]=1); Object.keys(cashDays).forEach(d=>revDaysSet[d]=1); const revDays=Object.keys(revDaysSet).length;
@@ -1216,13 +1216,14 @@
     const catKeys=Object.keys(expCat).sort();
     let pnl='<div class="pnl-sec">Revenue</div><div class="pnl-row"><span>Chaturbate (tokens)</span><span>'+lgUSD(tokRev)+'</span></div>';
     Object.keys(cashBySrc).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+'</span><span>'+lgUSD(cashBySrc[s])+'</span></div>'; });
+    Object.keys(giftBySrc).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+' <span class="lg-muted">(non-cash)</span></span><span>'+lgUSD(giftBySrc[s])+'</span></div>'; });
     pnl+='<div class="pnl-row pnl-sub"><span>Total revenue</span><span>'+lgUSD(totalRev)+'</span></div>';
     pnl+='<div class="pnl-sec">Expenses</div>'+(catKeys.length?catKeys.map(c=>'<div class="pnl-row"><span>'+esc(c)+'</span><span>'+lgUSD(expCat[c])+'</span></div>').join(""):'<div class="pnl-row"><span class="lg-muted">No expenses</span><span>'+lgUSD(0)+'</span></div>');
     pnl+='<div class="pnl-row pnl-sub"><span>Total expenses</span><span>'+lgUSD(expTot)+'</span></div>';
     pnl+='<div class="pnl-row pnl-mid"><span>Operating income</span><span>'+lgUSD(totalRev-expTot)+'</span></div>';
     pnl+='<div class="pnl-sec">Taxes</div><div class="pnl-row"><span>Est. set-aside ('+Math.round(cfg.tax_rate*100)+'% of revenue)</span><span class="pnl-taxamt">\u2212'+lgUSD(taxes)+'</span></div>';
     pnl+='<div class="pnl-row pnl-net"><span>Net income</span><span class="'+(netInc>=0?"pos":"neg")+'">'+lgUSD(netInc)+'</span></div>';
-    if(giftInc>0){ pnl+='<div class="pnl-sec">Non-cash &middot; gifts</div>'; Object.keys(giftBySrc).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+'</span><span>'+lgUSD(giftBySrc[s])+'</span></div>'; }); pnl+='<div class="pnl-note">Taxable income at fair market value, but not cash \u2014 set aside tax for these from your cash.</div>'; }
+    if(giftInc>0){ pnl+='<div class="pnl-note">Includes '+lgUSD(giftInc)+' in gifts, taxed at fair market value. That tax is owed in cash even though the gifts aren\'t \u2014 set it aside from cash revenue.</div>'; }
     $("lg_d_pnl").innerHTML=pnl;
   }
 
@@ -1372,7 +1373,8 @@
     const grand=Object.keys(totalBySrc).reduce((a,k)=>a+totalBySrc[k],0);
     const daysSet={}; Object.keys(bySrcDay).forEach(s=>Object.keys(bySrcDay[s]).forEach(d=>{ if(inRange(d)) daysSet[d]=1; })); const nDays=Object.keys(daysSet).length;
     const srcKeys=Object.keys(totalBySrc).sort((a,b)=>totalBySrc[b]-totalBySrc[a]); const topSrc=srcKeys[0]||"\u2014";
-    $("lg_ov_kpis").innerHTML=kpi("Total revenue",lgUSD(grand),"","grad")+kpi("Avg / day",nDays?lgUSD(grand/nDays):"\u2014",nDays+" active days")+kpi("Top source",topSrc,totalBySrc[topSrc]?lgUSD(totalBySrc[topSrc]):"")+kpi("Sources",String(srcKeys.length),"");
+    const ovTax=grand*cfg.tax_rate, ovNet=grand-ovTax;
+    $("lg_ov_kpis").innerHTML=kpi("Revenue",lgUSD(grand),pfRangeLabel(),"grad")+kpi("Taxes",lgUSD(ovTax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(ovNet),"","mint")+kpi("Avg / day",nDays?lgUSD(grand/nDays):"\u2014",nDays+" active days");
     const rsTs=new Date(rs+"T00:00:00").getTime(); let reTs=new Date(re+"T00:00:00").getTime(); let cMin=rsTs,cMax=reTs; if(cMin===cMax){ cMin-=86400000; cMax+=86400000; }
     ovChart={W:560,pl:56,pr:12,pw:492,minX:cMin,maxX:cMax,points:[]};
     const CW="<div class='lg-cross'></div><div class='lg-tip'></div>";
@@ -1534,7 +1536,8 @@
     for(let i=0;i<rows.length;i+=500){ const { error }=await sb.from("cb_tokens").upsert(rows.slice(i,i+500),{ onConflict:"user_id,ts", ignoreDuplicates:true }); if(error){ err=error; break; } }
     if(err){ m.className="msg err"; m.textContent=err.message; return; }
     for(let i=0;i<sessions.length;i++){ const s=sessions[i]; if(s.bal_now!=null || liveBal[s.id]){ delete liveBal[s.id]; s.bal_start=null; s.bal_now=null; sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",s.id); } }
-    await fetchAgg(); renderAll(); m.className="msg ok"; m.textContent=lgN(rows.length)+" rows processed from "+list.length+" file"+(list.length>1?"s":"")+".";
+    sessTokDetail={};
+    await fetchAgg(); renderAll(); if(sheetId){ renderSheet(); loadSessDetail(sheetId); } m.className="msg ok"; m.textContent=lgN(rows.length)+" rows processed from "+list.length+" file"+(list.length>1?"s":"")+".";
   }
 
 
