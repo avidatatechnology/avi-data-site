@@ -536,6 +536,13 @@
   .pnl-net .pos{color:var(--mint)}.pnl-net .neg{color:var(--rose)}
   .pnl-note{font-size:11px;color:var(--muted-2);margin-top:9px;font-style:italic;line-height:1.45}
   .pnl-taxamt{color:var(--rose)!important}
+  .pnl-mini{border-bottom:1px solid var(--line)}
+  .pnl-mini span{font-weight:600}.pnl-mini span:first-child{color:var(--text)}
+  .pnl-recon{border-bottom:none;padding-bottom:4px}
+  .pnl-cashnet{border-bottom:none;padding-top:8px;border-top:1px solid var(--line)}
+  .pnl-cashnet span{font-family:var(--fd);font-weight:800;font-size:15px}
+  .pnl-cashnet span:first-child{color:var(--text)}
+  .pnl-cashnet span:last-child{color:var(--mint)!important}
   .pnl-mid{border-bottom:none;margin-top:6px}
   .pnl-mid span{font-weight:700}
   .pnl-mid span:first-child{color:var(--text)}
@@ -1188,7 +1195,7 @@
     const cashBySrc={}, giftBySrc={}; let cashInc=0, giftInc=0; const cashDays={};
     incRows.forEach(e=>{ const s=e.source||"Other", amt=Number(e.amount); if(NONCASH[s]){ giftBySrc[s]=(giftBySrc[s]||0)+amt; giftInc+=amt; } else { cashBySrc[s]=(cashBySrc[s]||0)+amt; cashInc+=amt; } cashDays[e.txn_date]=1; });
     const expCat={}; let expTot=0; monthTx.filter(e=>(e.kind||"expense")==="expense").forEach(e=>{ const c=e.category||"Uncategorized"; expCat[c]=(expCat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
-    const totalRev=tokRev+cashInc+giftInc, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, netInc=totalRev-taxes-expTot;
+    const cashRev=tokRev+cashInc, totalRev=cashRev+giftInc, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, netInc=totalRev-taxes-expTot;
     $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(totalRev),"","grad")+kpi("Taxes",lgUSD(taxes),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(netAfterTax),"","mint")+kpi("Tokens",lgN(tokens),"");
     const workDays=Object.keys(sessDaysSet).length;
     const revDaysSet={}; Object.keys(sessDaysSet).forEach(d=>revDaysSet[d]=1); Object.keys(cashDays).forEach(d=>revDaysSet[d]=1); const revDays=Object.keys(revDaysSet).length;
@@ -1200,13 +1207,18 @@
     const catKeys=Object.keys(expCat).sort();
     let pnl='<div class="pnl-sec">Revenue</div><div class="pnl-row"><span>Chaturbate (tokens)</span><span>'+lgUSD(tokRev)+'</span></div>';
     Object.keys(cashBySrc).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+'</span><span>'+lgUSD(cashBySrc[s])+'</span></div>'; });
-    Object.keys(giftBySrc).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+' <span class="lg-muted">(non-cash)</span></span><span>'+lgUSD(giftBySrc[s])+'</span></div>'; });
+    if(giftInc>0) pnl+='<div class="pnl-row pnl-mini"><span>Cash revenue</span><span>'+lgUSD(cashRev)+'</span></div>';
+    Object.keys(giftBySrc).sort().forEach(s=>{ pnl+='<div class="pnl-row"><span>'+esc(s)+' <span class="lg-muted">(non-cash, FMV)</span></span><span>'+lgUSD(giftBySrc[s])+'</span></div>'; });
     pnl+='<div class="pnl-row pnl-sub"><span>Total revenue</span><span>'+lgUSD(totalRev)+'</span></div>';
     pnl+='<div class="pnl-sec">Expenses</div>'+(catKeys.length?catKeys.map(c=>'<div class="pnl-row"><span>'+esc(c)+'</span><span>'+lgUSD(expCat[c])+'</span></div>').join(""):'<div class="pnl-row"><span class="lg-muted">No expenses</span><span>'+lgUSD(0)+'</span></div>');
     pnl+='<div class="pnl-row pnl-sub"><span>Total expenses</span><span>'+lgUSD(expTot)+'</span></div>';
     pnl+='<div class="pnl-row pnl-mid"><span>Operating income</span><span>'+lgUSD(totalRev-expTot)+'</span></div>';
     pnl+='<div class="pnl-sec">Taxes</div><div class="pnl-row"><span>Est. set-aside ('+Math.round(cfg.tax_rate*100)+'% of revenue)</span><span class="pnl-taxamt">\u2212'+lgUSD(taxes)+'</span></div>';
     pnl+='<div class="pnl-row pnl-net"><span>Net income</span><span class="'+(netInc>=0?"pos":"neg")+'">'+lgUSD(netInc)+'</span></div>';
+    if(giftInc>0){
+      pnl+='<div class="pnl-row pnl-recon"><span>Less: non-cash gifts</span><span class="pnl-taxamt">\u2212'+lgUSD(giftInc)+'</span></div>';
+      pnl+='<div class="pnl-row pnl-cashnet"><span>Cash net income</span><span>'+lgUSD(netInc-giftInc)+'</span></div>';
+    }
     if(giftInc>0){ pnl+='<div class="pnl-note">Includes '+lgUSD(giftInc)+' in gifts, taxed at fair market value. That tax is owed in cash even though the gifts aren\'t \u2014 set it aside from cash revenue.</div>'; }
     $("lg_d_pnl").innerHTML=pnl;
   }
