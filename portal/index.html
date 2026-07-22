@@ -269,6 +269,7 @@
   .miniinv{display:flex;align-items:center;gap:10px;font-size:13px;padding:10px 0;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
   .miniinv .mn{font-family:var(--fm);font-size:11px;color:var(--brand-2)}
   .miniinv .ma{margin-left:auto;font-family:var(--fd);font-weight:700}
+  .miniinv-acts{margin-left:auto;display:flex;gap:8px;flex-shrink:0;white-space:nowrap}
   .linkx{font-size:12px;color:var(--muted);cursor:pointer;background:none;border:none;font-family:var(--fb)}
   .linkx:hover{color:var(--brand-2)}
   .linkx.del:hover{color:var(--rose)}
@@ -2060,7 +2061,7 @@
     let soMap={}; try{ const { data:so }=await sb.from("stage_signoffs").select("project_id,stage").eq("client_id",cl.id); (so||[]).forEach(s=>{ (soMap[s.project_id]=soMap[s.project_id]||[]).push(s.stage); }); }catch(e){}
     box.innerHTML=data.map(p=>{ const sos=soMap[p.id]||[]; const approvals=sos.filter(s=>s===1||s===3).length; const reqd=sos.includes(4);
       let tags=''; if(approvals) tags+='<span class="badge stage" style="padding:3px 8px;color:var(--mint);background:rgba(52,216,160,.1);border-color:rgba(52,216,160,.28)">✓ '+approvals+' sign-off'+(approvals===1?'':'s')+'</span>'; if(reqd) tags+='<span class="badge stage" style="padding:3px 8px;margin-left:6px">plan requested</span>';
-      return '<div class="miniinv"><span style="font-family:var(--fd);font-weight:600">'+esc(p.name||"Project")+'</span><span class="badge stage" style="padding:3px 8px;margin-left:8px">'+STAGES[p.stage||0]+'</span><button class="pill pill-ghost" style="width:auto;margin-left:auto;padding:6px 12px;font-size:12px" data-proj="'+p.id+'">Open</button><button class="pill pill-ghost" title="Delete project" style="width:auto;margin-left:8px;padding:6px 10px;font-size:12px;border-color:rgba(242,96,125,.4);color:var(--rose)" data-delproj="'+p.id+'">Delete</button>'+(tags?'<span style="width:100%;margin-top:4px">'+tags+'</span>':'')+'</div>'; }).join('');
+      return '<div class="miniinv"><span style="font-family:var(--fd);font-weight:600">'+esc(p.name||"Project")+'</span><span class="badge stage" style="padding:3px 8px;margin-left:8px">'+STAGES[p.stage||0]+'</span><span class="miniinv-acts"><button class="pill pill-ghost" style="width:auto;padding:6px 12px;font-size:12px" data-proj="'+p.id+'">Open</button><button class="pill pill-ghost" title="Delete project" style="width:auto;padding:6px 12px;font-size:12px;border-color:rgba(242,96,125,.4);color:var(--rose)" data-delproj="'+p.id+'">Delete</button></span>'+(tags?'<span style="width:100%;margin-top:4px">'+tags+'</span>':'')+'</div>'; }).join('');
     box.querySelectorAll("[data-proj]").forEach(b=>b.addEventListener("click",()=>{ const proj=data.find(x=>x.id===b.getAttribute("data-proj")); manageProject(cl,proj); }));
     box.querySelectorAll("[data-delproj]").forEach(b=>b.addEventListener("click",async()=>{ const proj=data.find(x=>x.id===b.getAttribute("data-delproj")); await deleteProjectFull(cl,proj,b); }));
   }
