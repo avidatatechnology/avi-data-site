@@ -2038,7 +2038,7 @@
     const suggested="AVI-"+String(cacheInvoiceCount+1).padStart(4,"0"); const st=proj.stage||0;
     $("projectPage").innerHTML='<button class="pback" id="backClient"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'+esc(cl.company_name||cl.email)+'</button>'+
       '<div class="phead"><div style="flex:1"><div class="eyebrow">Project</div><h1 id="ppTitle">'+esc(proj.name||"Project")+'</h1><div class="sub" id="ppSub">'+esc(cl.company_name||cl.email)+(proj.value_cents>0?' · '+fmt(proj.value_cents):'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px"><span class="badge stage" id="ppBadge">'+STAGES[st]+'</span><button class="linkx" id="ppEdit">Edit name &amp; value</button></div></div>'+
-      '<div class="card" id="ppEditCard" style="display:none;margin-bottom:18px"><div class="ch">Edit project</div><div class="f2" style="margin-top:6px"><div><label>Project name</label><input id="peName" value="'+esc(proj.name||"")+'"/></div><div><label>Project value (USD)</label><input id="peValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/></div></div><label>Note to client (optional)</label><textarea id="peNote">'+esc(proj.note||"")+'</textarea><div style="display:flex;gap:10px;margin-top:8px"><button class="btn" id="peSave" style="width:auto">Save</button><button class="btn-ghost" id="peCancel" style="width:auto">Cancel</button></div><div class="msg" id="peMsg"></div></div>'+
+      '<div class="card" id="ppEditCard" style="display:none;margin-bottom:18px"><div class="ch">Edit project</div><div class="f2" style="margin-top:6px"><div><label>Project name</label><input id="peName" value="'+esc(proj.name||"")+'"/></div><div><label>Project value (USD)</label><input id="peValue" type="number" step="0.01" min="0" value="'+(proj.value_cents?(proj.value_cents/100):"")+'"/></div></div><label>Note to client (optional)</label><textarea id="peNote">'+esc(proj.note||"")+'</textarea><div style="display:flex;gap:10px;margin-top:8px"><button class="btn" id="peSave" style="width:auto">Save</button><button class="btn-ghost" id="peCancel" style="width:auto">Cancel</button></div><div class="msg" id="peMsg"></div><div class="billdiv"></div><div class="ch2" style="color:var(--rose)">Danger zone</div><div class="csub">Permanently delete this project and everything tied to it — invoices, tickets, documents, notes, and sign-offs. This cannot be undone. Projects with a paid invoice can\'t be deleted here.</div><button class="btn-ghost" id="peDelete" style="width:auto;margin-top:10px;border-color:rgba(242,96,125,.4);color:var(--rose)">Delete project</button><div class="msg" id="peDelMsg"></div></div>'+
       '<div class="card" style="margin-bottom:18px"><div class="pipe pipe-click" id="ppPipe">'+pipeStepsClickable(st,st)+'</div><div class="csub" style="text-align:center;margin:14px 0 0">Click a stage to set how far along you are. Stages up to the current one unlock for dated notes. Red = action needed (client sign-off or unpaid invoice).</div><div id="ppStatus"></div></div>'+
       '<div class="card" style="margin-bottom:18px" id="tlCard"><button type="button" class="cardtog" id="tlTog"><span class="ch" style="margin:0">Timeline & dated notes</span><span class="staccchev" id="tlChev">▾</span></button><div id="tlBody"><div class="csub" style="margin-top:6px">Each unlocked stage has its dates and a dated-note log — this is how your client sees progress. Click a stage to expand it.</div><div id="stageNotes" style="margin-top:10px"></div><button class="btn" id="snSave" style="width:auto;margin-top:10px">Save stage dates</button><div class="msg" id="snMsg"></div></div></div>'+
       '<div class="card" id="ticketsCard" style="display:none;margin-bottom:18px"><div class="ch">Support tickets</div><div class="csub">Requests the client submits from their portal during Iterate & Maintain. Reply and close them here.</div><div id="tixBox" style="margin-top:12px">Loading…</div></div>'+
@@ -2070,6 +2070,37 @@
       proj.name=$("peName").value.trim(); proj.note=$("peNote").value.trim(); proj.value_cents=val>0?Math.round(val*100):0;
       $("ppTitle").textContent=proj.name||"Project"; $("ppSub").textContent=(cl.company_name||cl.email)+(proj.value_cents>0?' · '+fmt(proj.value_cents):''); loadMilestones(cl,proj);
       m.className="msg ok"; m.textContent="Saved."; $("peSave").disabled=false; $("ppEditCard").style.display="none"; loadAdmin();
+    });
+    $("peDelete").addEventListener("click",async()=>{
+      const m=$("peDelMsg");
+      // Guard: refuse if any paid invoice exists on this project.
+      m.className="msg info"; m.textContent="Checking…"; $("peDelete").disabled=true;
+      try{
+        const { data:paid, error:pe }=await sb.from("invoices").select("id").eq("project_id",proj.id).eq("status","paid").limit(1);
+        if(pe){ m.className="msg err"; m.textContent="Couldn't verify invoices. "+(pe.message||""); $("peDelete").disabled=false; return; }
+        if(paid&&paid.length){ m.className="msg err"; m.textContent="This project has a paid invoice — delete or reassign that record first."; $("peDelete").disabled=false; return; }
+      }catch(e){ m.className="msg err"; m.textContent="Couldn't verify invoices."; $("peDelete").disabled=false; return; }
+      if(!confirm('Delete "'+(proj.name||"this project")+'" and ALL its invoices, tickets, documents, and notes? This cannot be undone.')){ $("peDelete").disabled=false; m.textContent=""; return; }
+      m.className="msg info"; m.textContent="Deleting…";
+      try{
+        // 1. Remove document files from storage, then their rows.
+        const { data:docs }=await sb.from("documents").select("id,storage_path").eq("project_id",proj.id);
+        if(docs&&docs.length){ const paths=docs.map(d=>d.storage_path).filter(Boolean); if(paths.length) await sb.storage.from("documents").remove(paths); }
+        // 2. Delete child rows. ticket_messages keys on ticket_id, so clear
+        //    them by their parent tickets first, then delete the tickets.
+        const { data:tks }=await sb.from("tickets").select("id").eq("project_id",proj.id);
+        if(tks&&tks.length){ const tids=tks.map(t=>t.id); await sb.from("ticket_messages").delete().in("ticket_id",tids); }
+        await sb.from("tickets").delete().eq("project_id",proj.id);
+        await sb.from("stage_signoffs").delete().eq("project_id",proj.id);
+        await sb.from("stage_notes").delete().eq("project_id",proj.id);
+        await sb.from("stage_logs").delete().eq("project_id",proj.id);
+        await sb.from("documents").delete().eq("project_id",proj.id);
+        await sb.from("invoices").delete().eq("project_id",proj.id);
+        // 3. Delete the project itself.
+        const { error:de }=await sb.from("projects").delete().eq("id",proj.id);
+        if(de){ m.className="msg err"; m.textContent="Couldn't delete. "+(de.message||""); $("peDelete").disabled=false; return; }
+        clientPageProjects(cl); loadAdmin();
+      }catch(e){ m.className="msg err"; m.textContent="Delete failed. "+(e.message||""); $("peDelete").disabled=false; }
     });
     $("inSave").addEventListener("click",async()=>{
       const m=$("inMsg"); const num=$("inNum").value.trim(), desc=$("inDesc").value.trim(), amt=parseFloat($("inAmt").value), due=dispToIso($("inDue").value)||null;
