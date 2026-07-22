@@ -551,6 +551,7 @@
   .lg-offrow td{color:var(--muted)!important;background:rgba(255,255,255,.015)}
   .lg-offlbl{font-style:italic;color:var(--muted-2)}
   .lg-auto{font-size:11px;color:var(--muted-2);font-family:var(--fm)}
+  .lg-ovtag{font-size:11px;color:var(--brand-2);margin-left:3px;cursor:help}
   .lg-offclick{cursor:pointer}
   .lg-offclick:hover td{background:rgba(255,255,255,.03)}
   .lg-caret{color:var(--muted-2);font-size:10px}
@@ -1167,7 +1168,7 @@
   function openSessSheet(id){ sheetId=id; sheetMode="pulse"; sheetRes="auto"; const el=$("lgSheet"); if(!el) return; el.style.display="flex"; const c=sessTokDetail[id]; if(c&&c.asOf!==dataAsOf) delete sessTokDetail[id]; renderSheet(); if(!sessTokDetail[id]) loadSessDetail(id); }
   function closeSessSheet(){ sheetId=null; const el=$("lgSheet"); if(el) el.style.display="none"; }
   function sessSortVal(it,col){ if(it.off){ const rev=it.tokens*cfg.token_rate; switch(col){ case "date":return it.st||it.d; case "time":return it.st||it.d; case "dur":return -1; case "platform":return ""; case "tokens":return it.tokens; case "revenue":return rev; case "tax":return rev*cfg.tax_rate; case "net":return rev-rev*cfg.tax_rate; case "hourly":return -1; default:return it.d; } } if(it.day){ switch(col){ case "date":return it.st; case "time":return it.st; case "dur":return it.mins; case "platform":return "chaturbate"; case "tokens":return it.tokens; case "revenue":return it.rev; case "tax":return it.tax; case "net":return it.net; case "hourly":return it.mins>0?it.net/(it.mins/60):0; default:return it.d; } } const s=it.s, m=sessionMetrics(s); switch(col){ case "date":return s.start_ts||s.session_date; case "time":return s.start_ts||""; case "dur":return m.mins; case "platform":return (s.platform||"").toLowerCase(); case "tokens":return m.tokens; case "revenue":return m.rev; case "tax":return m.tax; case "net":return m.net; case "hourly":return m.hourly; default:return s.session_date; } }
-  function sessionMetrics(s){ const imp=sessTok[s.id]||0; const balTok=(s.bal_now!=null)?Math.max(0,Number(s.bal_now)-Number(s.bal_start||0)):null; const tokens=(!s.end_ts)?(balTok!=null?balTok:imp):(imp>0?imp:(balTok!=null?balTok:0)); const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=sessEnd(s); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live }; }
+  function sessionMetrics(s){ const imp=sessTok[s.id]||0; const balTok=(s.bal_now!=null)?Math.max(0,Number(s.bal_now)-Number(s.bal_start||0)):null; const auto=(!s.end_ts)?(balTok!=null?balTok:imp):(imp>0?imp:(balTok!=null?balTok:0)); const tokens=(s.tokens_override!=null)?Number(s.tokens_override):auto; const rev=tokens*cfg.token_rate; const tax=rev*cfg.tax_rate; const net=rev-tax; const live=!s.end_ts; const endTs=sessEnd(s); const mins=Math.max(0,(new Date(endTs)-new Date(s.start_ts))/60000); const hrs=mins/60; return { tokens, rev, tax, net, mins, hrs, hourly: hrs>0?net/hrs:0, live, overridden:(s.tokens_override!=null), autoTokens:auto }; }
 
   const monthSessions=(ym)=>sessions.filter(s=>monthOf(s.session_date)===ym);
   const monthExpenses=(ym)=>expenses.filter(e=>monthOf(e.txn_date)===ym);
@@ -1249,10 +1250,11 @@
           '<div class="lg-ie-f"><label>Date</label><input class="lg-rowinp lg-ie-date" id="rowdate_'+s.id+'" value="'+isoToDisp(s.session_date)+'" placeholder="mm/dd/yyyy"></div>'+
           '<div class="lg-ie-f"><label>Start</label><input class="lg-time lg-rowinp lg-ie-time" id="rowstart_'+s.id+'" value="'+sv+'"></div>'+
           '<div class="lg-ie-f"><label>End <span class="lg-ie-opt">blank = live</span></label><div class="lg-timewrap lg-ie-time"><input class="lg-time lg-rowinp" id="rowend_'+s.id+'" placeholder="live" value="'+ev+'"><button type="button" class="lg-timeclear" data-lgclearend="'+s.id+'">&times;</button></div></div>'+
+          '<div class="lg-ie-f"><label>Tokens <span class="lg-ie-opt">blank = auto</span></label><input class="lg-rowinp lg-ie-time" id="rowtok_'+s.id+'" inputmode="numeric" placeholder="auto: '+lgN(m.autoTokens)+'" value="'+(s.tokens_override!=null?s.tokens_override:"")+'"></div>'+
           '<div class="lg-ie-actions"><button class="lg-edit" data-lgsave-sess="'+s.id+'">Save</button> <button class="lg-del" data-lgcancel-sess="'+s.id+'">Cancel</button></div>'+
           '</div></td></tr>';
       }
-      let row='<tr class="lg-sessclick'+(m.live?' lg-liverow':'')+'" data-lgsessdetail="'+s.id+'"><td>'+isoToDisp(s.session_date)+'<span class="lg-sesscaret">&#9656;</span></td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td class="num">'+lgN(m.tokens)+'</td><td class="num lg-revc">'+lgUSD(m.rev)+'</td><td class="num lg-taxc">'+lgUSD(m.tax)+'</td><td class="num lg-netc">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
+      let row='<tr class="lg-sessclick'+(m.live?' lg-liverow':'')+'" data-lgsessdetail="'+s.id+'"><td>'+isoToDisp(s.session_date)+'<span class="lg-sesscaret">&#9656;</span></td><td>'+fmtClock(s.start_ts)+' – '+(s.end_ts?fmtClock(s.end_ts):'<span class="lg-live">live</span>')+'</td><td class="num">'+fmtDur(m.mins)+'</td><td class="num">'+lgN(m.tokens)+(m.overridden?' <span class="lg-ovtag" title="Manually overridden">✎</span>':'')+'</td><td class="num lg-revc">'+lgUSD(m.rev)+'</td><td class="num lg-taxc">'+lgUSD(m.tax)+'</td><td class="num lg-netc">'+lgUSD(m.net)+'</td><td class="num">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</td><td class="num"><button class="lg-edit" data-lgedit-sess="'+s.id+'">Edit</button> <button class="lg-del" data-lgdel-sess="'+s.id+'">Delete</button></td></tr>';
       return row;
     }).join("");
   }
@@ -1496,7 +1498,8 @@
     if(rawEnd&&!en){ alert("End time not understood — try 10:50 PM, or clear it to stay live."); return; }
     const dateIso=dispToIso($("rowdate_"+id).value)||s.session_date; let start=dateIso+"T"+st+":00", end=null;
     if(en){ end=dateIso+"T"+en+":00"; if(new Date(end)<=new Date(start)){ const d=new Date(dateIso+"T00:00:00"); d.setDate(d.getDate()+1); end=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+en+":00"; } }
-    const { error }=await sb.from("work_sessions").update({session_date:dateIso,start_ts:start,end_ts:end}).eq("id",id);
+    let tokOv=null; const tokEl=$("rowtok_"+id); if(tokEl){ const raw=(tokEl.value||"").trim(); if(raw!==""){ const n=parseInt(raw.replace(/[^0-9]/g,""),10); if(isNaN(n)||n<0){ alert("Tokens must be a whole number, or blank to use the auto value."); return; } tokOv=n; } }
+    const { error }=await sb.from("work_sessions").update({session_date:dateIso,start_ts:start,end_ts:end,tokens_override:tokOv}).eq("id",id);
     if(error){ alert(error.message); return; }
     editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll();
   }
