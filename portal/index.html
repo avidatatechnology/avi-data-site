@@ -1536,6 +1536,10 @@
     for(let i=0;i<rows.length;i+=500){ const { error }=await sb.from("cb_tokens").upsert(rows.slice(i,i+500),{ onConflict:"user_id,ts", ignoreDuplicates:true }); if(error){ err=error; break; } }
     if(err){ m.className="msg err"; m.textContent=err.message; return; }
     for(let i=0;i<sessions.length;i++){ const s=sessions[i]; if(s.bal_now!=null || liveBal[s.id]){ delete liveBal[s.id]; s.bal_start=null; s.bal_now=null; sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",s.id); } }
+    // A fresh upload is authoritative for the dates it covers — clear any manual
+    // token overrides that fall inside the imported range so the upload wins.
+    let dmin=null,dmax=null; rows.forEach(r=>{ const d=(r.ts||"").slice(0,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return; if(dmin===null||d<dmin) dmin=d; if(dmax===null||d>dmax) dmax=d; });
+    if(dmin&&dmax){ const hit=sessions.filter(s=>s.tokens_override!=null && s.session_date>=dmin && s.session_date<=dmax); for(const s of hit){ s.tokens_override=null; await sb.from("work_sessions").update({tokens_override:null}).eq("id",s.id); } }
     sessTokDetail={};
     await fetchAgg(); renderAll(); if(sheetId){ renderSheet(); loadSessDetail(sheetId); } m.className="msg ok"; m.textContent=lgN(rows.length)+" rows processed from "+list.length+" file"+(list.length>1?"s":"")+".";
   }
