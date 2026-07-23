@@ -384,9 +384,15 @@
   .lg-netbig.pos{background:linear-gradient(110deg,var(--brand-2),var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent}
   .lg-netbig.neg{color:var(--rose)}
   .lg-netlbl{font-size:12px;color:var(--muted-2);margin-top:2px}
-  .lg-import{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 16px}
+  .lg-import{margin:0 0 16px}
+  .lg-imp-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
   .lg-imp-sub{font-size:12.5px;color:var(--muted);margin-top:3px}
   .lg-imp-r{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .lg-pertog{width:100%;margin-top:14px;padding:10px 0 0;background:none;border:none;border-top:1px solid var(--line-soft);color:var(--text);font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:color .14s}
+  .lg-pertog:hover{color:var(--brand-2)}
+  .lg-pertog-n{font-family:var(--fm);font-size:11.5px;color:var(--muted);font-weight:400;margin-left:6px}
+  .lg-pertog-c{font-size:11px;color:var(--muted);transition:transform .16s}
+  .lg-pertog.open .lg-pertog-c{transform:rotate(90deg)}
   .lg-cardhd{font-family:var(--fd);font-weight:700;font-size:14px;padding:16px 16px 0}
   .lg-grid-s{grid-template-columns:1fr 1fr}
   .lg-sess-top{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start}
@@ -594,7 +600,7 @@
   .lg-grid-set{grid-template-columns:1fr 1fr}
   input[type=time]{width:100%}
   .lg-hint{font-size:11px;color:var(--muted-2);margin-top:6px;line-height:1.4;text-transform:none;letter-spacing:0;font-family:var(--fb)}
-  .lg-periods{max-height:430px;overflow:auto;margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .lg-periods{max-height:264px;overflow:auto;margin-top:12px;display:flex;flex-direction:column;gap:8px}
   .lg-per{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border:1px solid var(--line-soft);border-radius:10px;background:var(--panel)}
   .lg-per.on{border-color:rgba(52,216,160,.35);background:rgba(52,216,160,.05)}
   .lg-per-lbl{font-size:13px;font-family:var(--fm);letter-spacing:.02em}
@@ -778,11 +784,14 @@
       <div class="card lg-daygoalcard" id="lgDayGoal" style="display:none"></div>
       <div class="lg-sess-top">
         <div class="lg-sess-col">
-          <div class="card lg-import" style="margin:0">
-            <div class="lg-imp-l"><div class="ch">Token import</div><div class="lg-imp-sub" id="lg_tok_status">No tokens imported yet.</div></div>
-            <div class="lg-imp-r"><input type="file" id="lg_tok_file" accept=".csv" multiple hidden><button class="btn" id="lg_tok_btn" style="width:auto">Upload export(s)</button><span class="msg" id="lg_tok_msg"></span></div>
+          <div class="card lg-import" style="margin:0;display:block">
+            <div class="lg-imp-row">
+              <div class="lg-imp-l"><div class="ch">Token import</div><div class="lg-imp-sub" id="lg_tok_status">No tokens imported yet.</div></div>
+              <div class="lg-imp-r"><input type="file" id="lg_tok_file" accept=".csv" multiple hidden><button class="btn" id="lg_tok_btn" style="width:auto">Upload export(s)</button><span class="msg" id="lg_tok_msg"></span></div>
+            </div>
+            <button type="button" class="lg-pertog" id="lg_per_tog"><span>Export periods <span class="lg-pertog-n" id="lg_per_count"></span></span><span class="lg-pertog-c" id="lg_per_caret">&#9656;</span></button>
+            <div class="lg-periods" id="lg_periods" style="display:none"></div>
           </div>
-          <div class="card"><div class="ch">Export periods</div><div class="lg-periods" id="lg_periods"></div></div>
         </div>
         <div class="lg-sess-col">
           <div class="card lg-form" style="margin:0">
@@ -1177,7 +1186,7 @@
   function shiftMonth(dir){ const p=curMonth.split("-"); const d=new Date(+p[0], (+p[1])-1+dir, 1); curMonth=d.getFullYear()+"-"+pad2n(d.getMonth()+1); renderDash(); renderExpenses(); }
 
   function periodList(earliest){ const out=[]; const t=new Date(); let y=t.getFullYear(), mo=t.getMonth(), half=(t.getDate()<=15?1:2); const floor=earliest||(y+"-"+pad2n(mo+1)+"-"+pad2n(t.getDate())); for(let k=0;k<400;k++){ const last=new Date(y,mo+1,0).getDate(), ml=MONTHS[mo].slice(0,3), mm=pad2n(mo+1); const p= half===2 ? {label:ml+" 16 – "+ml+" "+last+", "+y, start:y+"-"+mm+"-16", end:y+"-"+mm+"-"+pad2n(last)} : {label:ml+" 01 – "+ml+" 15, "+y, start:y+"-"+mm+"-01", end:y+"-"+mm+"-15"}; out.push(p); if(p.start<=floor) break; if(half===2){ half=1; } else { half=2; mo--; if(mo<0){ mo=11; y--; } } } return out; }
-  function renderPeriods(){ const map={}; dailyTok.forEach(r=>{ map[r.d]=(map[r.d]||0)+Number(r.tokens||0); }); $("lg_periods").innerHTML=periodList(dailyTok.length?dailyTok[0].d:null).map(p=>{ let t=0; for(const k in map){ if(k>=p.start&&k<=p.end) t+=map[k]; } const done=t>0; const right=done?('<span class="lg-per-done">✓ '+lgN(t)+' tokens · '+lgUSD(t*cfg.token_rate)+'</span><button class="lg-per-btn" data-per="upload">Replace</button>'):'<button class="lg-per-btn primary" data-per="upload">Upload</button>'; return '<div class="lg-per'+(done?' on':'')+'"><div class="lg-per-lbl">'+p.label+'</div><div class="lg-per-r">'+right+'</div></div>'; }).join(""); }
+  function renderPeriods(){ const map={}; dailyTok.forEach(r=>{ map[r.d]=(map[r.d]||0)+Number(r.tokens||0); }); const list=periodList(dailyTok.length?dailyTok[0].d:null); let ndone=0; $("lg_periods").innerHTML=list.map(p=>{ let t=0; for(const k in map){ if(k>=p.start&&k<=p.end) t+=map[k]; } const done=t>0; if(done) ndone++; const right=done?('<span class="lg-per-done">✓ '+lgN(t)+' tokens · '+lgUSD(t*cfg.token_rate)+'</span><button class="lg-per-btn" data-per="upload">Replace</button>'):'<button class="lg-per-btn primary" data-per="upload">Upload</button>'; return '<div class="lg-per'+(done?' on':'')+'"><div class="lg-per-lbl">'+p.label+'</div><div class="lg-per-r">'+right+'</div></div>'; }).join(""); const c=$("lg_per_count"); if(c) c.textContent="· "+ndone+" of "+list.length+" imported"; }
 
   function renderTokStatus(){ const el=$("lg_tok_status"); if(!dailyTok.length){ el.textContent="No tokens imported yet."; return; } let total=0; dailyTok.forEach(r=>total+=Number(r.tokens||0)); el.textContent=dailyTok.length+" active days · "+dailyTok[0].d+" to "+dailyTok[dailyTok.length-1].d+" · "+lgN(total)+" tokens ("+lgUSD(total*cfg.token_rate)+")"; }
 
@@ -1598,6 +1607,7 @@
     ["lg_cfg_goalrev","lg_cfg_goalday","lg_cfg_goalnet","lg_cfg_goalnetday","lg_cfg_goaltok","lg_cfg_goaltokday"].forEach(id=>{ const el=$(id); if(!el) return; el.addEventListener("focus",()=>{ el.value=(el.value||"").replace(/[^0-9.]/g,""); }); el.addEventListener("blur",()=>{ const v=parseFloat((el.value||"").replace(/[^0-9.]/g,"")); const money=id.indexOf("tok")<0; el.value=(v>0)?(money?fmtMoney(v):fmtTok(v)):""; }); });
     $("lg_tok_btn").addEventListener("click",()=>$("lg_tok_file").click());
     $("lg_tok_file").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length) importTokenFiles(fs); });
+    $("lg_per_tog").addEventListener("click",()=>{ const bd=$("lg_periods"), tg=$("lg_per_tog"); const open=bd.style.display==="none"; bd.style.display=open?"flex":"none"; tg.classList.toggle("open",open); });
     $("lg_periods").addEventListener("click",e=>{ if(e.target.closest('[data-per="upload"]')) $("lg_tok_file").click(); });
     $("lg_s_cancel").addEventListener("click",resetSessionForm);
     $("lg_bal_start").addEventListener("input",onBalInput);
