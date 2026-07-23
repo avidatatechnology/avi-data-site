@@ -395,8 +395,9 @@
   .lg-pertog.open .lg-pertog-c{transform:rotate(90deg)}
   .lg-cardhd{font-family:var(--fd);font-weight:700;font-size:14px;padding:16px 16px 0}
   .lg-grid-s{grid-template-columns:1fr 1fr}
-  .lg-sess-top{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start}
+  .lg-sess-top{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:stretch}
   .lg-sess-col{display:flex;flex-direction:column;gap:14px}
+  .lg-sess-col>.card{flex:1}
   .lg-rowedit{display:flex;align-items:center;gap:8px}
   .lg-rowinp{width:104px;padding:7px 9px!important;font-size:13px}
   .lg-rowedit .lg-timewrap{width:auto}
@@ -451,10 +452,12 @@
   .lg-sesscaret{color:var(--muted-2);font-size:11px;margin-left:6px}
   .kpi .v.mint{color:var(--mint)}
   .lg-sesshd{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
-  .lg-statbar{display:flex;gap:22px;flex-wrap:wrap}
+  .lg-sesshd-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .lg-statbar{display:flex;gap:18px;flex-wrap:wrap}
   .lg-stat{display:flex;flex-direction:column;gap:1px}
   .lg-statv{font-family:var(--fd);font-weight:700;font-size:15px;color:var(--text);white-space:nowrap}
   .lg-statv.mint{color:var(--mint)}
+  .lg-statv.rose{color:var(--rose)}
   .lg-statl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2)}
   .lg-dayrow td{font-weight:600}
   .lg-live-btn{cursor:pointer}
@@ -798,7 +801,6 @@
             <div class="ch">Log a Chaturbate session</div>
             <div class="lg-grid lg-grid-s" style="margin-top:12px">
               <div><label>Date</label><div class="dp"><input type="text" class="dpi" id="lg_s_date" placeholder="mm/dd/yyyy" autocomplete="off"><button type="button" class="dpbtn" tabindex="-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button></div></div>
-              <div><label>Platform</label><input type="text" id="lg_s_platform" value="Chaturbate"></div>
               <div><label>Start</label><input type="text" class="lg-time" id="lg_s_start" placeholder="9:57 AM" autocomplete="off"></div>
               <div><label>End <span class="lg-optlbl">blank = live</span></label><div class="lg-timewrap"><input type="text" class="lg-time" id="lg_s_end" placeholder="still live" autocomplete="off"><button type="button" class="lg-timeclear" id="lg_s_endclear" title="Clear — keep session live">&times;</button></div></div>
             </div>
@@ -814,7 +816,7 @@
           <div class="lg-livestats" id="lgLiveStats"></div>
         </div>
       </div>
-      <div class="lg-sesshd"><div class="lg-statbar" id="lg_s_stats"></div><div class="lg-seg" id="sessViewSeg"><button class="lg-segbtn on" data-sessview="sessions">Sessions</button><button class="lg-segbtn" data-sessview="daily">Daily</button></div></div>
+      <div class="lg-sesshd"><div class="lg-statbar" id="lg_s_stats"></div><div class="lg-sesshd-r"><div class="lg-seg" id="statModeSeg"><button class="lg-segbtn on" data-statmode="avg">Avg</button><button class="lg-segbtn" data-statmode="total">Total</button></div><div class="lg-seg" id="sessViewSeg"><button class="lg-segbtn on" data-sessview="sessions">Sessions</button><button class="lg-segbtn" data-sessview="daily">Daily</button></div></div></div>
       <div class="card lg-tablecard"><div class="lg-scroll"><table class="lgt" id="lg_s_table"><thead><tr><th class="lg-sortable" data-ssort="date">Date</th><th class="lg-sortable" data-ssort="time">Time</th><th class="num lg-sortable" data-ssort="dur">Dur</th><th class="num lg-sortable" data-ssort="tokens">Tokens</th><th class="num lg-sortable" data-ssort="revenue">Revenue</th><th class="num lg-sortable" data-ssort="tax">Tax</th><th class="num lg-sortable" data-ssort="net">Net</th><th class="num lg-sortable" data-ssort="hourly">$/hr</th><th></th></tr></thead><tbody id="lg_s_body"></tbody></table></div></div>
     </div>
 
@@ -1004,7 +1006,7 @@
   const monthOf=(s)=>(s||"").slice(0,7);
   const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
   function monthLabel(ym){ if(!ym) return "—"; const p=ym.split("-"); return MONTHS[(+p[1])-1]+" "+p[0]; }
-  function fmtDur(mins){ const h=Math.floor(mins/60), m=Math.round(mins%60); return h+":"+pad2n(m); }
+  function fmtDur(mins){ const t=Math.round(Number(mins)||0); const h=Math.floor(t/60), m=t%60; return h+":"+pad2n(m); }
   function parseMins(v){ v=(v||"").trim(); if(!v) return null; let m; if(m=v.match(/^(\d+):(\d{1,2})$/)) return (+m[1])*60+(+m[2]); let mins=0,ok=false; if(m=v.match(/(\d+(?:\.\d+)?)\s*h/i)){ mins+=parseFloat(m[1])*60; ok=true; } if(m=v.match(/(\d+)\s*m/i)){ mins+=+m[1]; ok=true; } if(ok) return Math.round(mins); if(/^\d+(?:\.\d+)?$/.test(v)) return Math.round(parseFloat(v)); return null; }
   function fmtClock(ts){ const d=new Date(ts); let h=d.getHours(), m=d.getMinutes(); const ap=h>=12?"PM":"AM"; h=h%12||12; return h+":"+pad2n(m)+" "+ap; }
   function nowLocal(){ const d=new Date(); return d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+pad2n(d.getHours())+":"+pad2n(d.getMinutes())+":"+pad2n(d.getSeconds()); }
@@ -1244,7 +1246,7 @@
     { var _sb=pfBounds(),_srs=_sb[0],_sre=_sb[1]; items=items.filter(it=> (it.off||it.day) ? (it.d>=_srs&&it.d<=_sre) : ((it.s.session_date>=_srs&&it.s.session_date<=_sre)|| !it.s.end_ts)); }
     if(sessSort){ items.sort((a,b)=>{ const va=sessSortVal(a,sessSort.col), vb=sessSortVal(b,sessSort.col); if(va<vb) return sessSort.dir==="asc"?-1:1; if(va>vb) return sessSort.dir==="asc"?1:-1; return 0; }); } else { items.sort((a,b)=>{ const da=(a.off||a.day)?a.d:a.s.session_date, db=(b.off||b.day)?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; const ta=(a.off||a.day)?a.st:a.s.start_ts, tb=(b.off||b.day)?b.st:b.s.start_ts; return ta<tb?1:-1; }); }
     updateSortArrows("lg_s_table",sessSort,"data-ssort");
-    (function(){ if(!$("lg_s_stats")) return; const rws=items.filter(it=>!it.off); let cnt=rws.length,tN=0,tR=0,tM=0; rws.forEach(it=>{ if(it.day){ tN+=it.net; tR+=it.rev; tM+=it.mins; } else { const m=sessionMetrics(it.s); tN+=m.net; tR+=m.rev; tM+=m.mins; } }); const hrs=tM/60, unit=sessView==="daily"?"day":"session"; const sp=(v,l,c)=>"<div class='lg-stat'><span class='lg-statv"+(c?(" "+c):"")+"'>"+v+"</span><span class='lg-statl'>"+l+"</span></div>"; $("lg_s_stats").innerHTML = cnt? (sp(cnt+" "+unit+(cnt!==1?"s":""),"count")+sp(hrs>0?lgUSD(tN/hrs)+"/hr":"\u2014","avg rate")+sp(lgUSD(cnt?tR/cnt:0),"avg revenue")+sp(lgUSD(cnt?tN/cnt:0),"avg net","mint")+sp(fmtDur(tM),"total time")) : ""; })();
+    (function(){ if(!$("lg_s_stats")) return; const rws=items.filter(it=>!it.off); let cnt=rws.length,tN=0,tR=0,tM=0,tT=0,tX=0; rws.forEach(it=>{ if(it.day){ tN+=it.net; tR+=it.rev; tM+=it.mins; tT+=it.tokens; tX+=it.tax; } else { const m=sessionMetrics(it.s); tN+=m.net; tR+=m.rev; tM+=m.mins; tT+=m.tokens; tX+=m.tax; } }); const hrs=tM/60, unit=sessView==="daily"?"day":"session"; const avg=(statMode==="avg"), pfx=avg?"avg ":"total ", dv=(v)=>(avg?(cnt?v/cnt:0):v); const sp=(v,l,c)=>"<div class='lg-stat'><span class='lg-statv"+(c?(" "+c):"")+"'>"+v+"</span><span class='lg-statl'>"+l+"</span></div>"; $("lg_s_stats").innerHTML = cnt? (sp(cnt+" "+unit+(cnt!==1?"s":""),"count")+sp(fmtDur(dv(tM)),pfx+"time")+sp(lgN(Math.round(dv(tT))),pfx+"tokens")+sp(lgUSD(dv(tR)),pfx+"revenue")+sp(lgUSD(dv(tX)),pfx+"taxes","rose")+sp(lgUSD(dv(tN)),pfx+"net","mint")+sp(hrs>0?lgUSD(tN/hrs)+"/hr":"\u2014","avg rate")) : ""; })();
     if(!items.length){ $("lg_s_body").innerHTML='<tr><td colspan="9" class="lg-empty">No sessions logged yet.</td></tr>'; return; }
     $("lg_s_body").innerHTML=items.map(it=>{
       if(it.off){ const rev=it.tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; const exp=offDetail===it.key;
@@ -1481,17 +1483,17 @@
 
   let editingSession=null, editingRow=null, offDetail=null, offEvents={}, offEventsAll=[], liveCardId=null, balSaveTimer=null, liveBal={};
   let sessTokDetail={}, sheetId=null, sheetMode="pulse", sheetRes="auto";
-  let txnKind="expense", txnSort={col:"date",dir:"desc"}, sessSort=null, editingTxn=null, cats={expense:[],income:[]}, sessView="sessions";
+  let txnKind="expense", txnSort={col:"date",dir:"desc"}, sessSort=null, editingTxn=null, cats={expense:[],income:[]}, sessView="sessions", statMode="avg";
   let revSrc="overview", revSort={col:"date",dir:"desc"}, editingRev=null, ovType="all", ovRange={preset:"all",start:null,end:null}, revRange={preset:"all",start:null,end:null}, ovSegs=[], ovChart=null, pf={gran:"monthly",startKey:null,endKey:null};
   function resetSessionForm(){ editingSession=null; $("lg_s_start").value="";$("lg_s_end").value=""; $("lg_s_add").textContent="Add session"; $("lg_s_cancel").style.display="none"; }
-  function editSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; editingSession=id; $("lg_s_date").value=isoToDisp(s.session_date); $("lg_s_start").value=to12((s.start_ts||"").slice(11,16)); $("lg_s_end").value=s.end_ts?to12(s.end_ts.slice(11,16)):""; $("lg_s_platform").value=s.platform||"Chaturbate"; $("lg_s_add").textContent="Update session"; $("lg_s_cancel").style.display=""; const m=$("lg_s_msg"); m.className="msg info"; m.textContent="Editing this session — change the times and Update."; window.scrollTo({top:$("lgSess").offsetTop-20,behavior:"smooth"}); }
+  function editSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; editingSession=id; $("lg_s_date").value=isoToDisp(s.session_date); $("lg_s_start").value=to12((s.start_ts||"").slice(11,16)); $("lg_s_end").value=s.end_ts?to12(s.end_ts.slice(11,16)):""; $("lg_s_add").textContent="Update session"; $("lg_s_cancel").style.display=""; const m=$("lg_s_msg"); m.className="msg info"; m.textContent="Editing this session — change the times and Update."; window.scrollTo({top:$("lgSess").offsetTop-20,behavior:"smooth"}); }
   async function addSession(){
     const dateIso=dispToIso($("lg_s_date").value)||today, rawEnd=$("lg_s_end").value.trim(), st=parseTime($("lg_s_start").value), en=parseTime(rawEnd), m=$("lg_s_msg");
     if(!st){ m.className="msg err"; m.textContent="Enter a valid start time, like 9:57 AM."; return; }
     if(rawEnd && !en){ m.className="msg err"; m.textContent="End time not understood — try 10:50 PM, or clear it to stay live."; return; }
     let start=dateIso+"T"+st+":00", end=null;
     if(en){ end=dateIso+"T"+en+":00"; if(new Date(end)<=new Date(start)){ const d=new Date(dateIso+"T00:00:00"); d.setDate(d.getDate()+1); end=d.getFullYear()+"-"+pad2n(d.getMonth()+1)+"-"+pad2n(d.getDate())+"T"+en+":00"; } }
-    const rec={ session_date:dateIso, start_ts:start, end_ts:end, platform:$("lg_s_platform").value.trim()||"Chaturbate", notes:null };
+    const rec={ session_date:dateIso, start_ts:start, end_ts:end, platform:"Chaturbate", notes:null };
     const wasEdit=!!editingSession;
     $("lg_s_add").disabled=true; m.className="msg info"; m.textContent="Saving…";
     const { error }= wasEdit ? await sb.from("work_sessions").update(rec).eq("id",editingSession) : await sb.from("work_sessions").insert(rec);
@@ -1566,6 +1568,7 @@
     $("lg_cat_new").addEventListener("keydown",e=>{ if(e.key==="Enter") addCategory(); });
     $("lg_cat_list").addEventListener("click",e=>{ const b=e.target.closest("[data-catdel]"); if(b) removeCategory(b.getAttribute("data-catdel")); });
     $("lg_e_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-tsort]"); if(!th) return; const col=th.getAttribute("data-tsort"); if(txnSort.col===col){ txnSort.dir=txnSort.dir==="asc"?"desc":"asc"; } else { txnSort={col,dir:"desc"}; } renderExpenses(); });
+    $("statModeSeg").addEventListener("click",e=>{ const b=e.target.closest("[data-statmode]"); if(!b) return; statMode=b.getAttribute("data-statmode"); document.querySelectorAll("[data-statmode]").forEach(x=>x.classList.toggle("on",x===b)); renderSessions(); });
     $("sessViewSeg").addEventListener("click",e=>{ const b=e.target.closest("[data-sessview]"); if(!b) return; sessView=b.getAttribute("data-sessview"); document.querySelectorAll("[data-sessview]").forEach(x=>x.classList.toggle("on",x===b)); renderSessions(); });
     $("lg_s_table").addEventListener("click",e=>{ const th=e.target.closest("th[data-ssort]"); if(!th) return; const col=th.getAttribute("data-ssort"); if(sessSort&&sessSort.col===col){ sessSort.dir=sessSort.dir==="asc"?"desc":"asc"; } else { sessSort={col,dir:"desc"}; } renderSessions(); });
     $("lgRevTabs").addEventListener("click",e=>{ const b=e.target.closest("[data-rev]"); if(b) revShow(b.getAttribute("data-rev")); });
