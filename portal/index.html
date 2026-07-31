@@ -1286,10 +1286,11 @@
     const balCleared=!!(liveBal[live.id]&&liveBal[live.id].cleared);
     if(!balCleared && live.bal_start==null){ let a=0; sessions.forEach(s=>{ if(s.id!==live.id && s.session_date===today && (s.start_ts||"")<(live.start_ts||"")) a+=sessionMetrics(s).tokens; }); offEventsAll.forEach(e=>{ if((e.lts||"").slice(0,10)===today && (e.lts||"")<(live.start_ts||"")) a+=(e.tokens||0); }); live.bal_start=a; }
     const m=sessionMetrics(live);
+    const tph=m.hrs>0?Math.round(m.tokens/m.hrs):null;
     $("lgLiveWhen").textContent="started "+fmtClock(live.start_ts);
     if(document.activeElement!==$("lg_bal_start")) $("lg_bal_start").value=(live.bal_start!=null?live.bal_start:"");
     if(document.activeElement!==$("lg_bal_now")) $("lg_bal_now").value=(live.bal_now!=null?live.bal_now:"");
-    $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Live for</div><div class="v">'+fmtDur(m.mins)+'</div></div><div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
+    $("lgLiveStats").innerHTML='<div class="lg-livestat"><div class="k">Live for</div><div class="v">'+fmtDur(m.mins)+'</div></div><div class="lg-livestat"><div class="k">Earned this session</div><div class="v">'+lgN(m.tokens)+' <span class="u">tok</span></div></div><div class="lg-livestat"><div class="k">Tokens / hr</div><div class="v">'+(tph!=null?lgN(tph)+' <span class="u">tok/hr</span>':"—")+'</div></div><div class="lg-livestat"><div class="k">Net</div><div class="v">'+lgUSD(m.net)+'</div></div><div class="lg-livestat hero"><div class="k">Net hourly rate</div><div class="v">'+(m.hrs>0?lgUSD(m.hourly):"—")+'</div></div>';
   }
   async function cancelSession(id){ const s=sessions.find(x=>x.id===id); if(!s) return; clearTimeout(balSaveTimer); const { error }=await sb.from("work_sessions").delete().eq("id",id); if(error){ alert(error.message); return; } delete liveBal[id]; editingRow=null; if(liveCardId===id) liveCardId=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
   function balStatus(txt,cls){ const el=$("lg_bal_status"); if(!el) return; el.textContent=txt||""; el.style.color = cls==="err" ? "#F2607D" : (cls==="ok" ? "#34D8A0" : ""); }
