@@ -365,7 +365,8 @@
   .lg-tiprk.t2{background:rgba(159,176,255,.22);color:var(--brand-2)}
   .lg-tiprk.t3{background:rgba(52,216,160,.18);color:var(--mint)}
   .lg-tipuser{font-family:var(--fm);font-size:12.5px;color:var(--text);word-break:break-all}
-  table.lg-tiptbl{table-layout:fixed;width:100%;min-width:720px}
+  table.lg-tiptbl{table-layout:fixed;width:100%;min-width:812px}
+  .lg-tipavg{color:var(--muted)}
   table.lg-tiptbl tbody td{vertical-align:middle}
   .lg-tipsh{white-space:nowrap}
   .lg-tiptrack{display:inline-block;width:96px;height:6px;border-radius:3px;background:var(--line);vertical-align:middle;overflow:hidden;margin-right:12px}
@@ -1277,6 +1278,7 @@
   function tipBucketLabel(k){ if(k==="all") return "All time"; if(/^\d{4}-\d{2}-\d{2}$/.test(k)) return isoToDisp(k); if(/^\d{4}-\d{2}$/.test(k)) return tipMonthLabel(k); return k; }
 
   const TIP_MIN=5;
+  function tipAvg(tok,tips){ tok=Number(tok)||0; tips=Number(tips)||0; if(!tips) return "\u2014"; const v=tok/tips; return v>=100?lgN(v):v.toFixed(1); }
   function tipDefMore(){ return tipBucket==="all"?50:(tipBucket==="month"?36:45); }
   function tipStep(){ return tipDefMore(); }
 
@@ -1322,6 +1324,7 @@
       + '<div class="lg-tipstat"><b>'+lgN(users)+'</b><span>tippers</span></div>'
       + '<div class="lg-tipstat"><b>'+lgN(grand)+'</b><span>tokens</span></div>'
       + '<div class="lg-tipstat"><b class="mint">'+lgUSD(grand*rate)+'</b><span>revenue</span></div>'
+      + '<div class="lg-tipstat"><b>'+tipAvg(grand,tipSum?tipSum.total_tips:0)+'</b><span>avg tip (tok)</span></div>'
       + '<div class="lg-tipstat"><b class="gold">'+pct(top5).toFixed(1)+'%</b><span>from top 5</span></div>'
       + (top1u?('<div class="lg-tipstat"><b>'+pct(top1).toFixed(1)+'%</b><span>from '+esc(top1u)+'</span></div>'):'')
       + '<div class="lg-tipstat"><b>'+lgUSD(users?(grand*rate/users):0)+'</b><span>avg per tipper</span></div>'
@@ -1350,6 +1353,7 @@
           + '<td class="lg-tipuser">'+esc(r.username)+'</td>'
           + '<td class="num">'+lgN(r.tips)+'</td>'
           + '<td class="num">'+lgN(tok)+'</td>'
+          + '<td class="num lg-tipavg">'+tipAvg(tok,r.tips)+'</td>'
           + '<td class="num">'+lgUSD(tok*rate)+'</td>'
           + '<td class="num lg-tipsh"><span class="lg-tiptrack"><i style="width:'+bar.toFixed(1)+'%"></i></span><span class="lg-tippct">'+share.toFixed(1)+'%</span></td>'
           + '</tr>';
@@ -1357,12 +1361,12 @@
 
       var o=other[k], mc=micro[k];
       var foot="";
-      if(o&&o.users>0) foot+='<div class="lg-tipmore">+ '+lgN(o.users)+' more tipper'+(o.users!==1?'s':'')+' &middot; '+lgN(o.tok)+' tokens &middot; '+lgUSD(o.tok*rate)+'</div>';
+      if(o&&o.users>0) foot+='<div class="lg-tipmore">+ '+lgN(o.users)+' more tipper'+(o.users!==1?'s':'')+' &middot; '+lgN(o.tok)+' tokens &middot; '+lgUSD(o.tok*rate)+' &middot; '+tipAvg(o.tok,o.tips)+' avg tip</div>';
       if(mc&&mc.users>0) foot+='<div class="lg-tipmore lg-tipmicro">'+lgN(mc.users)+' tipper'+(mc.users!==1?'s':'')+' under '+TIP_MIN+' tokens &middot; '+lgN(mc.tok)+' tokens &middot; '+lgUSD(mc.tok*rate)+' &middot; '+(m.tok>0?(mc.tok/m.tok*100).toFixed(1):'0.0')+'%</div>';
 
       html+='<div class="card lg-tablecard">'
         + '<div class="lg-tiphd"><b>'+esc(tipBucketLabel(k))+'</b><span>'+lgN(m.users)+' tipper'+(m.users!==1?'s':'')+'</span><span>&middot;</span><span>'+lgN(m.tok)+' tokens</span><span>&middot;</span><span><em>'+lgUSD(m.tok*rate)+'</em></span></div>'
-        + '<div class="lg-scroll"><table class="lgt lg-tiptbl"><colgroup><col style="width:56px"><col><col style="width:88px"><col style="width:112px"><col style="width:124px"><col style="width:196px"></colgroup><thead><tr><th></th><th>Tipper</th><th class="num">Tips</th><th class="num">Tokens</th><th class="num">Revenue</th><th class="num">Share</th></tr></thead><tbody>'+body+'</tbody></table></div>'
+        + '<div class="lg-scroll"><table class="lgt lg-tiptbl"><colgroup><col style="width:56px"><col><col style="width:84px"><col style="width:108px"><col style="width:96px"><col style="width:120px"><col style="width:192px"></colgroup><thead><tr><th></th><th>Tipper</th><th class="num">Tips</th><th class="num">Tokens</th><th class="num">Avg tip</th><th class="num">Revenue</th><th class="num">Share</th></tr></thead><tbody>'+body+'</tbody></table></div>'
         + foot
         + '</div>';
     });
