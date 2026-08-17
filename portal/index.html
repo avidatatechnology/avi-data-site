@@ -365,7 +365,8 @@
   .lg-tiprk.t2{background:rgba(159,176,255,.22);color:var(--brand-2)}
   .lg-tiprk.t3{background:rgba(52,216,160,.18);color:var(--mint)}
   .lg-tipuser{font-family:var(--fm);font-size:12.5px;color:var(--text);word-break:break-all}
-  table.lg-tiptbl{table-layout:fixed;width:100%;min-width:812px}
+  table.lg-tiptbl{table-layout:fixed;width:100%;min-width:900px}
+  .lg-tipnet{color:var(--mint)}
   .lg-tipavg{color:var(--muted)}
   table.lg-tiptbl tbody td{vertical-align:middle}
   .lg-tipsh{white-space:nowrap}
@@ -1312,7 +1313,7 @@
     if(tipErr){ box.innerHTML='<div class="card lg-tablecard"><div class="lg-empty">'+esc(tipErr)+'<br><span style="font-size:12px;color:var(--muted-2)">If this mentions a missing function, run the ledger_tippers v2 SQL in Supabase first.</span></div></div>'; return; }
     if(!tipRows.length){ box.innerHTML='<div class="card lg-tablecard"><div class="lg-empty">No tipper names in this period.<br><span style="font-size:12px;color:var(--muted-2)">Usernames are only saved from uploads made after the import update \u2014 re-upload an export to fill in history.</span></div></div>'; return; }
 
-    var rate=cfg.token_rate;
+    var rate=cfg.token_rate, netf=1-(cfg.tax_rate||0);
     var grand=tipSum?Number(tipSum.total_tokens)||0:0;
     var users=tipSum?Number(tipSum.total_users)||0:0;
     var top5=tipSum?Number(tipSum.top5_tokens)||0:0;
@@ -1323,7 +1324,8 @@
     var strip='<div class="card lg-tipstats">'
       + '<div class="lg-tipstat"><b>'+lgN(users)+'</b><span>tippers</span></div>'
       + '<div class="lg-tipstat"><b>'+lgN(grand)+'</b><span>tokens</span></div>'
-      + '<div class="lg-tipstat"><b class="mint">'+lgUSD(grand*rate)+'</b><span>revenue</span></div>'
+      + '<div class="lg-tipstat"><b>'+lgUSD(grand*rate)+'</b><span>revenue</span></div>'
+      + '<div class="lg-tipstat"><b class="mint">'+lgUSD(grand*rate*netf)+'</b><span>net</span></div>'
       + '<div class="lg-tipstat"><b>'+tipAvg(grand,tipSum?tipSum.total_tips:0)+'</b><span>avg tip (tok)</span></div>'
       + '<div class="lg-tipstat"><b class="gold">'+pct(top5).toFixed(1)+'%</b><span>from top 5</span></div>'
       + (top1u?('<div class="lg-tipstat"><b>'+pct(top1).toFixed(1)+'%</b><span>from '+esc(top1u)+'</span></div>'):'')
@@ -1355,18 +1357,19 @@
           + '<td class="num">'+lgN(tok)+'</td>'
           + '<td class="num lg-tipavg">'+tipAvg(tok,r.tips)+'</td>'
           + '<td class="num">'+lgUSD(tok*rate)+'</td>'
+          + '<td class="num lg-tipnet">'+lgUSD(tok*rate*netf)+'</td>'
           + '<td class="num lg-tipsh"><span class="lg-tiptrack"><i style="width:'+bar.toFixed(1)+'%"></i></span><span class="lg-tippct">'+share.toFixed(1)+'%</span></td>'
           + '</tr>';
       }).join("");
 
       var o=other[k], mc=micro[k];
       var foot="";
-      if(o&&o.users>0) foot+='<div class="lg-tipmore">+ '+lgN(o.users)+' more tipper'+(o.users!==1?'s':'')+' &middot; '+lgN(o.tok)+' tokens &middot; '+lgUSD(o.tok*rate)+' &middot; '+tipAvg(o.tok,o.tips)+' avg tip</div>';
-      if(mc&&mc.users>0) foot+='<div class="lg-tipmore lg-tipmicro">'+lgN(mc.users)+' tipper'+(mc.users!==1?'s':'')+' under '+TIP_MIN+' tokens &middot; '+lgN(mc.tok)+' tokens &middot; '+lgUSD(mc.tok*rate)+' &middot; '+(m.tok>0?(mc.tok/m.tok*100).toFixed(1):'0.0')+'%</div>';
+      if(o&&o.users>0) foot+='<div class="lg-tipmore">+ '+lgN(o.users)+' more tipper'+(o.users!==1?'s':'')+' &middot; '+lgN(o.tok)+' tokens &middot; '+lgUSD(o.tok*rate*netf)+' net &middot; '+tipAvg(o.tok,o.tips)+' avg tip</div>';
+      if(mc&&mc.users>0) foot+='<div class="lg-tipmore lg-tipmicro">'+lgN(mc.users)+' tipper'+(mc.users!==1?'s':'')+' under '+TIP_MIN+' tokens &middot; '+lgN(mc.tok)+' tokens &middot; '+lgUSD(mc.tok*rate*netf)+' net &middot; '+(m.tok>0?(mc.tok/m.tok*100).toFixed(1):'0.0')+'%</div>';
 
       html+='<div class="card lg-tablecard">'
-        + '<div class="lg-tiphd"><b>'+esc(tipBucketLabel(k))+'</b><span>'+lgN(m.users)+' tipper'+(m.users!==1?'s':'')+'</span><span>&middot;</span><span>'+lgN(m.tok)+' tokens</span><span>&middot;</span><span><em>'+lgUSD(m.tok*rate)+'</em></span></div>'
-        + '<div class="lg-scroll"><table class="lgt lg-tiptbl"><colgroup><col style="width:56px"><col><col style="width:84px"><col style="width:108px"><col style="width:96px"><col style="width:120px"><col style="width:192px"></colgroup><thead><tr><th></th><th>Tipper</th><th class="num">Tips</th><th class="num">Tokens</th><th class="num">Avg tip</th><th class="num">Revenue</th><th class="num">Share</th></tr></thead><tbody>'+body+'</tbody></table></div>'
+        + '<div class="lg-tiphd"><b>'+esc(tipBucketLabel(k))+'</b><span>'+lgN(m.users)+' tipper'+(m.users!==1?'s':'')+'</span><span>&middot;</span><span>'+lgN(m.tok)+' tokens</span><span>&middot;</span><span>'+lgUSD(m.tok*rate)+'</span><span>&middot;</span><span><em>'+lgUSD(m.tok*rate*netf)+' net</em></span></div>'
+        + '<div class="lg-scroll"><table class="lgt lg-tiptbl"><colgroup><col style="width:56px"><col><col style="width:80px"><col style="width:104px"><col style="width:92px"><col style="width:112px"><col style="width:112px"><col style="width:192px"></colgroup><thead><tr><th></th><th>Tipper</th><th class="num">Tips</th><th class="num">Tokens</th><th class="num">Avg tip</th><th class="num">Revenue</th><th class="num">Net</th><th class="num">Share</th></tr></thead><tbody>'+body+'</tbody></table></div>'
         + foot
         + '</div>';
     });
@@ -1437,9 +1440,10 @@
   function balStatus(txt,cls){ const el=$("lg_bal_status"); if(!el) return; el.textContent=txt||""; el.style.color = cls==="err" ? "#F2607D" : (cls==="ok" ? "#34D8A0" : ""); }
   async function saveBal(id,start,now){
     balStatus("saving…");
-    const { data, error }=await sb.from("work_sessions").update({bal_start:start,bal_now:now}).eq("id",id).select("id");
+    // .is("end_ts",null) => if another device already ended this session, this write does nothing
+    const { data, error }=await sb.from("work_sessions").update({bal_start:start,bal_now:now}).eq("id",id).is("end_ts",null).select("id");
     if(error){ balStatus("not saved — "+error.message,"err"); console.error("bal save error:",error); return; }
-    if(!data || !data.length){ balStatus("not saved — write blocked (no row updated)","err"); console.error("bal save: 0 rows updated (RLS?)"); return; }
+    if(!data || !data.length){ balStatus("session already ended elsewhere","err"); syncSessions(); return; }
     balStatus("saved ✓","ok");
   }
   function onBalInput(){
@@ -1631,6 +1635,29 @@
   }
 
   let editingSession=null, editingRow=null, offDetail=null, offEvents={}, offEventsAll=[], liveCardId=null, balSaveTimer=null, liveBal={};
+  let syncBusy=false;
+
+  // Fingerprint of what actually matters, so we only repaint on a real change.
+  function sessFp(list){ return (list||[]).map(function(s){ return [s.id,s.session_date,s.start_ts,s.end_ts||"",s.bal_start==null?"":s.bal_start,s.bal_now==null?"":s.bal_now,s.tokens_override==null?"":s.tokens_override].join(":"); }).join("|"); }
+
+  // Pull work_sessions from Supabase and repaint if another device changed something.
+  async function syncSessions(){
+    if(syncBusy||!me) return;
+    if(editingRow||editingSession) return;      // don't yank a form out from under an edit
+    syncBusy=true;
+    try{
+      const before=sessFp(sessions);
+      await fetchSessions();
+      if(sessFp(sessions)===before) return;
+      // a session that ended elsewhere must drop its local live state here too
+      Object.keys(liveBal).forEach(function(id){ const s=sessions.find(function(x){ return String(x.id)===String(id); }); if(!s||s.end_ts){ delete liveBal[id]; } });
+      if(liveCardId){ const s=sessions.find(function(x){ return String(x.id)===String(liveCardId); }); if(!s||s.end_ts){ clearTimeout(balSaveTimer); liveCardId=null; } }
+      tipKey=null;
+      await fetchAgg();
+      renderAll();
+    }catch(e){}
+    finally{ syncBusy=false; }
+  }
   let sessTokDetail={}, sheetId=null, sheetMode="pulse", sheetRes="auto";
   let txnKind="expense", txnSort={col:"date",dir:"desc"}, sessSort=null, editingTxn=null, cats={expense:[],income:[]}, sessView="sessions", statMode="avg", tipBucket="all", tipRows=[], tipBusy=false, tipErr=null, tipKey=null, tipSeq=0, tipMore=0, tipSum=null;
   let revSrc="overview", revSort={col:"date",dir:"desc"}, editingRev=null, ovType="all", ovRange={preset:"all",start:null,end:null}, revRange={preset:"all",start:null,end:null}, ovSegs=[], ovChart=null, pf={gran:"monthly",startKey:null,endKey:null};
@@ -1663,11 +1690,11 @@
     if(error){ alert(error.message); return; }
     editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll();
   }
-  async function endLive(id){ const s=sessions.find(x=>x.id===id); if(!s) return; if(!confirm("End this live session now? It'll be timestamped to the current time and switch to your imported token totals.")) return; const end=nowLocal(); delete liveBal[id]; const { error }=await sb.from("work_sessions").update({end_ts:end,bal_start:null,bal_now:null}).eq("id",id); if(error){ alert(error.message); return; } editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
+  async function endLive(id){ await syncSessions(); const s=sessions.find(x=>x.id===id); if(!s) return; if(s.end_ts){ renderAll(); return; } if(!confirm("End this live session now? It'll be timestamped to the current time and switch to your imported token totals.")) return; const end=nowLocal(); delete liveBal[id]; const { error }=await sb.from("work_sessions").update({end_ts:end,bal_start:null,bal_now:null}).eq("id",id); if(error){ alert(error.message); return; } editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
   let confirmCb=null;
   function showConfirm(title,msg,okLabel,cb){ const m=$("lgConfirm"); if(!m) return; $("lgConfirmTitle").textContent=title; $("lgConfirmMsg").textContent=msg; $("lgConfirmOk").textContent=okLabel||"Confirm"; confirmCb=cb; m.style.display="flex"; }
   function hideConfirm(){ const m=$("lgConfirm"); if(m) m.style.display="none"; confirmCb=null; }
-  async function endLiveKeep(id){ const s=sessions.find(x=>x.id===id); if(!s) return; const end=nowLocal(); const upd={end_ts:end}; const bnEl=$("lg_bal_now"); if(bnEl){ const bnRaw=(bnEl.value||"").trim(); if(bnRaw!==""){ const bsEl=$("lg_bal_start"); upd.bal_now=parseInt(bnRaw.replace(/[^0-9]/g,""),10)||0; upd.bal_start=bsEl?(parseInt((bsEl.value||"0").replace(/[^0-9]/g,""),10)||0):(s.bal_start||0); } } clearTimeout(balSaveTimer); const { error }=await sb.from("work_sessions").update(upd).eq("id",id); if(error){ alert(error.message); return; } delete liveBal[id]; editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
+  async function endLiveKeep(id){ await syncSessions(); const s=sessions.find(x=>x.id===id); if(!s) return; if(s.end_ts){ renderAll(); return; } const end=nowLocal(); const upd={end_ts:end}; const bnEl=$("lg_bal_now"); if(bnEl){ const bnRaw=(bnEl.value||"").trim(); if(bnRaw!==""){ const bsEl=$("lg_bal_start"); upd.bal_now=parseInt(bnRaw.replace(/[^0-9]/g,""),10)||0; upd.bal_start=bsEl?(parseInt((bsEl.value||"0").replace(/[^0-9]/g,""),10)||0):(s.bal_start||0); } } clearTimeout(balSaveTimer); const { error }=await sb.from("work_sessions").update(upd).eq("id",id); if(error){ alert(error.message); return; } delete liveBal[id]; editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
   async function fetchOffEvents(d){ try{ const { data }=await sb.rpc("ledger_offsession_events",{p_shift:TZ_SHIFT,p_day:d,p_now:nowLocal()}); offEvents[d]=data||[]; }catch(e){ offEvents[d]=[]; } if(offDetail===d) renderSessions(); }
 
   async function addExpense(){
@@ -1809,7 +1836,13 @@
       const cn=e.target.closest("[data-etxcancel]"); if(cn){ editingTxn=null; renderExpenses(); return; }
       const b=e.target.closest("[data-lgdel-exp]"); if(b) delLg("expenses",b.getAttribute("data-lgdel-exp"),async()=>{ editingTxn=null; await fetchExpenses(); renderAll(); });
     });
+    // Tick the live clock locally every 30s.
     setInterval(()=>{ if(sessions.some(s=>!s.end_ts)){ renderLiveCard(); renderCbSummary(); if(!editingRow) renderSessions(); if(lgTab==="dash") renderDash(); } }, 30000);
+    // Re-read the database every 15s so other devices' changes land here.
+    setInterval(()=>{ if(!document.hidden) syncSessions(); }, 15000);
+    // And immediately whenever this tab comes back to the foreground.
+    document.addEventListener("visibilitychange",()=>{ if(!document.hidden) syncSessions(); });
+    window.addEventListener("focus",()=>syncSessions());
   }
 
   /* ---------- CLIENT ---------- */
