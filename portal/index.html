@@ -1543,16 +1543,17 @@
 
   function normDate(s){ s=(s||"").trim(); let m; if(m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)) return m[1]+"-"+pad2n(+m[2])+"-"+pad2n(+m[3]); if(m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/)){ let y=m[3]; if(y.length===2) y="20"+y; return y+"-"+pad2n(+m[1])+"-"+pad2n(+m[2]); } return ""; }
 
+  function pickCol(r,names){ const keys=Object.keys(r||{}); for(const want of names){ const k=keys.find(k=>k.trim().toLowerCase()===want); if(k!=null){ const v=String(r[k]==null?"":r[k]).trim(); if(v) return v; } } return null; }
   function parseOne(file){ return new Promise((resolve)=>{ Papa.parse(file,{ header:true, skipEmptyLines:true, complete:(res)=>resolve(res.data||[]), error:()=>resolve([]) }); }); }
   async function importTokenFiles(list){
     const m=$("lg_tok_msg"); if(!list||!list.length) return;
     if(typeof Papa==="undefined"){ m.className="msg err"; m.textContent="CSV parser not loaded — refresh and try again."; return; }
     m.className="msg info"; m.textContent="Reading "+list.length+" file"+(list.length>1?"s":"")+"…";
     let raw=[]; for(let i=0;i<list.length;i++){ raw=raw.concat(await parseOne(list[i])); }
-    const rows=raw.map(r=>{ const ts=(r["Timestamp"]||"").trim(); const ch=parseInt(String(r["Token change"]!=null?r["Token change"]:"").replace(/[^\-0-9]/g,""),10); if(!ts||isNaN(ch)) return null; return { user_id:me.id, ts: ts.replace(" ","T"), token_change: ch, ttype:(r["Transaction type"]||"").slice(0,60) }; }).filter(Boolean);
+    const rows=raw.map(r=>{ const ts=(r["Timestamp"]||"").trim(); const ch=parseInt(String(r["Token change"]!=null?r["Token change"]:"").replace(/[^\-0-9]/g,""),10); if(!ts||isNaN(ch)) return null; const un=pickCol(r,["user","username","from user","from","tipper"]); const nt=pickCol(r,["note","message","notes","comment"]); return { user_id:me.id, ts: ts.replace(" ","T"), token_change: ch, ttype:(r["Transaction type"]||"").slice(0,60), username: un?un.slice(0,80):null, note: nt?nt.slice(0,500):null }; }).filter(Boolean);
     if(!rows.length){ m.className="msg err"; m.textContent="No rows found — is this the token export (Timestamp / Token change …)?"; return; }
     m.className="msg info"; m.textContent="Importing "+rows.length+"…"; let err=null;
-    for(let i=0;i<rows.length;i+=500){ const { error }=await sb.from("cb_tokens").upsert(rows.slice(i,i+500),{ onConflict:"user_id,ts", ignoreDuplicates:true }); if(error){ err=error; break; } }
+    for(let i=0;i<rows.length;i+=500){ const { error }=await sb.from("cb_tokens").upsert(rows.slice(i,i+500),{ onConflict:"user_id,ts", ignoreDuplicates:false }); if(error){ err=error; break; } }
     if(err){ m.className="msg err"; m.textContent=err.message; return; }
     for(let i=0;i<sessions.length;i++){ const s=sessions[i]; if(s.bal_now!=null || liveBal[s.id]){ delete liveBal[s.id]; s.bal_start=null; s.bal_now=null; sb.from("work_sessions").update({bal_start:null,bal_now:null}).eq("id",s.id); } }
     // A fresh upload is authoritative for the dates it covers — clear any manual
