@@ -389,15 +389,14 @@
   .lg-month{font-family:var(--fd);font-weight:700;font-size:18px;letter-spacing:-.02em;min-width:170px;text-align:center}
   .lg-two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 14px}
   .lg-perf{margin:0 0 14px}
-  .lg-perf-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:26px;align-items:center}
-  .lg-perf-goals{display:flex;flex-direction:column;gap:18px;min-width:0}
-  .lg-perf-goals .lg-goal{margin:0}
-  .lg-perf-avgs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding-left:26px;border-left:1px solid var(--line-soft)}
-  .lg-avgt{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:11px 12px;min-width:0}
+  .lg-perf-bars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 34px}
+  .lg-perf-bars .lg-goal{margin:0;min-width:0}
+  .lg-perf-plain{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line-soft)}
+  .lg-avgt{flex:1 1 200px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:11px 12px;min-width:0}
   .lg-avgt-l{display:block;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
   .lg-avgt-v{display:block;font-family:var(--fm);font-size:17px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  @media (max-width:1080px){.lg-perf-grid{grid-template-columns:1fr;gap:18px;align-items:stretch}.lg-perf-avgs{padding-left:0;border-left:none;border-top:1px solid var(--line-soft);padding-top:18px}}
-  @media (max-width:620px){.lg-perf-avgs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .lg-goalpct.nogoal{color:var(--muted-2);opacity:.7}
+  @media (max-width:820px){.lg-perf-bars{grid-template-columns:1fr;gap:18px}}
   .lg-goal{margin:0 0 16px}.lg-goal:last-child{margin-bottom:0}
   .lg-goalhd{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7px}
   .lg-goalnums{font-family:var(--fm);font-size:12px}
@@ -779,10 +778,8 @@
       <div class="summary" id="lg_d_kpis"></div>
       <div class="card lg-perf">
         <div class="ch">Goals vs actual</div>
-        <div class="lg-perf-grid">
-          <div class="lg-perf-goals" id="lg_d_goals"></div>
-          <div class="lg-perf-avgs" id="lg_d_avg"></div>
-        </div>
+        <div class="lg-perf-bars" id="lg_d_goals"></div>
+        <div class="lg-perf-plain" id="lg_d_avg"></div>
       </div>
       <div class="card lg-pnl"><div class="ch">Profit &amp; Loss &middot; <span id="lg_pnl_month" style="color:var(--muted);font-weight:400"></span></div><div id="lg_d_pnl"></div></div>
     </div>
@@ -1251,7 +1248,7 @@
 
   function renderTokStatus(){ const el=$("lg_tok_status"); if(!dailyTok.length){ el.textContent="No tokens imported yet."; return; } let total=0; dailyTok.forEach(r=>total+=Number(r.tokens||0)); el.textContent=dailyTok.length+" active days · "+dailyTok[0].d+" to "+dailyTok[dailyTok.length-1].d+" · "+lgN(total)+" tokens ("+lgUSD(total*cfg.token_rate)+")"; }
 
-  function goalRow(label,actual,goal,pct){ return '<div class="lg-goal"><div class="lg-goalhd"><span>'+label+'</span><span class="lg-goalnums">'+actual+' <span class="lg-muted">/ '+goal+'</span></span></div><div class="lg-bar"><span style="width:'+Math.max(0,Math.min(100,pct)).toFixed(0)+'%"></span></div><div class="lg-goalpct">'+pct.toFixed(0)+'% of goal</div></div>'; }
+  function goalRow(label,actual,goal,pct,hasGoal){ const on=(hasGoal!==false); return '<div class="lg-goal"><div class="lg-goalhd"><span>'+label+'</span><span class="lg-goalnums">'+actual+' <span class="lg-muted">/ '+goal+'</span></span></div><div class="lg-bar"><span style="width:'+(on?Math.max(0,Math.min(100,pct)).toFixed(0):"0")+'%"></span></div><div class="lg-goalpct'+(on?"":" nogoal")+'">'+(on?(pct.toFixed(0)+'% of goal'):'No goal set')+'</div></div>'; }
   function avgRow(k,v){ return '<div class="lg-avg"><span>'+k+'</span><b>'+v+'</b></div>'; }
   function avgTile(k,v){ return '<div class="lg-avgt"><span class="lg-avgt-l">'+esc(k)+'</span><span class="lg-avgt-v">'+v+'</span></div>'; }
   function catRow(k,v){ return '<div class="lg-cat"><span>'+esc(k)+'</span><span>'+v+'</span></div>'; }
@@ -1274,8 +1271,14 @@
     const revDaysSet={}; Object.keys(sessDaysSet).forEach(d=>revDaysSet[d]=1); Object.keys(cashDays).forEach(d=>revDaysSet[d]=1); const revDays=Object.keys(revDaysSet).length;
     const gRev=cfg.goal_revenue?totalRev/cfg.goal_revenue*100:0;
     const avgDayRev=revDays?totalRev/revDays:0; const gDay=cfg.goal_revenue_daily?avgDayRev/cfg.goal_revenue_daily*100:0;
-    $("lg_d_goals").innerHTML=goalRow("Revenue (month)",lgUSD(totalRev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"\u2014",gRev)+goalRow("Revenue / day (avg)",lgUSD(avgDayRev),cfg.goal_revenue_daily?lgUSD(cfg.goal_revenue_daily):"\u2014",gDay);
-    $("lg_d_avg").innerHTML=avgTile("Revenue / day",revDays?lgUSD(totalRev/revDays):"\u2014")+avgTile("Net / day",revDays?lgUSD(netAfterTax/revDays):"\u2014")+avgTile("Tokens / day",workDays?lgN(tokens/workDays):"\u2014")+avgTile("Hours / day",workDays?(mins/60/workDays).toFixed(1)+"h":"\u2014")+avgTile("Days worked",String(workDays));
+    const avgNetDay=revDays?netAfterTax/revDays:0, avgTokDay=workDays?tokens/workDays:0;
+    const goalNetDay=cfg.goal_revenue_daily*(1-cfg.tax_rate), goalTokDay=cfg.token_rate>0?cfg.goal_revenue_daily/cfg.token_rate:0;
+    $("lg_d_goals").innerHTML=
+      goalRow("Revenue (month)",lgUSD(totalRev),cfg.goal_revenue?lgUSD(cfg.goal_revenue):"\u2014",gRev,cfg.goal_revenue>0)
+     +goalRow("Revenue / day",lgUSD(avgDayRev),cfg.goal_revenue_daily?lgUSD(cfg.goal_revenue_daily):"\u2014",gDay,cfg.goal_revenue_daily>0)
+     +goalRow("Net / day",lgUSD(avgNetDay),goalNetDay?lgUSD(goalNetDay):"\u2014",goalNetDay?avgNetDay/goalNetDay*100:0,goalNetDay>0)
+     +goalRow("Tokens / day",lgN(Math.round(avgTokDay)),goalTokDay?lgN(Math.round(goalTokDay)):"\u2014",goalTokDay?avgTokDay/goalTokDay*100:0,goalTokDay>0);
+    $("lg_d_avg").innerHTML=avgTile("Hours / day",workDays?(mins/60/workDays).toFixed(1)+"h":"\u2014")+avgTile("Days worked",String(workDays));
     if($("lg_pnl_month")) $("lg_pnl_month").textContent=monthLabel(ym);
     const catKeys=Object.keys(expCat).sort();
     let pnl='<div class="pnl-sec">Revenue</div><div class="pnl-row"><span>Chaturbate (tokens)</span><span>'+lgUSD(tokRev)+'</span></div>';
