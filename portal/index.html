@@ -545,6 +545,7 @@
   .pf-cd.open .pf-cd-car{transform:rotate(180deg)}
   .pf-cd-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:100%;background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 14px 40px rgba(0,0,0,.55);z-index:60;display:none;max-height:280px;overflow-y:auto}
   .pf-cd.open .pf-cd-menu{display:block}
+  .pf-cd-opt.off{opacity:.3;cursor:not-allowed;pointer-events:none}
   .pf-cd-opt{display:block;width:100%;text-align:left;background:none;border:none;color:var(--muted);font-family:var(--fd);font-weight:600;font-size:13px;padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
   .pf-cd-opt:hover{background:rgba(255,255,255,.06);color:var(--text)}
   .pf-cd-opt.sel{background:var(--brand);color:#fff}
@@ -573,6 +574,7 @@
   .lg-rowinp{padding:7px 9px!important;font-size:13px}
   select.lg-rowinp{min-width:110px}
   .lg-pnl{max-width:560px}
+  .lg-pnl.pnl-wide{max-width:none}
   .pnl-scroll{overflow-x:auto;margin:0 -4px;padding:0 4px}
   .pnl-tbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
   .pnl-tbl th,.pnl-tbl td{padding:8px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
@@ -1352,6 +1354,7 @@
     }
     let out='<div class="pnl-scroll"><table class="pnl-tbl"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
     if(M.giftInc>0) out+='<div class="pnl-note">Includes '+lgUSD(M.giftInc)+' in gifts, taxed at fair market value. That tax is owed in cash even though the gifts aren\'t \u2014 set it aside from cash revenue.</div>';
+    const card=$("lg_d_pnl").closest(".lg-pnl"); if(card) card.classList.toggle("pnl-wide",multi);
     $("lg_d_pnl").innerHTML=out;
   }
 
@@ -1642,12 +1645,16 @@
     else { let y=startD.getFullYear(), m=startD.getMonth(); const ey=now.getFullYear(), em=now.getMonth(); while(y<ey||(y===ey&&m<=em)){ const s=new Date(y,m,1), e=new Date(y,m+1,0); out.push({key:y+"-"+pad2n(m+1),label:PFMON[m]+" "+y,start:ymd(s),end:ymd(e)}); m++; if(m>11){m=0;y++;} } }
     return out; }
   function pfBounds(){ const ps=pfPeriods(pf.gran); if(!ps.length) return [today,today]; let si=ps.findIndex(p=>p.key===pf.startKey), ei=ps.findIndex(p=>p.key===pf.endKey); if(si<0) si=0; if(ei<0) ei=ps.length-1; if(ei<si){ const t=si; si=ei; ei=t; } return [ps[si].start, ps[ei].end]; }
+  // Periods run oldest to newest. If the user picks a start after the end (or an
+  // end before the start), drag the other side along instead of silently swapping.
+  function pfOrder(changed){ const ps=pfPeriods(pf.gran); const si=ps.findIndex(p=>p.key===pf.startKey), ei=ps.findIndex(p=>p.key===pf.endKey); if(si<0||ei<0||si<=ei) return; if(changed==="start") pf.endKey=pf.startKey; else pf.startKey=pf.endKey; }
   function pfRangeLabel(){ const ps=pfPeriods(pf.gran); const s=ps.find(p=>p.key===pf.startKey), e=ps.find(p=>p.key===pf.endKey); if(!s||!e) return "All"; return s.key===e.key? s.label : (s.label+" \u2013 "+e.label); }
   var PFGRAN=[["daily","Daily"],["weekly","Weekly"],["monthly","Monthly"],["quarterly","Quarterly"],["annual","Annual"]];
   function renderPf(){ const ps=pfPeriods(pf.gran); if(!pf.startKey||!ps.some(p=>p.key===pf.startKey)) pf.startKey=ps.length?ps[0].key:null; if(!pf.endKey||!ps.some(p=>p.key===pf.endKey)) pf.endKey=ps.length?ps[ps.length-1].key:null;
     const granLbl=(PFGRAN.find(g=>g[0]===pf.gran)||[,"Monthly"])[1]; const perItems=ps.map(p=>[p.key,p.label]); const startLbl=(ps.find(p=>p.key===pf.startKey)||{}).label||""; const endLbl=(ps.find(p=>p.key===pf.endKey)||{}).label||"";
-    const optHtml=(items,cur)=>items.map(it=>"<button type='button' class='pf-cd-opt"+(it[0]===cur?" sel":"")+"' data-val='"+esc(it[0])+"'>"+esc(it[1])+"</button>").join("");
-    document.querySelectorAll(".pf-bar").forEach(bar=>{ bar.querySelectorAll(".pf-cd").forEach(cd=>{ const w=cd.getAttribute("data-pf"), val=cd.querySelector(".pf-cd-val"), menu=cd.querySelector(".pf-cd-menu"); if(w==="gran"){ val.textContent=granLbl; menu.innerHTML=optHtml(PFGRAN,pf.gran); } else if(w==="start"){ val.textContent=startLbl; menu.innerHTML=optHtml(perItems,pf.startKey); } else if(w==="end"){ val.textContent=endLbl; menu.innerHTML=optHtml(perItems,pf.endKey); } }); }); }
+    const optHtml=(items,cur,disabledFn)=>items.map((it,i)=>{ const off=disabledFn?disabledFn(i):false; return "<button type='button' class='pf-cd-opt"+(it[0]===cur?" sel":"")+(off?" off":"")+"'"+(off?" disabled":"")+" data-val='"+esc(it[0])+"'>"+esc(it[1])+"</button>"; }).join("");
+    const si=ps.findIndex(p=>p.key===pf.startKey), ei=ps.findIndex(p=>p.key===pf.endKey);
+    document.querySelectorAll(".pf-bar").forEach(bar=>{ bar.querySelectorAll(".pf-cd").forEach(cd=>{ const w=cd.getAttribute("data-pf"), val=cd.querySelector(".pf-cd-val"), menu=cd.querySelector(".pf-cd-menu"); if(w==="gran"){ val.textContent=granLbl; menu.innerHTML=optHtml(PFGRAN,pf.gran); } else if(w==="start"){ val.textContent=startLbl; menu.innerHTML=optHtml(perItems,pf.startKey,i=>ei>=0&&i>ei); } else if(w==="end"){ val.textContent=endLbl; menu.innerHTML=optHtml(perItems,pf.endKey,i=>si>=0&&i<si); } }); }); }
   function renderRevAll(){ renderPf(); renderRevOv(); renderCbSummary(); renderSessions(); renderRevSrc(); }
   function syncRrFilters(){ const bnd=dateBounds(revRange,revAllStart()),rs=bnd[0],re=bnd[1]; document.querySelectorAll(".lg-rrfilter").forEach(bar=>{ bar.querySelectorAll("[data-rr]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rr")===revRange.preset)); const s=bar.querySelector(".lg-rrstart"), en=bar.querySelector(".lg-rrend"); if(s&&document.activeElement!==s) s.value=(revRange.preset==="custom")?(revRange.start?isoToDisp(revRange.start):""):isoToDisp(rs); if(en&&document.activeElement!==en) en.value=(revRange.preset==="custom")?(revRange.end?isoToDisp(revRange.end):""):isoToDisp(re); }); }
   function renderCbSummary(){ if(!$("lg_cb_kpis")) return; const bnd=pfBounds(),rs=bnd[0],re=bnd[1]; let rangeTok=0; sessions.filter(s=>s.session_date>=rs&&s.session_date<=re).forEach(s=>{ rangeTok+=sessionMetrics(s).tokens; }); rangeTok+=offRangeTok(rs,re); const rev=rangeTok*cfg.token_rate, tax=rev*cfg.tax_rate; const lbl=pfRangeLabel(); $("lg_cb_kpis").innerHTML=kpi("Revenue",lgUSD(rev),lbl,"grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(rev-tax),"","mint")+kpi("Tokens",lgN(rangeTok),""); renderDayGoal(); }
@@ -1843,7 +1850,7 @@
     $("lg_ov_line").addEventListener("mouseleave",ovChartLeave);
     $("specialView").addEventListener("click",e=>{
       const opt=e.target.closest(".pf-cd-opt");
-      if(opt){ const cd=opt.closest(".pf-cd"), w=cd.getAttribute("data-pf"), v=opt.getAttribute("data-val"); if(w==="gran"){ pf.gran=v; pf.startKey=null; pf.endKey=null; } else if(w==="start"){ pf.startKey=v; } else if(w==="end"){ pf.endKey=v; } document.querySelectorAll(".pf-cd.open").forEach(x=>x.classList.remove("open")); renderPf(); renderRevAll(); renderExpenses(); renderDash(); return; }
+      if(opt){ const cd=opt.closest(".pf-cd"), w=cd.getAttribute("data-pf"), v=opt.getAttribute("data-val"); if(w==="gran"){ pf.gran=v; pf.startKey=null; pf.endKey=null; } else if(w==="start"){ pf.startKey=v; pfOrder("start"); } else if(w==="end"){ pf.endKey=v; pfOrder("end"); } document.querySelectorAll(".pf-cd.open").forEach(x=>x.classList.remove("open")); renderPf(); renderRevAll(); renderExpenses(); renderDash(); return; }
       const btn=e.target.closest(".pf-cd-btn");
       if(btn){ const cd=btn.closest(".pf-cd"), was=cd.classList.contains("open"); document.querySelectorAll(".pf-cd.open").forEach(x=>x.classList.remove("open")); if(!was) cd.classList.add("open"); return; }
       document.querySelectorAll(".pf-cd.open").forEach(x=>x.classList.remove("open"));
