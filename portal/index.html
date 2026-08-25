@@ -1035,7 +1035,7 @@
   function adminShow(which){ show($("adminView"),which==="dash"); show($("clientPage"),which==="client"); show($("projectPage"),which==="project"); window.scrollTo(0,0); document.body.classList.remove("nav-open"); }
 
   /* ---------- SPECIAL: private ledger (timesheet + P&L) ---------- */
-  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0,goal_revenue_daily:0,goal_workdays:20}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[], dataAsOf=null, offDaily=[];
+  let sessions=[], expenses=[], cfg={token_rate:0.05,tax_rate:0.30,goal_revenue:0,goal_tokens:0,goal_revenue_daily:0,goal_workdays:20}, curMonth=null, lgTab="dash", lgWired=false, sessTok={}, dailyTok=[], dataAsOf=null, offDaily=[], offDay={};
   const TZ_SHIFT=(function(){ try{ const d=new Date(); const la=new Date(d.toLocaleString("en-US",{timeZone:"America/Los_Angeles"})); const loc=new Date(d.toLocaleString("en-US")); return Math.round((loc-la)/3600000); }catch(e){ return 3; } })();
   const lgUSD=(n)=>Number(n||0).toLocaleString("en-US",{style:"currency",currency:"USD"});
   const lgN=(n)=>Math.round(Number(n||0)).toLocaleString("en-US");
@@ -1067,7 +1067,12 @@
   // returns one row per tip, so a heavy day silently loses everything past the
   // cap. Page through it until a short page comes back.
   async function rpcAllRows(fn,params){ const PAGE=1000; let out=[], from=0; for(let g=0; g<200; g++){ const { data, error }=await sb.rpc(fn,params).order("lts",{ascending:true}).range(from,from+PAGE-1); if(error) throw error; const b=data||[]; out=out.concat(b); if(b.length<PAGE) break; from+=PAGE; } return out; }
-  async function fetchAgg(){ try{ const mx=await sb.from("cb_tokens").select("ts").order("ts",{ascending:false}).limit(1); const maxTs=(mx.data&&mx.data[0])?mx.data[0].ts:null; dataAsOf = maxTs? shiftLocal(maxTs) : nowLocal(); const [a,b,c,d2]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:nowLocal()}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}), sb.rpc("ledger_offsession_daily",{p_shift:TZ_SHIFT,p_now:nowLocal()}), rpcAllRows("ledger_offsession_events",{p_shift:TZ_SHIFT,p_day:null,p_now:nowLocal()}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; offDaily=c.data||[]; offEventsAll=(d2||[]).map(r=>({lts:r.lts,tokens:r.token_change})); }catch(e){ sessTok={}; dailyTok=[]; offDaily=[]; offEventsAll=[]; dataAsOf=nowLocal(); } }
+  async function fetchAgg(){ try{ const mx=await sb.from("cb_tokens").select("ts").order("ts",{ascending:false}).limit(1); const maxTs=(mx.data&&mx.data[0])?mx.data[0].ts:null; dataAsOf = maxTs? shiftLocal(maxTs) : nowLocal(); const [a,b,c]=await Promise.all([ sb.rpc("ledger_session_tokens",{p_shift:TZ_SHIFT,p_now:nowLocal()}), sb.rpc("ledger_daily_tokens",{p_shift:TZ_SHIFT}), sb.rpc("ledger_offsession_daily",{p_shift:TZ_SHIFT,p_now:nowLocal()}) ]); sessTok={}; (a.data||[]).forEach(r=>{ sessTok[r.session_id]=Number(r.tokens)||0; }); dailyTok=b.data||[]; offDaily=c.data||[]; offDay=offDayFrom(offDaily); if(!Object.keys(offDay).length){ const evs=await rpcAllRows("ledger_offsession_events",{p_shift:TZ_SHIFT,p_day:null,p_now:nowLocal()}); evs.forEach(r=>{ const d=String(r.lts||"").slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(d)) offDay[d]=(offDay[d]||0)+(Number(r.token_change)||0); }); } offEvents={}; }catch(e){ sessTok={}; dailyTok=[]; offDaily=[]; offDay={}; dataAsOf=nowLocal(); } }
+  // ledger_offsession_daily returns one row per day. Column naming isn't pinned
+  // down here, so accept the likely variants rather than silently reading zeros.
+  function offDayFrom(list){ const out={}; (list||[]).forEach(r=>{ if(!r) return; let d=r.d!=null?r.d:(r.day!=null?r.day:(r.lday!=null?r.lday:(r.local_day!=null?r.local_day:(r.session_date!=null?r.session_date:null)))); let t=r.tokens!=null?r.tokens:(r.token_change!=null?r.token_change:(r.tok!=null?r.tok:(r.total!=null?r.total:null))); d=String(d||"").slice(0,10); t=Number(t)||0; if(/^\d{4}-\d{2}-\d{2}$/.test(d)) out[d]=(out[d]||0)+t; }); return out; }
+  function offTok(d){ return Number(offDay[d])||0; }
+  function offRangeTok(s,e){ let t=0; for(const d in offDay){ if(d>=s&&d<=e) t+=Number(offDay[d])||0; } return t; }
 
   async function loadSpecial(){
     if(!lgWired){ wireLedger(); lgWired=true; }
@@ -1105,7 +1110,7 @@
     const startLocal=s.start_ts, endLocal=sessEnd(s);
     const startCb=cbFromLocal(startLocal), endCb=cbFromLocal(endLocal);
     let rows=[];
-    try{ const { data }=await sb.from("cb_tokens").select("ts,token_change").gte("ts",startCb).lte("ts",endCb).gt("token_change",0).order("ts",{ascending:true}); rows=data||[]; }catch(e){ rows=[]; }
+    try{ const PAGE=1000; for(let from=0,g=0; g<200; g++){ const { data,error }=await sb.from("cb_tokens").select("ts,token_change").gte("ts",startCb).lte("ts",endCb).gt("token_change",0).order("ts",{ascending:true}).range(from,from+PAGE-1); if(error) throw error; const b=data||[]; rows=rows.concat(b); if(b.length<PAGE) break; from+=PAGE; } }catch(e){ rows=[]; }
     const t0=new Date(startLocal).getTime();
     const evs=rows.map(r=>{ const lt=shiftLocal(r.ts); return { t:Math.max(0,Math.round((new Date(lt).getTime()-t0)/1000)), tok:Number(r.token_change)||0, lts:lt }; }).filter(e=>e.tok>0);
     const endMs=new Date(endLocal).getTime();
@@ -1241,7 +1246,7 @@
     $("lg_month_lbl").textContent=monthLabel(curMonth); const ym=curMonth;
     const smin={}, sessDaysSet={}; let tokens=0;
     monthSessions(ym).forEach(s=>{ tokens+=sessionMetrics(s).tokens; const mn=Math.max(0,(new Date(sessEnd(s))-new Date(s.start_ts))/60000); smin[s.session_date]=(smin[s.session_date]||0)+mn; sessDaysSet[s.session_date]=1; });
-    offEventsAll.forEach(e=>{ const d=(e.lts||"").slice(0,10); if(monthOf(d)===ym) tokens+=(e.tokens||0); });
+    for(const d in offDay){ if(monthOf(d)===ym) tokens+=offTok(d); }
     const tokRev=tokens*cfg.token_rate; let mins=0; for(const k in smin) mins+=smin[k];
     const NONCASH={Gifts:1};
     const monthTx=expenses.filter(e=>monthOf(e.txn_date)===ym);
@@ -1393,11 +1398,9 @@
   function renderSessions(){
     if($("lgTip")){ const _tip=(sessView==="tippers"); show($("lgTip"),_tip); show($("lgSessTableCard"),!_tip); show($("statModeSeg"),!_tip); if(_tip){ fetchTippers(); return; } }
     let items=[];
-    if(sessView==="daily"){ const byDay={}; const ensure=(d)=>byDay[d]||(byDay[d]={tokens:0,rev:0,tax:0,net:0,mins:0,count:0,fs:null,le:null}); sessions.forEach(s=>{ const m=sessionMetrics(s); const o=ensure(s.session_date); o.tokens+=m.tokens; o.rev+=m.rev; o.tax+=m.tax; o.net+=m.net; o.mins+=m.mins; o.count++; if(!o.fs||s.start_ts<o.fs) o.fs=s.start_ts; const _e=sessEnd(s); if(!o.le||_e>o.le) o.le=_e; }); const offByDay={}; offEventsAll.forEach(e=>{ const d=(e.lts||"").slice(0,10); if(!d) return; offByDay[d]=(offByDay[d]||0)+(Number(e.tokens)||0); }); Object.keys(offByDay).forEach(d=>{ const tok=offByDay[d]; if(tok<=0) return; const o=ensure(d); const rev=tok*cfg.token_rate; o.tokens+=tok; o.rev+=rev; o.tax+=rev*cfg.tax_rate; o.net+=rev-rev*cfg.tax_rate; }); Object.keys(byDay).forEach(d=>{ const o=byDay[d]; let st=d+"T12:00:00"; if(o.fs&&o.le){ const md=new Date((new Date(o.fs).getTime()+new Date(o.le).getTime())/2); st=ymd(md)+"T"+pad2n(md.getHours())+":"+pad2n(md.getMinutes())+":"+pad2n(md.getSeconds()); } items.push({day:true,d:d,st:st,tokens:o.tokens,rev:o.rev,tax:o.tax,net:o.net,mins:o.mins,count:o.count}); }); }
+    if(sessView==="daily"){ const byDay={}; const ensure=(d)=>byDay[d]||(byDay[d]={tokens:0,rev:0,tax:0,net:0,mins:0,count:0,fs:null,le:null}); sessions.forEach(s=>{ const m=sessionMetrics(s); const o=ensure(s.session_date); o.tokens+=m.tokens; o.rev+=m.rev; o.tax+=m.tax; o.net+=m.net; o.mins+=m.mins; o.count++; if(!o.fs||s.start_ts<o.fs) o.fs=s.start_ts; const _e=sessEnd(s); if(!o.le||_e>o.le) o.le=_e; }); Object.keys(offDay).forEach(d=>{ const tok=offTok(d); if(tok<=0) return; const o=ensure(d); const rev=tok*cfg.token_rate; o.tokens+=tok; o.rev+=rev; o.tax+=rev*cfg.tax_rate; o.net+=rev-rev*cfg.tax_rate; }); Object.keys(byDay).forEach(d=>{ const o=byDay[d]; let st=d+"T12:00:00"; if(o.fs&&o.le){ const md=new Date((new Date(o.fs).getTime()+new Date(o.le).getTime())/2); st=ymd(md)+"T"+pad2n(md.getHours())+":"+pad2n(md.getMinutes())+":"+pad2n(md.getSeconds()); } items.push({day:true,d:d,st:st,tokens:o.tokens,rev:o.rev,tax:o.tax,net:o.net,mins:o.mins,count:o.count}); }); }
     else { items=sessions.map(s=>({off:false,s:s})); }
-    if(sessView!=="daily"){ (function(){ const evByDay={}; offEventsAll.forEach(e=>{ const d=(e.lts||"").slice(0,10); if(!d) return; (evByDay[d]=evByDay[d]||[]).push(e); });
-      Object.keys(evByDay).forEach(d=>{ const evs=evByDay[d].slice().sort((a,b)=>a.lts<b.lts?-1:(a.lts>b.lts?1:0)); const wins=sessions.filter(s=>s.session_date===d).map(s=>({start:s.start_ts,end:sessEnd(s)})).sort((a,b)=>a.start<b.start?-1:1); const clusters={}; evs.forEach(e=>{ let gi=0; for(let w=0;w<wins.length;w++){ if(e.lts>=wins[w].end) gi++; else break; } (clusters[gi]=clusters[gi]||[]).push(e); }); Object.keys(clusters).forEach(gi=>{ const cl=clusters[gi]; const tok=cl.reduce((a,b)=>a+(Number(b.tokens)||0),0); if(tok>0) items.push({off:true,d:d,tokens:tok,st:cl[0].lts,evs:cl,key:d+"_"+gi}); }); });
-    })(); }
+    if(sessView!=="daily"){ Object.keys(offDay).forEach(d=>{ const tok=offTok(d); if(tok>0) items.push({off:true,d:d,tokens:tok,st:d+"T23:59:59",key:d}); }); }
     { var _sb=pfBounds(),_srs=_sb[0],_sre=_sb[1]; items=items.filter(it=> (it.off||it.day) ? (it.d>=_srs&&it.d<=_sre) : ((it.s.session_date>=_srs&&it.s.session_date<=_sre)|| !it.s.end_ts)); }
     if(sessSort){ items.sort((a,b)=>{ const va=sessSortVal(a,sessSort.col), vb=sessSortVal(b,sessSort.col); if(va<vb) return sessSort.dir==="asc"?-1:1; if(va>vb) return sessSort.dir==="asc"?1:-1; return 0; }); } else { items.sort((a,b)=>{ const da=(a.off||a.day)?a.d:a.s.session_date, db=(b.off||b.day)?b.d:b.s.session_date; if(da!==db) return da<db?1:-1; const ta=(a.off||a.day)?a.st:a.s.start_ts, tb=(b.off||b.day)?b.st:b.s.start_ts; return ta<tb?1:-1; }); }
     updateSortArrows("lg_s_table",sessSort,"data-ssort");
@@ -1406,7 +1409,7 @@
     $("lg_s_body").innerHTML=items.map(it=>{
       if(it.off){ const rev=it.tokens*cfg.token_rate, tax=rev*cfg.tax_rate, net=rev-tax; const exp=offDetail===it.key;
         let out='<tr class="lg-offrow lg-offclick" data-lgoff="'+it.key+'"><td>'+isoToDisp(it.d)+'</td><td><span class="lg-offlbl">Not active</span> <span class="lg-caret">'+(exp?"▾":"▸")+'</span></td><td class="num">—</td><td class="num">'+lgN(it.tokens)+'</td><td class="num lg-revc">'+lgUSD(rev)+'</td><td class="num lg-taxc">'+lgUSD(tax)+'</td><td class="num lg-netc">'+lgUSD(net)+'</td><td class="num">—</td><td class="num"><span class="lg-auto">auto</span></td></tr>';
-        if(exp){ out+='<tr class="lg-offdetail"><td colspan="9"><div class="lg-offlist">'+it.evs.map(e=>'<span class="lg-offchip">'+fmtClock(e.lts)+' · +'+lgN(e.tokens)+'</span>').join("")+'</div></td></tr>'; }
+        if(exp){ const evs=offEvents[it.d]; out+='<tr class="lg-offdetail"><td colspan="9"><div class="lg-offlist">'+(evs==null?'<span class="lg-offchip">Loading…</span>':evs.filter(e=>(Number(e.token_change)||0)>0).map(e=>'<span class="lg-offchip">'+fmtClock(e.lts)+' · +'+lgN(e.token_change)+'</span>').join(""))+'</div></td></tr>'; }
         return out;
       }
       if(it.day){ const hrs=it.mins/60; const lbl=it.count>0?(it.count+' session'+(it.count>1?"s":"")):'Not active'; const durc=it.mins>0?fmtDur(it.mins):"—"; const hrc=(it.mins>0&&hrs>0)?lgUSD(it.net/hrs):"—"; return '<tr class="lg-dayrow"><td>'+isoToDisp(it.d)+'</td><td>'+lbl+'</td><td class="num">'+durc+'</td><td class="num">'+lgN(it.tokens)+'</td><td class="num lg-revc">'+lgUSD(it.rev)+'</td><td class="num lg-taxc">'+lgUSD(it.tax)+'</td><td class="num lg-netc">'+lgUSD(it.net)+'</td><td class="num">'+hrc+'</td><td></td></tr>'; }
@@ -1425,14 +1428,14 @@
     }).join("");
   }
 
-  function renderDayGoal(){ const gw=$("lgDayGoal"); if(!gw) return; const goalv=cfg.goal_revenue_daily||0; if(goalv<=0){ gw.style.display="none"; gw.innerHTML=""; return; } let todayRev=0, todayMins=0; sessions.filter(s=>s.session_date===today).forEach(s=>{ const m=sessionMetrics(s); todayRev+=m.rev; todayMins+=m.mins; }); offEventsAll.filter(e=>(e.lts||"").slice(0,10)===today).forEach(e=>{ todayRev+=(e.tokens||0)*cfg.token_rate; }); const pct=todayRev/goalv*100, fillw=Math.min(100,pct); gw.style.display=""; gw.innerHTML="<div class='lg-goalhd'><span>Daily goal &middot; today</span><span>"+lgUSD(todayRev)+" / "+lgUSD(goalv)+"</span></div><div class='lg-goaltrack'><div class='lg-goalfill"+(pct>=100?" done":"")+"' style='width:"+fillw.toFixed(1)+"%'></div></div><div class='lg-goalsub"+(pct>=100?" done":"")+"'><span>"+(pct>=100?(Math.round(pct)+"% &middot; "+lgUSD(todayRev-goalv)+" past goal"):(Math.round(pct)+"% &middot; "+lgUSD(goalv-todayRev)+" to go"))+"</span><span class='lg-goalhrs'>"+fmtDur(todayMins)+" worked today</span></div>"; }
+  function renderDayGoal(){ const gw=$("lgDayGoal"); if(!gw) return; const goalv=cfg.goal_revenue_daily||0; if(goalv<=0){ gw.style.display="none"; gw.innerHTML=""; return; } let todayRev=0, todayMins=0; sessions.filter(s=>s.session_date===today).forEach(s=>{ const m=sessionMetrics(s); todayRev+=m.rev; todayMins+=m.mins; }); todayRev+=offTok(today)*cfg.token_rate; const pct=todayRev/goalv*100, fillw=Math.min(100,pct); gw.style.display=""; gw.innerHTML="<div class='lg-goalhd'><span>Daily goal &middot; today</span><span>"+lgUSD(todayRev)+" / "+lgUSD(goalv)+"</span></div><div class='lg-goaltrack'><div class='lg-goalfill"+(pct>=100?" done":"")+"' style='width:"+fillw.toFixed(1)+"%'></div></div><div class='lg-goalsub"+(pct>=100?" done":"")+"'><span>"+(pct>=100?(Math.round(pct)+"% &middot; "+lgUSD(todayRev-goalv)+" past goal"):(Math.round(pct)+"% &middot; "+lgUSD(goalv-todayRev)+" to go"))+"</span><span class='lg-goalhrs'>"+fmtDur(todayMins)+" worked today</span></div>"; }
   function renderLiveCard(){
     const live=sessions.find(s=>!s.end_ts), card=$("lgLiveCard");
     if(!live){ card.style.display="none"; liveCardId=null; return; }
     card.style.display=""; liveCardId=live.id;
     if(liveBal[live.id]){ live.bal_start=liveBal[live.id].start; live.bal_now=liveBal[live.id].now; }
     const balCleared=!!(liveBal[live.id]&&liveBal[live.id].cleared);
-    if(!balCleared && live.bal_start==null){ let a=0; sessions.forEach(s=>{ if(s.id!==live.id && s.session_date===today && (s.start_ts||"")<(live.start_ts||"")) a+=sessionMetrics(s).tokens; }); offEventsAll.forEach(e=>{ if((e.lts||"").slice(0,10)===today && (e.lts||"")<(live.start_ts||"")) a+=(e.tokens||0); }); live.bal_start=a; }
+    if(!balCleared && live.bal_start==null){ if(offTok(today)>0 && offEvents[today]==null){ fetchOffEvents(today); } else { let a=0; sessions.forEach(s=>{ if(s.id!==live.id && s.session_date===today && (s.start_ts||"")<(live.start_ts||"")) a+=sessionMetrics(s).tokens; }); (offEvents[today]||[]).forEach(e=>{ if((e.lts||"")<(live.start_ts||"")) a+=(Number(e.token_change)||0); }); live.bal_start=a; } }
     const m=sessionMetrics(live);
     const tph=m.hrs>0?Math.round(m.tokens/m.hrs):null;
     $("lgLiveWhen").textContent="started "+fmtClock(live.start_ts);
@@ -1574,7 +1577,7 @@
     document.querySelectorAll(".pf-bar").forEach(bar=>{ bar.querySelectorAll(".pf-cd").forEach(cd=>{ const w=cd.getAttribute("data-pf"), val=cd.querySelector(".pf-cd-val"), menu=cd.querySelector(".pf-cd-menu"); if(w==="gran"){ val.textContent=granLbl; menu.innerHTML=optHtml(PFGRAN,pf.gran); } else if(w==="start"){ val.textContent=startLbl; menu.innerHTML=optHtml(perItems,pf.startKey); } else if(w==="end"){ val.textContent=endLbl; menu.innerHTML=optHtml(perItems,pf.endKey); } }); }); }
   function renderRevAll(){ renderPf(); renderRevOv(); renderCbSummary(); renderSessions(); renderRevSrc(); }
   function syncRrFilters(){ const bnd=dateBounds(revRange,revAllStart()),rs=bnd[0],re=bnd[1]; document.querySelectorAll(".lg-rrfilter").forEach(bar=>{ bar.querySelectorAll("[data-rr]").forEach(b=>b.classList.toggle("on",b.getAttribute("data-rr")===revRange.preset)); const s=bar.querySelector(".lg-rrstart"), en=bar.querySelector(".lg-rrend"); if(s&&document.activeElement!==s) s.value=(revRange.preset==="custom")?(revRange.start?isoToDisp(revRange.start):""):isoToDisp(rs); if(en&&document.activeElement!==en) en.value=(revRange.preset==="custom")?(revRange.end?isoToDisp(revRange.end):""):isoToDisp(re); }); }
-  function renderCbSummary(){ if(!$("lg_cb_kpis")) return; const bnd=pfBounds(),rs=bnd[0],re=bnd[1]; let rangeTok=0; sessions.filter(s=>s.session_date>=rs&&s.session_date<=re).forEach(s=>{ rangeTok+=sessionMetrics(s).tokens; }); offEventsAll.forEach(e=>{ const d=(e.lts||"").slice(0,10); if(d>=rs&&d<=re) rangeTok+=(e.tokens||0); }); const rev=rangeTok*cfg.token_rate, tax=rev*cfg.tax_rate; const lbl=pfRangeLabel(); $("lg_cb_kpis").innerHTML=kpi("Revenue",lgUSD(rev),lbl,"grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(rev-tax),"","mint")+kpi("Tokens",lgN(rangeTok),""); renderDayGoal(); }
+  function renderCbSummary(){ if(!$("lg_cb_kpis")) return; const bnd=pfBounds(),rs=bnd[0],re=bnd[1]; let rangeTok=0; sessions.filter(s=>s.session_date>=rs&&s.session_date<=re).forEach(s=>{ rangeTok+=sessionMetrics(s).tokens; }); rangeTok+=offRangeTok(rs,re); const rev=rangeTok*cfg.token_rate, tax=rev*cfg.tax_rate; const lbl=pfRangeLabel(); $("lg_cb_kpis").innerHTML=kpi("Revenue",lgUSD(rev),lbl,"grad")+kpi("Taxes",lgUSD(tax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(rev-tax),"","mint")+kpi("Tokens",lgN(rangeTok),""); renderDayGoal(); }
   function renderRevViews(){ syncRrFilters(); renderCbSummary(); renderSessions(); renderRevSrc(); }
   function txnRows(){ return expenses.filter(e=>(e.kind||"expense")===txnKind); }
   function renderCatMgr(){ const list=(cats[txnKind]||[]); $("lg_cat_list").innerHTML=list.length?list.map(c=>'<span class="lg-catchip">'+esc(c)+'<button data-catdel="'+esc(c)+'" title="Remove">&times;</button></span>').join(""):'<span class="lg-muted">No categories yet \u2014 add one below.</span>'; }
@@ -1638,7 +1641,7 @@
     cfg={token_rate:rate,tax_rate:tax,goal_revenue:gr,goal_tokens:gt,goal_revenue_daily:gd,goal_workdays:wd}; m.className="msg ok"; m.textContent="Saved."; renderAll();
   }
 
-  let editingSession=null, editingRow=null, offDetail=null, offEvents={}, offEventsAll=[], liveCardId=null, balSaveTimer=null, liveBal={};
+  let editingSession=null, editingRow=null, offDetail=null, offEvents={}, liveCardId=null, balSaveTimer=null, liveBal={};
   let syncBusy=false;
 
   // Fingerprint of what actually matters, so we only repaint on a real change.
@@ -1699,7 +1702,7 @@
   function showConfirm(title,msg,okLabel,cb){ const m=$("lgConfirm"); if(!m) return; $("lgConfirmTitle").textContent=title; $("lgConfirmMsg").textContent=msg; $("lgConfirmOk").textContent=okLabel||"Confirm"; confirmCb=cb; m.style.display="flex"; }
   function hideConfirm(){ const m=$("lgConfirm"); if(m) m.style.display="none"; confirmCb=null; }
   async function endLiveKeep(id){ await syncSessions(); const s=sessions.find(x=>x.id===id); if(!s) return; if(s.end_ts){ renderAll(); return; } const end=nowLocal(); const upd={end_ts:end}; const bnEl=$("lg_bal_now"); if(bnEl){ const bnRaw=(bnEl.value||"").trim(); if(bnRaw!==""){ const bsEl=$("lg_bal_start"); upd.bal_now=parseInt(bnRaw.replace(/[^0-9]/g,""),10)||0; upd.bal_start=bsEl?(parseInt((bsEl.value||"0").replace(/[^0-9]/g,""),10)||0):(s.bal_start||0); } } clearTimeout(balSaveTimer); const { error }=await sb.from("work_sessions").update(upd).eq("id",id); if(error){ alert(error.message); return; } delete liveBal[id]; editingRow=null; await Promise.all([fetchSessions(),fetchAgg()]); renderAll(); }
-  async function fetchOffEvents(d){ try{ offEvents[d]=await rpcAllRows("ledger_offsession_events",{p_shift:TZ_SHIFT,p_day:d,p_now:nowLocal()}); }catch(e){ offEvents[d]=[]; } if(offDetail===d) renderSessions(); }
+  async function fetchOffEvents(d){ try{ offEvents[d]=await rpcAllRows("ledger_offsession_events",{p_shift:TZ_SHIFT,p_day:d,p_now:nowLocal()}); }catch(e){ offEvents[d]=[]; } if(offDetail===d) renderSessions(); if(d===today){ try{ renderLiveCard(); }catch(e){} } }
 
   async function addExpense(){
     const rec={ txn_date:dispToIso($("lg_e_date").value)||today, account:$("lg_e_account").value.trim()||null, category:$("lg_e_cat").value.trim()||null, brand:null, amount:parseFloat($("lg_e_amt").value)||0, notes:$("lg_e_notes").value.trim()||null, kind:txnKind };
@@ -1826,7 +1829,7 @@
     ["lg_s_start","lg_s_end"].forEach(id=>$(id).addEventListener("blur",()=>{ const v=parseTime($(id).value); if(v) $(id).value=to12(v); }));
     $("lg_s_endclear").addEventListener("click",()=>{ $("lg_s_end").value=""; $("lg_s_end").focus(); });
     $("lg_s_body").addEventListener("click",e=>{
-      const off=e.target.closest("[data-lgoff]"); if(off){ const k=off.getAttribute("data-lgoff"); offDetail=(offDetail===k)?null:k; renderSessions(); return; }
+      const off=e.target.closest("[data-lgoff]"); if(off){ const k=off.getAttribute("data-lgoff"); offDetail=(offDetail===k)?null:k; if(offDetail&&offEvents[offDetail]==null) fetchOffEvents(offDetail); renderSessions(); return; }
       const ed=e.target.closest("[data-lgedit-sess]"); if(ed){ const eid=ed.getAttribute("data-lgedit-sess"); editingRow=eid; delete sessTokDetail[eid]; renderSessions(); return; }
       const cl=e.target.closest("[data-lgclearend]"); if(cl){ const inp=$("rowend_"+cl.getAttribute("data-lgclearend")); if(inp){ inp.value=""; inp.focus(); } return; }
       const sv=e.target.closest("[data-lgsave-sess]"); if(sv){ saveRow(sv.getAttribute("data-lgsave-sess")); return; }
