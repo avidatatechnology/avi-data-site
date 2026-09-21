@@ -1570,9 +1570,7 @@
     const tabs=[["daily","Last 60 days"],["monthly","By month"],["dow","Day of week"]];
     const favs=Object.keys(amts).map(k=>({a:+k,c:amts[k]})).sort((a,b)=>b.c-a.c||b.a-a.a).slice(0,6), favMax=favs.length?favs[0].c:1;
     const facts=[["Tips",lgN(rows.length)],["Average tip",tipAvg(tot,rows.length)+" tok"],["Biggest tip",lgN(big.n)+" tok",isoToDisp(big.l)],["Last 30 days",lgN(t30)+" tok"],["Days tipped",lgN(dayKeys.length)],["Streams tipped in",lgN(nStreams)],["First tip",isoToDisp(first.l)],["Last tip",isoToDisp(last.l),ago(since)]];
-    const recent=rows.slice(-40).reverse(); let recHtml="", curD=null;
-    recent.forEach(r=>{ const d=r.l.slice(0,10); if(d!==curD){ curD=d; const x=new Date(d+"T00:00:00"); recHtml+='<tr class="tp-day"><td colspan="2">'+DN[x.getDay()]+', '+MN[x.getMonth()]+' '+x.getDate()+'</td><td class="num">'+lgN(days[d]||0)+' tok that day</td></tr>'; } recHtml+='<tr><td class="tp-t">'+fmtClock(r.l)+'</td><td class="tp-note">'+esc(r.note)+'</td><td class="num"><b>'+lgN(r.n)+'</b><span class="tp-usd">'+lgUSD(r.n*rate*netf)+'</span></td></tr>'; });
-    let h='<div class="tp">'+back
+        let h='<div class="tp">'+back
       +'<header class="tp-head"><div><h2 class="tp-name">'+esc(name)+'</h2><div class="tp-ranks">'
         +(I?'<span><b>#'+lgN(I.rnk)+'</b> of '+lgN(N)+' all-time</span>':'')
         +(R30?'<span><b>#'+lgN(R30.rnk)+'</b> of '+lgN(tipIdxN30)+' last 30 days</span>':'<span class="dim">No tips in the last 30 days</span>')
@@ -1588,7 +1586,6 @@
         +'<div class="tp-panel"><h3>Details</h3><dl class="tp-facts">'+facts.map(f=>'<div><dt>'+f[0]+'</dt><dd>'+f[1]+(f[2]?'<span>'+f[2]+'</span>':'')+'</dd></div>').join("")+'</dl></div>'
         +'<div class="tp-panel"><h3>Favorite amounts</h3><div class="tp-amts">'+favs.map(f=>'<div class="tp-amt"><span class="tp-amt-a">'+lgN(f.a)+'</span><span class="tp-amt-bar"><i style="width:'+(f.c/favMax*100).toFixed(1)+'%"></i></span><span class="tp-amt-c">'+lgN(f.c)+'×</span></div>').join("")+'</div></div>'
       +'</section>'
-      +'<section class="tp-panel"><h3>Recent tips</h3><div class="lg-scroll"><table class="tp-tbl"><colgroup><col style="width:120px"><col><col style="width:200px"></colgroup><tbody>'+recHtml+'</tbody></table></div></section>'
       +'</div>';
     box.innerHTML=h; tpFit();
   }
