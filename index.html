@@ -2075,6 +2075,13 @@
 
   function normDate(s){ s=(s||"").trim(); let m; if(m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)) return m[1]+"-"+pad2n(+m[2])+"-"+pad2n(+m[3]); if(m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/)){ let y=m[3]; if(y.length===2) y="20"+y; return y+"-"+pad2n(+m[1])+"-"+pad2n(+m[2]); } return ""; }
 
+  // Chaturbate exports in fixed UTC-7 all year. The ledger stores Los Angeles wall time
+  // (TZ_SHIFT = local − LA), which only matches UTC-7 during PDT. In winter (PST) the raw
+  // stamps run an hour late, so convert every row to true LA time on import.
+  const LA_FMT=(function(){ try{ return new Intl.DateTimeFormat("en-US",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}); }catch(e){ return null; } })();
+  function cbToLA(raw){ const m=String(raw||"").replace(" ","T").match(/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)(\.\d+)?$/); if(!m||!LA_FMT) return String(raw||"").replace(" ","T");
+    const ms=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6])+7*3600000; const p={}; LA_FMT.formatToParts(new Date(ms)).forEach(x=>{ p[x.type]=x.value; });
+    return p.year+"-"+p.month+"-"+p.day+"T"+(p.hour==="24"?"00":p.hour)+":"+p.minute+":"+p.second+(m[7]||""); }
   function pickCol(r,names){ const keys=Object.keys(r||{}); for(const want of names){ const k=keys.find(k=>k.trim().toLowerCase()===want); if(k!=null){ const v=String(r[k]==null?"":r[k]).trim(); if(v) return v; } } return null; }
   function parseOne(file){ return new Promise((resolve)=>{ Papa.parse(file,{ header:true, skipEmptyLines:true, complete:(res)=>resolve(res.data||[]), error:()=>resolve([]) }); }); }
   async function importTokenFiles(list){
@@ -2082,7 +2089,7 @@
     if(typeof Papa==="undefined"){ m.className="msg err"; m.textContent="CSV parser not loaded — refresh and try again."; return; }
     m.className="msg info"; m.textContent="Reading "+list.length+" file"+(list.length>1?"s":"")+"…";
     let raw=[]; for(let i=0;i<list.length;i++){ raw=raw.concat(await parseOne(list[i])); }
-    let rows=raw.map(r=>{ const ts=(r["Timestamp"]||"").trim(); const ch=parseInt(String(r["Token change"]!=null?r["Token change"]:"").replace(/[^\-0-9]/g,""),10); if(!ts||isNaN(ch)) return null; const un=pickCol(r,["user","username","from user","from","tipper"]); const nt=pickCol(r,["note","message","notes","comment"]); return { user_id:me.id, ts: ts.replace(" ","T"), token_change: ch, ttype:(r["Transaction type"]||"").slice(0,60), username: un?un.slice(0,80):null, note: nt?nt.slice(0,500):null }; }).filter(Boolean);
+    let rows=raw.map(r=>{ const ts=(r["Timestamp"]||"").trim(); const ch=parseInt(String(r["Token change"]!=null?r["Token change"]:"").replace(/[^\-0-9]/g,""),10); if(!ts||isNaN(ch)) return null; const un=pickCol(r,["user","username","from user","from","tipper"]); const nt=pickCol(r,["note","message","notes","comment"]); return { user_id:me.id, raw: ts.replace(" ","T"), ts: cbToLA(ts), token_change: ch, ttype:(r["Transaction type"]||"").slice(0,60), username: un?un.slice(0,80):null, note: nt?nt.slice(0,500):null }; }).filter(Boolean);
     if(!rows.length){ m.className="msg err"; m.textContent="No rows found — is this the token export (Timestamp / Token change …)?"; return; }
     // Income only: tips sent, cash-outs and tokens spent in other rooms aren't revenue.
     // Tips already marked as gifts are left alone so the upload doesn't undo them.
@@ -2092,6 +2099,11 @@
     if(tokImporting){ m.className="msg err"; m.textContent="An import is already running — wait for it to finish."; return; }
     tokImporting=true; try{
     m.className="msg info"; m.textContent="Importing "+rows.length+"…"; let err=null;
+    // Older uploads stored the raw (unconverted) stamp — remove those copies first.
+    const stale=rows.filter(r=>r.raw!==r.ts).map(r=>r.raw);
+    for(let i=0;i<stale.length&&!err;i+=150){ const { error }=await sb.from("cb_tokens").delete().in("ts",stale.slice(i,i+150)); if(error) err=error; }
+    if(err){ m.className="msg err"; m.textContent=err.message; return; }
+    rows.forEach(r=>{ delete r.raw; });
     for(let i=0;i<rows.length;i+=500){ const { error }=await sb.from("cb_tokens").upsert(rows.slice(i,i+500),{ onConflict:"user_id,ts", ignoreDuplicates:false }); if(error){ err=error; break; } }
     if(err){ m.className="msg err"; m.textContent=err.message; return; }
     try{ await sb.from("cb_tokens").delete().lt("token_change",0); }catch(e){}
