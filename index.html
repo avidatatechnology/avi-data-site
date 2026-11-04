@@ -2090,8 +2090,11 @@
   // stamps run an hour late, so convert every row to true LA time on import.
   const LA_FMT=(function(){ try{ return new Intl.DateTimeFormat("en-US",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}); }catch(e){ return null; } })();
   function cbToLA(raw){ const m=String(raw||"").replace(" ","T").match(/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)(\.\d+)?$/); if(!m||!LA_FMT) return String(raw||"").replace(" ","T");
-    const ms=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6])+7*3600000; const p={}; LA_FMT.formatToParts(new Date(ms)).forEach(x=>{ p[x.type]=x.value; });
-    return p.year+"-"+p.month+"-"+p.day+"T"+(p.hour==="24"?"00":p.hour)+":"+p.minute+":"+p.second+(m[7]||""); }
+    // Store (your local wall time − TZ_SHIFT) so ts + TZ_SHIFT always shows the real local time,
+    // including the hour when Eastern and Pacific change clocks at different moments.
+    const ms=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6])+7*3600000; const L=new Date(ms);
+    const w=new Date(Date.UTC(L.getFullYear(),L.getMonth(),L.getDate(),L.getHours(),L.getMinutes(),L.getSeconds())-TZ_SHIFT*3600000);
+    return w.getUTCFullYear()+"-"+pad2n(w.getUTCMonth()+1)+"-"+pad2n(w.getUTCDate())+"T"+pad2n(w.getUTCHours())+":"+pad2n(w.getUTCMinutes())+":"+pad2n(w.getUTCSeconds())+(m[7]||""); }
   function pickCol(r,names){ const keys=Object.keys(r||{}); for(const want of names){ const k=keys.find(k=>k.trim().toLowerCase()===want); if(k!=null){ const v=String(r[k]==null?"":r[k]).trim(); if(v) return v; } } return null; }
   function parseOne(file){ return new Promise((resolve)=>{ Papa.parse(file,{ header:true, skipEmptyLines:true, complete:(res)=>resolve(res.data||[]), error:()=>resolve([]) }); }); }
   async function importTokenFiles(list){
