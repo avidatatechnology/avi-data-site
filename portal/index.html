@@ -1539,10 +1539,10 @@
     const cashBySrc={}, giftBySrc={}; let cashInc=0, giftInc=0; const cashDays={};
     tx.filter(e=>(e.kind||"expense")==="income").forEach(e=>{ const s=e.source||"Other", amt=Number(e.amount); if(NONCASH[s]){ giftBySrc[s]=(giftBySrc[s]||0)+amt; giftInc+=amt; } else { cashBySrc[s]=(cashBySrc[s]||0)+amt; cashInc+=amt; } cashDays[e.txn_date]=1; });
     const expCat={}; let expTot=0; tx.filter(e=>(e.kind||"expense")==="expense").forEach(e=>{ const c=e.category||"Uncategorized"; expCat[c]=(expCat[c]||0)+Number(e.amount); expTot+=Number(e.amount); });
-    const cashRev=tokRev+cashInc, totalRev=cashRev+giftInc, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, netInc=totalRev-taxes-expTot;
+    const cashRev=tokRev+cashInc, totalRev=cashRev+giftInc, taxes=totalRev*cfg.tax_rate, netAfterTax=totalRev-taxes, profit=totalRev-expTot, taxW=Math.max(0,profit)*cfg.tax_rate, taxSaved=taxes-taxW, netInc=profit-taxW;
     const workDays=Object.keys(sessDaysSet).length;
     const revDaysSet={}; Object.keys(sessDaysSet).forEach(d=>revDaysSet[d]=1); Object.keys(cashDays).forEach(d=>revDaysSet[d]=1);
-    return { tokens, tokRev, mins, workDays, revDays:Object.keys(revDaysSet).length, cashBySrc, giftBySrc, cashInc, giftInc, expCat, expTot, cashRev, totalRev, taxes, netAfterTax, netInc };
+    return { tokens, tokRev, mins, workDays, revDays:Object.keys(revDaysSet).length, cashBySrc, giftBySrc, cashInc, giftInc, expCat, expTot, cashRev, totalRev, taxes, netAfterTax, profit, taxW, taxSaved, netInc };
   }
   function monthsBetween(ds,de){ const out=[]; let y=+ds.slice(0,4), m=+ds.slice(5,7); const ey=+de.slice(0,4), em=+de.slice(5,7); for(let g=0; g<600; g++){ out.push(y+"-"+pad2n(m)); if(y===ey&&m===em) break; m++; if(m>12){ m=1; y++; } } return out; }
   function monthWindow(ym,ds,de){ const y=+ym.slice(0,4), m=+ym.slice(5,7); const first=ym+"-01"; const last=ym+"-"+pad2n(new Date(y,m,0).getDate()); return [first<ds?ds:first, last>de?de:last]; }
@@ -1552,7 +1552,7 @@
     const pb=pfBounds(), ds=pb[0], de=pb[1];
     const yms=monthsBetween(ds,de), multi=yms.length>1;
     const M=calcMetrics(ds,de);
-    $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(M.totalRev),multi?pfRangeLabel():"","grad")+kpi("Taxes",lgUSD(M.taxes),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(M.netAfterTax),"","mint")+kpi("Tokens",lgN(M.tokens),"");
+    $("lg_d_kpis").innerHTML=kpi("Revenue",lgUSD(M.totalRev),multi?pfRangeLabel():"","grad")+kpi("Write-offs",lgUSD(M.expTot),"saves "+lgUSD(M.taxSaved)+" in tax")+kpi("Taxes after write-offs",lgUSD(M.taxW),lgUSD(M.taxes)+" before write-offs","warn")+kpi("Net",lgUSD(M.netInc),"after write-offs & taxes","mint")+kpi("Tokens",lgN(M.tokens),"");
     const revGoal=cfg.goal_revenue*yms.length;
     const gRev=revGoal?M.totalRev/revGoal*100:0;
     const avgDayRev=M.revDays?M.totalRev/M.revDays:0; const gDay=cfg.goal_revenue_daily?avgDayRev/cfg.goal_revenue_daily*100:0;
@@ -1588,7 +1588,10 @@
     body+=row("Total expenses",m=>lgUSD(m.expTot),"pnl-trsub");
     body+=row("Operating income",m=>lgUSD(m.totalRev-m.expTot),"pnl-trmid");
     body+=secRow("Taxes");
-    body+=row("Est. set-aside ("+Math.round(cfg.tax_rate*100)+"% of revenue)",m=>"\u2212"+lgUSD(m.taxes),"","pnl-taxamt");
+    const pct=Math.round(cfg.tax_rate*100)+"%";
+    body+=row('<span class="lg-muted">Tax before write-offs ('+pct+' of revenue)</span>',m=>'<span class="lg-muted">'+lgUSD(m.taxes)+'</span>');
+    body+=row('<span class="lg-muted">Tax saved by write-offs</span>',m=>'<span class="lg-muted" style="color:var(--mint)">'+lgUSD(m.taxSaved)+'</span>');
+    body+=row("Est. set-aside — after write-offs ("+pct+" of operating income)",m=>"\u2212"+lgUSD(m.taxW),"","pnl-taxamt");
     body+=row("Net income",m=>lgUSD(m.netInc),"pnl-trnet");
     if(anyGift){
       body+=row("Less: non-cash gifts",m=>"\u2212"+lgUSD(m.giftInc),"pnl-trrecon","pnl-taxamt");
