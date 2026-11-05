@@ -618,6 +618,27 @@
   #specialView .btn,#specialView .lg-per-btn.primary{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(0,0,0,.15),0 10px 22px -12px rgba(110,139,255,.75)}
   #specialView .lg-offchip.tap:hover{border-color:rgba(110,139,255,.4)}
   @media (prefers-reduced-motion:reduce){ .lg-sl,.lg-gl,#specialView .lg-per-btn{transition:none} }
+  /* ── Glass dropdowns (replace native selects in the ledger) ── */
+  .gs{position:relative;display:inline-flex;vertical-align:middle;min-width:0}
+  .gs.gs-block{display:flex;width:100%}
+  .gs>select{position:absolute!important;inset:0;width:100%!important;height:100%!important;opacity:0!important;pointer-events:none!important;margin:0!important}
+  .gs-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:0;background:var(--panel-2);border:1px solid var(--line-soft);color:var(--text);font-family:var(--fd);font-weight:600;font-size:13px;padding:8px 13px;border-radius:10px;cursor:pointer;white-space:nowrap;
+    background-image:linear-gradient(180deg,rgba(255,255,255,.07) 0%,rgba(255,255,255,.015) 55%,rgba(255,255,255,0) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),inset 0 -1px 0 rgba(0,0,0,.2),0 6px 14px -9px rgba(0,0,0,.6);transition:border-color .2s,box-shadow .3s}
+  .gs-block .gs-btn{font-family:var(--fb);font-weight:500;font-size:15px;padding:12px 14px;border-radius:11px;border-color:var(--line)}
+  .gs-val{overflow:hidden;text-overflow:ellipsis}
+  .gs-btn:hover{border-color:rgba(110,139,255,.38)}
+  .gs.open .gs-btn{border-color:var(--brand-2);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 3px rgba(110,139,255,.16),0 8px 18px -10px rgba(110,139,255,.55)}
+  .gs.dis .gs-btn{opacity:.5;cursor:not-allowed}
+  .gs-car{flex:none;color:var(--muted);transition:transform .22s ease}
+  .gs.open .gs-car{transform:rotate(180deg);color:var(--brand-2)}
+  .gs-menu{position:fixed;z-index:500;max-height:320px;overflow:auto;padding:6px;border-radius:12px;border:1px solid rgba(255,255,255,.09);
+    background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.015) 50%),rgba(22,32,58,.86);-webkit-backdrop-filter:blur(16px) saturate(160%);backdrop-filter:blur(16px) saturate(160%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 18px 44px rgba(0,0,0,.6);animation:gsIn .14s ease-out}
+  @keyframes gsIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .gs-opt{display:block;width:100%;text-align:left;background:none;border:0;color:var(--text);font-family:var(--fb);font-size:13px;padding:8px 11px;border-radius:8px;cursor:pointer;white-space:nowrap}
+  .gs-opt:hover{background:rgba(255,255,255,.07)}
+  .gs-opt.on{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,0) 70%),rgba(110,139,255,.2);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+  .gs-opt:disabled{opacity:.4;cursor:default}
   /* ── Liquid glass, part 2: every ledger tab (Dashboard / Revenue / Expenses / Settings) ── */
   #specialView .kpi,#specialView .lg-auto-box,.lg-sheet-card{position:relative;background-image:linear-gradient(160deg,rgba(255,255,255,.055) 0%,rgba(255,255,255,.012) 42%,rgba(255,255,255,.008) 60%,rgba(255,255,255,.03) 100%);border-color:rgba(255,255,255,.07);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08),inset 0 -1px 0 rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.25),0 18px 40px -24px rgba(0,0,0,.75)}
@@ -1011,7 +1032,6 @@
         <div class='pf-cd pf-end' data-pf='end'><button type='button' class='pf-cd-btn'><span class='pf-cd-val'></span><svg class='pf-cd-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.5'/></svg></button><div class='pf-cd-menu'></div></div>
       </div>
       <div class="summary" id="lg_cb_kpis"></div>
-      <div class="card lg-daygoalcard" id="lgDayGoal" style="display:none"></div>
       <div class="lg-sess-top">
         <div class="lg-sess-col">
           <div class="card lg-import" style="margin:0;display:block">
@@ -1312,6 +1332,39 @@
   }
   (function(){ let last=null,raf=0,ev=null; const clr=n=>{ if(n){ n.style.removeProperty("--mx"); n.style.removeProperty("--my"); } };
     document.addEventListener("pointermove",e=>{ ev=e; if(raf) return; raf=requestAnimationFrame(()=>{ raf=0; const t=ev.target; const n=t&&t.closest?t.closest("#specialView .card, #specialView .kpi"):null; if(n!==last){ clr(last); last=n; } if(!n) return; const r=n.getBoundingClientRect(); if(!r.width||!r.height) return; n.style.setProperty("--mx",((ev.clientX-r.left)/r.width*100)+"%"); n.style.setProperty("--my",((ev.clientY-r.top)/r.height*100)+"%"); }); },{passive:true}); })();
+  (function(){
+    const VD=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value"), SD=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"selectedIndex");
+    let openGs=null, menu=null;
+    const car="<svg class='gs-car' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>";
+    function sync(sel){ const w=sel.parentNode; if(!w||!w.classList||!w.classList.contains("gs")) return; const o=sel.options[sel.selectedIndex]; w.querySelector(".gs-val").textContent=o?o.text:""; w.classList.toggle("dis",!!sel.disabled); }
+    function close(){ if(!openGs) return; openGs.classList.remove("open"); openGs=null; if(menu){ menu.remove(); menu=null; } }
+    function open(w){ const sel=w.querySelector("select"); if(sel.disabled) return; close(); openGs=w; w.classList.add("open");
+      menu=document.createElement("div"); menu.className="gs-menu";
+      Array.from(sel.options).forEach((o,i)=>{ const b=document.createElement("button"); b.type="button"; b.className="gs-opt"+(i===sel.selectedIndex?" on":""); b.textContent=o.text; if(o.disabled) b.disabled=true;
+        b.addEventListener("click",ev=>{ ev.stopPropagation(); if(i!==sel.selectedIndex){ SD.set.call(sel,i); sync(sel); sel.dispatchEvent(new Event("input",{bubbles:true})); sel.dispatchEvent(new Event("change",{bubbles:true})); } close(); });
+        menu.appendChild(b); });
+      document.body.appendChild(menu);
+      const r=w.getBoundingClientRect(); menu.style.minWidth=r.width+"px";
+      const mh=menu.offsetHeight, below=window.innerHeight-r.bottom; menu.style.left=Math.max(8,Math.min(r.left,window.innerWidth-menu.offsetWidth-8))+"px";
+      menu.style.top=(below<mh+12&&r.top>mh+12?(r.top-mh-6):(r.bottom+6))+"px";
+      const on=menu.querySelector(".gs-opt.on"); if(on) on.scrollIntoView({block:"nearest"}); }
+    function enhance(sel){ if(sel.dataset.gs||sel.multiple) return; sel.dataset.gs="1";
+      const w=document.createElement("span"); w.className="gs"+(sel.closest(".lg-auto-gap,.lg-cardhd,.lg-ctrl-l,.lg-sesshd,.pf-bar")?"":" gs-block");
+      sel.parentNode.insertBefore(w,sel); w.appendChild(sel);
+      const b=document.createElement("button"); b.type="button"; b.className="gs-btn"; b.innerHTML="<span class='gs-val'></span>"+car; w.appendChild(b);
+      b.addEventListener("click",ev=>{ ev.preventDefault(); ev.stopPropagation(); if(openGs===w) close(); else open(w); });
+      Object.defineProperty(sel,"value",{configurable:true,get(){ return VD.get.call(this); },set(v){ VD.set.call(this,v); sync(this); }});
+      Object.defineProperty(sel,"selectedIndex",{configurable:true,get(){ return SD.get.call(this); },set(v){ SD.set.call(this,v); sync(this); }});
+      sel.addEventListener("change",()=>sync(sel));
+      new MutationObserver(()=>sync(sel)).observe(sel,{childList:true,subtree:true,attributes:true,attributeFilter:["disabled"]});
+      sync(sel); }
+    function scan(root){ (root.querySelectorAll?root:document).querySelectorAll("#specialView select, .lg-sheet select").forEach(enhance); }
+    document.addEventListener("click",e=>{ if(menu&&!menu.contains(e.target)) close(); });
+    document.addEventListener("keydown",e=>{ if(e.key==="Escape") close(); });
+    window.addEventListener("resize",close); document.addEventListener("scroll",e=>{ if(menu&&!menu.contains(e.target)) close(); },true);
+    const start=()=>{ scan(document); new MutationObserver(ms=>{ for(const m of ms){ if(m.addedNodes&&m.addedNodes.length){ scan(document); break; } } }).observe(document.body,{childList:true,subtree:true}); };
+    if(document.body) start(); else document.addEventListener("DOMContentLoaded",start);
+  })();
   function pickMonth(){ const months=sessions.map(s=>monthOf(s.session_date)).filter(Boolean).sort(); curMonth = months.length ? months[months.length-1] : today.slice(0,7); }
   function lgCacheKey(){ return (me&&me.id)?"lgCache_"+me.id:null; }
   function writeLgCache(){ const k=lgCacheKey(); if(!k) return; try{ localStorage.setItem(k,JSON.stringify({cfg,sessions,expenses,sessTok,dailyTok,offDaily,offDay,giftRows,cats,dataAsOf})); }catch(e){} }
@@ -1872,8 +1925,8 @@
     let dots=""; for(let i=1;i<dateTs.length-1;i++){ dots+="<circle cx='"+X(dateTs[i]).toFixed(1)+"' cy='"+Y(totals[i]).toFixed(1)+"' r='3.2' fill='#fff' fill-opacity='0.92' stroke='rgba(12,18,33,.9)' stroke-width='1.5'/>"; }
     return "<svg viewBox='0 0 "+W+" "+H+"' class='lg-chart' preserveAspectRatio='xMidYMid meet'>"+ovDefs()+grid+bands+dots+xlab+"</svg>";
   }
-  function svgStackBars(days,bySrcDay,srcList,minX,maxX){
-    const W=560,H=196,pl=56,pr=12,ptp=12,pb=24,pw=W-pl-pr,ph=H-ptp-pb;
+  function svgStackBars(days,bySrcDay,srcList,minX,maxX,Hc){
+    const W=560,H=Hc||196,pl=56,pr=12,ptp=12,pb=24,pw=W-pl-pr,ph=H-ptp-pb;
     if(minX===maxX){ minX-=86400000; maxX+=86400000; }
     const dayTot=d=>srcList.reduce((a,s)=>a+((bySrcDay[s]&&bySrcDay[s][d])||0),0);
     const maxY=Math.max(Math.max.apply(null,days.map(dayTot).concat([0])),1)*1.12;
@@ -1924,6 +1977,19 @@
   function ovSegAt(clientX,clientY,svg){ const rect=svg.getBoundingClientRect(); if(!rect.width) return null; const mx=(clientX-rect.left)/rect.width*200, my=(clientY-rect.top)/rect.height*200; const dx=mx-100,dy=my-100,dist=Math.sqrt(dx*dx+dy*dy); if(dist<58||dist>98) return null; let ang=Math.atan2(dx,-dy); if(ang<0) ang+=2*Math.PI; const fr=ang/(2*Math.PI); for(var k=0;k<ovSegs.length;k++){ if(fr>=ovSegs[k].s0 && fr<ovSegs[k].s1) return ovSegs[k].label; } return null; }
   function ovChartMove(e){ const box=$("lg_ov_line"); const wrap=box&&box.querySelector(".lg-chartwrap"); if(!wrap||!ovChart||!ovChart.points.length) return; const svg=wrap.querySelector(".lg-chart"); if(!svg) return; const rect=svg.getBoundingClientRect(); if(!rect.width) return; const scaleX=rect.width/ovChart.W, cxpx=e.clientX-rect.left; let best=null,bd=1e9; ovChart.points.forEach(p=>{ const px=(ovChart.pl+(p.t-ovChart.minX)/(ovChart.maxX-ovChart.minX)*ovChart.pw)*scaleX; const dd=Math.abs(px-cxpx); if(dd<bd){ bd=dd; best=p; best.__px=px; } }); if(!best) return; const cross=wrap.querySelector(".lg-cross"), tip=wrap.querySelector(".lg-tip"); cross.style.display="block"; cross.style.left=best.__px.toFixed(1)+"px"; let html="<div class='lg-tipd'>"+best.label+"</div>"; best.parts.forEach(pt=>{ html+="<div class='lg-tipr'><span class='lg-legdot' style='background:"+pt.color+"'></span><span class='lg-tipl'>"+esc(pt.label)+"</span><span class='lg-tipv'>"+lgUSD(pt.val)+"</span></div>"; }); if(best.parts.length>1) html+="<div class='lg-tipr lg-tiptot'><span class='lg-tipl'>Total</span><span class='lg-tipv'>"+lgUSD(best.total)+"</span></div>"; tip.innerHTML=html; tip.style.display="block"; const tw=tip.offsetWidth||140; let tx=best.__px+14; if(tx+tw>rect.width) tx=best.__px-tw-14; tip.style.left=Math.max(2,tx).toFixed(1)+"px"; }
   function ovChartLeave(){ const box=$("lg_ov_line"); if(!box) return; const c=box.querySelector(".lg-cross"), t=box.querySelector(".lg-tip"); if(c)c.style.display="none"; if(t)t.style.display="none"; }
+  // Grow the daily bar chart to fill its card when the donut card next to it is taller.
+  let ovBarArgs=null;
+  function ovFitBars(reset){ const box=$("lg_ov_line"); if(!box||!ovBarArgs) return; let svg=box.querySelector(".lg-chart"); if(!svg) return;
+    const setH=h=>{ const t=document.createElement("div"); t.innerHTML=svgStackBars.apply(null,ovBarArgs.concat([h])); svg.replaceWith(t.firstChild); svg=box.querySelector(".lg-chart"); };
+    if(reset) setH(196);
+    const card=box.closest(".card"), dbox=$("lg_ov_donut"), dcard=dbox&&dbox.closest(".card"); if(!card||!dcard||!card.offsetParent) return;
+    if(Math.abs(card.getBoundingClientRect().top-dcard.getBoundingClientRect().top)>4) return; // stacked (mobile) — leave as is
+    const cb=card.getBoundingClientRect(), pb=parseFloat(getComputedStyle(card).paddingBottom)||0; let bottom=cb.top;
+    Array.from(card.children).forEach(c=>{ const r=c.getBoundingClientRect(); if(r.height) bottom=Math.max(bottom,r.bottom); });
+    const spare=cb.bottom-pb-bottom, sr=svg.getBoundingClientRect(); if(spare<6||!sr.width) return;
+    const vb=svg.viewBox.baseVal, curH=vb?vb.height:196; const Hv=Math.round(Math.max(196,Math.min(620,(sr.height+spare)*560/sr.width)));
+    if(Math.abs(Hv-curH)>=3) setH(Hv); }
+  window.addEventListener("resize",()=>{ clearTimeout(window._ovRz); window._ovRz=setTimeout(()=>ovFitBars(true),140); });
   function renderRevOv(){
     if(!$("lg_ov_line")) return;
     const bySrcDay={};
@@ -1947,9 +2013,12 @@
       else {
         days.forEach(d=>{ let tot=0; const parts=srcList.map(s=>{ const v=(bySrcDay[s]&&bySrcDay[s][d])||0; tot+=v; return {label:s,color:ovColor(s),val:v}; }).filter(p=>p.val>0); ovChart.points.push({t:new Date(d+"T00:00:00").getTime(),label:isoToDisp(d),total:tot,parts:parts}); });
         const leg=(ovType==="all")?("<div class='lg-stackleg'>"+srcList.map(s=>"<span class='lg-sli'><span class='lg-legdot' style='background:"+ovColor(s)+"'></span>"+esc(s)+"</span>").join("")+"</div>"):"";
+        ovBarArgs=[days,bySrcDay,srcList,ovChart.minX,ovChart.maxX];
         $("lg_ov_line").innerHTML="<div class='lg-chartwrap'>"+svgStackBars(days,bySrcDay,srcList,ovChart.minX,ovChart.maxX)+CW+"</div>"+leg; }
+      if(!days.length) ovBarArgs=null;
     }
     $("lg_ov_donut").innerHTML=svgDonut(srcKeys.map(s=>({label:s,value:totalBySrc[s],color:ovColor(s)})));
+    requestAnimationFrame(ovFitBars);
   }
   function dateBounds(range,allStart){ const end=(range.preset==="custom"&&range.end)?range.end:today; let start; const base=new Date(today+"T00:00:00"); if(range.preset==="30d"){ base.setDate(base.getDate()-29); start=ymd(base); } else if(range.preset==="3m"){ base.setDate(base.getDate()-89); start=ymd(base); } else if(range.preset==="12m"){ base.setDate(base.getDate()-364); start=ymd(base); } else if(range.preset==="ytd"){ start=today.slice(0,4)+"-01-01"; } else if(range.preset==="custom"){ start=range.start||allStart; } else { start=allStart; } return [start,end]; }
   function revAllStart(){ let ds=[]; dailyTok.forEach(r=>ds.push(r.d)); expenses.filter(e=>(e.kind||"expense")==="income").forEach(e=>ds.push(e.txn_date)); sessions.forEach(s=>{ if(s.session_date) ds.push(s.session_date); }); return ds.length?ds.sort()[0]:today; }
