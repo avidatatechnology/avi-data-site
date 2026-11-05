@@ -714,6 +714,22 @@
 .lg-auto-row input[type=text]{width:92px;background:var(--raised);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 8px;font-size:13px}
 .lg-auto-meta{font-family:var(--fm);font-size:11px;color:var(--muted)}
 .lg-auto-ft{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+/* Suggested-sessions card: override the global full-width input/label styles */
+.lg-auto-box{padding:16px 18px;border-radius:12px}
+.lg-auto-hd{margin-bottom:10px}
+.lg-auto-t{font-size:14px}
+.lg-auto-gap{text-transform:none;letter-spacing:0;font-family:var(--fb);font-weight:400;font-size:12px;margin:0;white-space:nowrap}
+.lg-auto-gap select{width:auto;margin:0;padding:4px 8px;border-radius:7px;font-family:var(--fb)}
+.lg-auto-note{font-size:12px;color:var(--muted);margin:0 0 10px}
+.lg-auto-row{flex-wrap:nowrap;gap:10px;padding:10px 12px;margin:0 0 8px;text-transform:none;letter-spacing:0;font-family:var(--fb);font-size:13px;color:var(--text);border:1px solid var(--line-soft);border-radius:9px;background:var(--panel);cursor:pointer}
+.lg-auto-row.on{border-color:rgba(110,139,255,.55);background:rgba(110,139,255,.08)}
+.lg-auto-row input[type=checkbox]{width:16px;height:16px;flex:none;margin:0;padding:0;accent-color:var(--brand);cursor:pointer}
+.lg-auto-row input[type=text]{width:96px;margin:0;padding:6px 10px;border-radius:7px;font-family:var(--fb)}
+.lg-auto-dash{color:var(--muted)}
+.lg-auto-row .lg-auto-meta{margin-left:auto;white-space:nowrap}
+.lg-auto-tag{font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.lg-auto-btns{display:flex;gap:8px;margin-left:auto}
+@media(max-width:640px){.lg-auto-row{flex-wrap:wrap}.lg-auto-row .lg-auto-meta{margin-left:0;flex-basis:100%}}
   .lg-offchip{font-family:var(--fm);font-size:11px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;color:var(--muted)}
   #specialView.lg-loading #lgDash,#specialView.lg-loading #lgRevOv,#specialView.lg-loading #lgSess,#specialView.lg-loading #lgRevSrc{visibility:hidden}
   .lg-offchip.tap{cursor:pointer}.lg-offchip.tap:hover{border-color:var(--muted)}
@@ -2045,15 +2061,15 @@
   function autoPanel(d){
     if(!autoProp[d]||autoProp[d].gap!==autoGap) detectSessions(d);
     const P=autoProp[d];
-    const gapSel='<label class="lg-auto-gap">New session after<select data-autogap>'+[45,60,75,90,120].map(v=>'<option value="'+v+'"'+(v===autoGap?' selected':'')+'>'+v+' min</option>').join("")+'</select>of no tips</label>';
+    const gapSel='<label class="lg-auto-gap">Split after <select data-autogap>'+[45,60,75,90,120].map(v=>'<option value="'+v+'"'+(v===autoGap?' selected':'')+'>'+v+' min</option>').join("")+'</select> with no tips</label>';
     let body;
     if(!P.list.length){ body='<div class="lg-auto-meta" style="padding:6px 0">No tips found for this day.</div>'; }
-    else { body=(P.list.every(p=>p.weak)?'<div class="lg-auto-meta" style="padding:6px 0">These look like random tips — check one to add it as a session anyway.</div>':'')+P.list.map((p,i)=>'<div class="lg-auto-row"><input type="checkbox" data-autoon="'+i+'"'+(p.on?' checked':'')+'><input type="text" data-autost="'+i+'" value="'+to12(p.st)+'"> – <input type="text" data-autoen="'+i+'" value="'+to12(p.en)+'"><span class="lg-auto-meta">'+p.n+' tips · '+lgN(p.tok)+' tokens · '+lgUSD(p.tok*cfg.token_rate)+(p.weak?' · short':'')+'</span></div>').join(""); }
+    else { body=(P.list.every(p=>p.weak)?'<div class="lg-auto-note">Too short to count as a stream automatically — check it to add anyway.</div>':'')+P.list.map((p,i)=>'<label class="lg-auto-row'+(p.on?' on':'')+'"><input type="checkbox" data-autoon="'+i+'"'+(p.on?' checked':'')+'><input type="text" data-autost="'+i+'" value="'+to12(p.st)+'"><span class="lg-auto-dash">–</span><input type="text" data-autoen="'+i+'" value="'+to12(p.en)+'">'+(p.weak?'<span class="lg-auto-tag">short</span>':'')+'<span class="lg-auto-meta">'+p.n+' tips · '+lgN(p.tok)+' tokens · '+lgUSD(p.tok*cfg.token_rate)+'</span></label>').join(""); }
     const nOn=P.list.filter(p=>p.on).length;
     let lN=P.allN, lT=P.allTok; P.list.forEach(p=>{ if(p.on){ lN-=p.n; lT-=p.tok; } });
     const left=lN>0?(lN+' tip'+(lN>1?'s':'')+' ('+lgN(Math.max(0,lT))+' tokens) stay Not active'):'';
     const live=(d===today)?' · if you\'re still streaming, add it later':'';
-    return '<div class="lg-auto-box"><div class="lg-auto-hd"><span class="lg-auto-t">Suggested sessions — approve to add</span>'+gapSel+'</div>'+body+'<div class="lg-auto-ft"><span>'+left+live+'</span>'+(P.list.length?'<button class="lg-per-btn primary" data-autoadd="'+d+'"'+((!nOn||autoBusy)?' disabled':'')+'>'+(autoBusy?'Adding…':'Approve '+nOn+' session'+(nOn!==1?'s':''))+'</button>':'')+' <button class="lg-per-btn" data-autoclose>Cancel</button></div></div>';
+    return '<div class="lg-auto-box"><div class="lg-auto-hd"><span class="lg-auto-t">Suggested sessions — approve to add</span>'+gapSel+'</div>'+body+'<div class="lg-auto-ft"><span>'+left+live+'</span><div class="lg-auto-btns"><button class="lg-per-btn" data-autoclose>Cancel</button>'+(P.list.length?'<button class="lg-per-btn primary" data-autoadd="'+d+'"'+((!nOn||autoBusy)?' disabled':'')+'>'+(autoBusy?'Adding…':'Add '+nOn+' session'+(nOn!==1?'s':''))+'</button>':'')+'</div></div></div>';
   }
   async function autoAdd(d){
     const P=autoProp[d]; if(!P||autoBusy) return;
