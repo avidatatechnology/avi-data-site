@@ -2004,7 +2004,7 @@
     const srcKeys=Object.keys(totalBySrc).sort((a,b)=>totalBySrc[b]-totalBySrc[a]); const topSrc=srcKeys[0]||"\u2014";
     const ovTax=grand*cfg.tax_rate, ovNet=grand-ovTax;
     $("lg_ov_kpis").innerHTML=kpi("Revenue",lgUSD(grand),pfRangeLabel(),"grad")+kpi("Taxes",lgUSD(ovTax),Math.round(cfg.tax_rate*100)+"%","warn")+kpi("Net",lgUSD(ovNet),"","mint")+kpi("Avg / day",nDays?lgUSD(grand/nDays):"\u2014",nDays+" active days");
-    const rsTs=new Date(rs+"T00:00:00").getTime(); let reTs=new Date(re+"T00:00:00").getTime(); let cMin=rsTs,cMax=reTs; if(cMin===cMax){ cMin-=86400000; cMax+=86400000; }
+    const rsTs=new Date(rs+"T00:00:00").getTime(); let reTs=new Date(re+"T00:00:00").getTime(); let cMin=rsTs,cMax=reTs; const tdTs=new Date(today+"T00:00:00").getTime(); if(cMax>tdTs) cMax=Math.max(cMin,tdTs); if(cMin===cMax){ cMin-=86400000; cMax+=86400000; }
     ovChart={W:560,pl:56,pr:12,pw:492,minX:cMin,maxX:cMax,points:[]};
     const CW="<div class='lg-cross'></div><div class='lg-tip'></div>";
     const srcList=(ovType==="all")?srcKeys:(totalBySrc[ovType]?[ovType]:[]);
