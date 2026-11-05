@@ -602,7 +602,7 @@
   .lg-dctr{fill:var(--text);font-family:var(--fd);font-weight:800;font-size:16px}
   .lg-dsub{fill:var(--muted-2);font-size:10px;text-transform:uppercase;letter-spacing:.1em}
   .lg-legend{display:flex;flex-direction:column;gap:9px;width:100%;min-width:0}
-  .lg-seg{cursor:pointer;transition:stroke-width .15s ease, opacity .15s ease}
+  .lg-seg{cursor:pointer;transition:opacity .15s ease, transform .15s ease}
   .lg-leg{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;transition:opacity .15s ease;border-radius:7px;padding:3px 5px;margin:-3px -5px}
   .lg-leg.hot{background:rgba(255,255,255,.05)}
   .lg-legdot{width:11px;height:11px;border-radius:3px;flex:none}
@@ -1834,16 +1834,24 @@
     const total=segs.reduce((a,b)=>a+b.value,0);
     if(total<=0){ ovSegs=[]; return "<div class='lg-muted' style='padding:36px;text-align:center'>No revenue in this range.</div>"; }
     const r=76,cx=100,cy=100,C=2*Math.PI*r,sw=20; let off=0,acc=0,arcs=""; ovSegs=[];
-    segs.forEach(s=>{ const frac=s.value/total, len=frac*C, fm=(off/C)+(frac/2), th=fm*2*Math.PI, tx=(Math.sin(th)*9).toFixed(1), ty=(-Math.cos(th)*9).toFixed(1);
-      ovSegs.push({label:s.label,color:s.color,s0:acc,s1:acc+frac}); acc+=frac;
-      arcs+="<circle class='lg-seg' data-src='"+esc(s.label)+"' data-tx='"+tx+"' data-ty='"+ty+"' cx='"+cx+"' cy='"+cy+"' r='"+r+"' fill='none' stroke='"+gPaint(s.label,"r")+"' stroke-width='"+sw+"' stroke-dasharray='"+len.toFixed(2)+" "+(C-len).toFixed(2)+"' stroke-dashoffset='"+(-off).toFixed(2)+"' transform='rotate(-90 "+cx+" "+cy+")'/>"; off+=len; });
+    // Slices are drawn as filled ring sectors (dashed strokes glitch on tiny slices in Chrome).
+    // Every slice gets at least ~1.5° so small sources stay visible; hover/click use the drawn angles.
+    const rO=r+sw/2, rI=r-sw/2, nS=segs.length, gap=nS>1?0.012:0, minF=0.006;
+    const raw=segs.map(s=>s.value/total), bump=raw.map(f=>Math.max(f,minF)), bs=bump.reduce((a,b)=>a+b,0), disp=bump.map(f=>f/bs);
+    const pt=(rad,f)=>{ const a=f*2*Math.PI; return (cx+rad*Math.sin(a)).toFixed(2)+" "+(cy-rad*Math.cos(a)).toFixed(2); };
+    const sector=(f0,f1)=>{ const lg=(f1-f0)>0.5?1:0; return "M"+pt(rO,f0)+" A"+rO+" "+rO+" 0 "+lg+" 1 "+pt(rO,f1)+" L"+pt(rI,f1)+" A"+rI+" "+rI+" 0 "+lg+" 0 "+pt(rI,f0)+" Z"; };
+    segs.forEach((s,idx)=>{ const frac=disp[idx]; const f0=acc, f1=acc+frac; const fm=f0+frac/2, th=fm*2*Math.PI, tx=(Math.sin(th)*6).toFixed(1), ty=(-Math.cos(th)*6).toFixed(1);
+      ovSegs.push({label:s.label,color:s.color,s0:f0,s1:f1}); acc=f1;
+      const g=Math.min(gap,frac*0.4), a0=f0+g/2, a1=f1-g/2;
+      const d= (a1-a0)>=0.999 ? sector(0,0.5)+" "+sector(0.5,0.99999) : sector(a0,a1);
+      arcs+="<path class='lg-seg' data-src='"+esc(s.label)+"' data-tx='"+tx+"' data-ty='"+ty+"' d='"+d+"' fill='"+gPaint(s.label,"r")+"'/>"; });
     const svg="<svg viewBox='0 0 200 200' class='lg-donut'>"+ovDefs()+"<g filter='url(#ovshadow)'>"+arcs+"</g><text x='"+cx+"' y='"+(cy-1)+"' text-anchor='middle' class='lg-dctr'>"+lgUSD(total)+"</text><text x='"+cx+"' y='"+(cy+17)+"' text-anchor='middle' class='lg-dsub'>total</text></svg>";
     const legend="<div class='lg-legend'>"+segs.map(s=>"<div class='lg-leg' data-src='"+esc(s.label)+"'><span class='lg-legdot' style='background:"+s.color+"'></span><span class='lg-leglbl'>"+esc(s.label)+"</span><span class='lg-legval'>"+lgUSD(s.value)+" \u00b7 "+Math.round(s.value/total*100)+"%</span></div>").join("")+"</div>";
     return "<div class='lg-donutwrap'>"+svg+legend+"</div>";
   }
   function ovHighlight(src){
     const box=$("lg_ov_donut"); if(!box) return;
-    box.querySelectorAll(".lg-seg").forEach(c=>{ const on=src&&c.getAttribute("data-src")===src; c.style.strokeWidth=on?"27":"20"; c.style.opacity=(src&&!on)?"0.32":"1"; c.setAttribute("transform",(on?("translate("+c.getAttribute("data-tx")+" "+c.getAttribute("data-ty")+") "):"")+"rotate(-90 100 100)"); });
+    box.querySelectorAll(".lg-seg").forEach(c=>{ const on=src&&c.getAttribute("data-src")===src; c.style.opacity=(src&&!on)?"0.32":"1"; if(on) c.setAttribute("transform","translate("+c.getAttribute("data-tx")+" "+c.getAttribute("data-ty")+")"); else c.removeAttribute("transform"); });
     box.querySelectorAll(".lg-leg").forEach(l=>{ const on=src&&l.getAttribute("data-src")===src; l.classList.toggle("hot",!!on); l.style.opacity=(src&&!on)?"0.5":"1"; });
   }
   function ovSegAt(clientX,clientY,svg){ const rect=svg.getBoundingClientRect(); if(!rect.width) return null; const mx=(clientX-rect.left)/rect.width*200, my=(clientY-rect.top)/rect.height*200; const dx=mx-100,dy=my-100,dist=Math.sqrt(dx*dx+dy*dy); if(dist<54||dist>100) return null; let ang=Math.atan2(dx,-dy); if(ang<0) ang+=2*Math.PI; const fr=ang/(2*Math.PI); for(var k=0;k<ovSegs.length;k++){ if(fr>=ovSegs[k].s0 && fr<ovSegs[k].s1) return ovSegs[k].label; } return null; }
