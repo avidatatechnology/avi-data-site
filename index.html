@@ -2033,22 +2033,24 @@
     const list=[]; let used=0;
     groups.forEach(g=>{ g=trimEdge(g); g=trimEdge(g.slice().reverse()).reverse();
       const span=(g[g.length-1].t-g[0].t)/60000;
-      if(g.length<AUTO_MIN_TIPS||span<AUTO_MIN_SPAN) return;
-      let tok=0; g.forEach(e=>tok+=e.n); used+=g.length;
-      list.push({ st:hhmm(g[0].t), en:hhmm(g[g.length-1].t+60000), tok, n:g.length, on:true });
+      // Short/sparse groups are still listed (unchecked) so you can override and add them.
+      const weak=(g.length<AUTO_MIN_TIPS||span<AUTO_MIN_SPAN);
+      let tok=0; g.forEach(e=>tok+=e.n);
+      list.push({ st:hhmm(g[0].t), en:hhmm(g[g.length-1].t+60000), tok, n:g.length, on:!weak, weak });
     });
-    const tipsLeft=evs.length-used; let tokLeft=0; evs.forEach(e=>tokLeft+=e.n); list.forEach(p=>tokLeft-=p.tok);
-    autoProp[d]={ gap:autoGap, list, tipsLeft, tokLeft:Math.max(0,tokLeft) };
+    let allTok=0; evs.forEach(e=>allTok+=e.n);
+    autoProp[d]={ gap:autoGap, list, allN:evs.length, allTok };
   }
   function autoPanel(d){
     if(!autoProp[d]||autoProp[d].gap!==autoGap) detectSessions(d);
     const P=autoProp[d];
     const gapSel='<label class="lg-auto-gap">New session after<select data-autogap>'+[45,60,75,90,120].map(v=>'<option value="'+v+'"'+(v===autoGap?' selected':'')+'>'+v+' min</option>').join("")+'</select>of no tips</label>';
     let body;
-    if(!P.list.length){ body='<div class="lg-auto-meta" style="padding:6px 0">No streams found — these look like random tips, so they stay Not active.</div>'; }
-    else { body=P.list.map((p,i)=>'<div class="lg-auto-row"><input type="checkbox" data-autoon="'+i+'"'+(p.on?' checked':'')+'><input type="text" data-autost="'+i+'" value="'+to12(p.st)+'"> – <input type="text" data-autoen="'+i+'" value="'+to12(p.en)+'"><span class="lg-auto-meta">'+p.n+' tips · '+lgN(p.tok)+' tokens · '+lgUSD(p.tok*cfg.token_rate)+'</span></div>').join(""); }
+    if(!P.list.length){ body='<div class="lg-auto-meta" style="padding:6px 0">No tips found for this day.</div>'; }
+    else { body=(P.list.every(p=>p.weak)?'<div class="lg-auto-meta" style="padding:6px 0">These look like random tips — check one to add it as a session anyway.</div>':'')+P.list.map((p,i)=>'<div class="lg-auto-row"><input type="checkbox" data-autoon="'+i+'"'+(p.on?' checked':'')+'><input type="text" data-autost="'+i+'" value="'+to12(p.st)+'"> – <input type="text" data-autoen="'+i+'" value="'+to12(p.en)+'"><span class="lg-auto-meta">'+p.n+' tips · '+lgN(p.tok)+' tokens · '+lgUSD(p.tok*cfg.token_rate)+(p.weak?' · short':'')+'</span></div>').join(""); }
     const nOn=P.list.filter(p=>p.on).length;
-    const left=P.tipsLeft>0?(P.tipsLeft+' tip'+(P.tipsLeft>1?'s':'')+' ('+lgN(P.tokLeft)+' tokens) stay Not active'):'';
+    let lN=P.allN, lT=P.allTok; P.list.forEach(p=>{ if(p.on){ lN-=p.n; lT-=p.tok; } });
+    const left=lN>0?(lN+' tip'+(lN>1?'s':'')+' ('+lgN(Math.max(0,lT))+' tokens) stay Not active'):'';
     const live=(d===today)?' · if you\'re still streaming, add it later':'';
     return '<div class="lg-auto-box"><div class="lg-auto-hd"><span class="lg-auto-t">Suggested sessions — approve to add</span>'+gapSel+'</div>'+body+'<div class="lg-auto-ft"><span>'+left+live+'</span>'+(P.list.length?'<button class="lg-per-btn primary" data-autoadd="'+d+'"'+((!nOn||autoBusy)?' disabled':'')+'>'+(autoBusy?'Adding…':'Approve '+nOn+' session'+(nOn!==1?'s':''))+'</button>':'')+' <button class="lg-per-btn" data-autoclose>Cancel</button></div></div>';
   }
