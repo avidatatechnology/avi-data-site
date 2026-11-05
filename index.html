@@ -2107,13 +2107,14 @@
     // Income only: tips sent, cash-outs and tokens spent in other rooms aren't revenue.
     // Tips already marked as gifts are left alone so the upload doesn't undo them.
     await fetchGifts(); const giftKeys=new Set(giftRows.map(g=>tsKey(g.ts)));
+    const staleAll=rows.filter(r=>r.raw!==r.ts).map(r=>r.raw);
     const allN=rows.length; rows=rows.filter(r=>r.token_change>0 && !giftKeys.has(tsKey(r.ts)));
     if(!rows.length){ m.className="msg err"; m.textContent="No incoming tokens in "+(allN>1?"these rows":"this row")+"."; return; }
     if(tokImporting){ m.className="msg err"; m.textContent="An import is already running — wait for it to finish."; return; }
     tokImporting=true; try{
     m.className="msg info"; m.textContent="Importing "+rows.length+"…"; let err=null;
     // Older uploads stored the raw (unconverted) stamp — remove those copies first.
-    const stale=rows.filter(r=>r.raw!==r.ts).map(r=>r.raw);
+    const stale=staleAll;
     for(let i=0;i<stale.length&&!err;i+=150){ const { error }=await sb.from("cb_tokens").delete().in("ts",stale.slice(i,i+150)); if(error) err=error; }
     if(err){ m.className="msg err"; m.textContent=err.message; return; }
     rows.forEach(r=>{ delete r.raw; });
